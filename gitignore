@@ -1,0 +1,68 @@
+# ===== Unity generated folders =====
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emory[Cc]aptures/
+[Rr]ecordings/
+
+# ===== Asset meta data should be tracked (do NOT ignore .meta files) =====
+# Keep .meta files so Unity references (scripts, prefabs, scenes) don't break.
+
+# ===== Visual Studio / VS Code / Rider =====
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# ===== Unity auto-generated files =====
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+crashlytics-build.properties
+
+# ===== Builds =====
+*.apk
+*.aab
+*.unitypackage
+*.unitypackage.meta
+*.app
+*.exe
+
+# ===== Gradle / Android =====
+.gradle/
+ExportedObj/
+
+# ===== Visual Studio cache =====
+.utmp/
+
+# ===== OS generated files =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ===== Optional: Asset Store / large files =====
+# *.psd
+# *.blend1
