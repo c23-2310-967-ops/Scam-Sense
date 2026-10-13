@@ -1,0 +1,1 @@
+﻿Inter font by Rasmus Andersson (https://rsms.me/inter). SIL Open Font License 1.1. Copied from Unity's com.unity.dt.app-ui package.

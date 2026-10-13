@@ -1,0 +1,187 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 147873241f4f7964690daffb230f2761, type: 3}
+  m_Name: Level1_TheFirstCase
+  m_EditorClassIdentifier: 
+  levelId: level_1
+  levelNumber: 1
+  displayName: The First Case
+  sceneName: Game
+  description: "Your first day on the case. Texts and emails arrive while you explore
+    the house \u2014 decide which are scams."
+  briefingTitle: CASE BRIEFING
+  briefingText: Welcome to your first case. You will receive messages and emails
+    throughout the day. Some are legitimate, while others may be attempts to deceive
+    you. Examine each message carefully before deciding.
+  caseNotes:
+  - Earlier today you ordered a desk lamp through the official Example Delivery app.
+  - During this morning's setup, you requested a password change for your Example
+    Cloud Service account.
+  objectives:
+  - Identify five messages.
+  - Correctly classify each message as SCAM or LEGITIMATE.
+  - Explore the house while waiting for incoming messages.
+  messages:
+  - id: l1_package_hold
+    channel: 0
+    sender: Unknown Number
+    senderDetail: +1 (555) 014-2290
+    subject: 
+    body: 'Delivery Alert: Your package is on hold due to incomplete delivery information.
+      Please confirm your details using the link provided.'
+    link: http://parcel-redelivery.example/confirm
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The sender is unknown, and the message creates urgency while asking
+      you to use an unfamiliar link. Verify delivery information through the courier's
+      official website or app instead.
+    trigger: 1
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: l1_bank_verify
+    channel: 1
+    sender: "Security Team \u2014 Example Bank"
+    senderDetail: 
+    subject: Immediate Account Verification Required
+    body: We detected an issue with your account. Your access may be restricted today
+      unless you verify your information using the link below.
+    link: http://examplebank-verify.example/login
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The message pressures you to act quickly and requests account verification
+      through a link. Do not provide sensitive information through unexpected messages.
+      Contact the bank through its official channels.
+    trigger: 2
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: l1_order_confirmed
+    channel: 0
+    sender: Example Delivery
+    senderDetail: 
+    subject: 
+    body: Your order has been confirmed. Your estimated delivery date is tomorrow.
+      You can view your order status in the official delivery app.
+    link: 
+    correctVerdict: 1
+    scenarioContext: The player previously placed an order, so this message matches
+      an expected transaction.
+    explanation: The message matches an action you took and directs you to the official
+      app rather than an unfamiliar link. In real life, still verify the sender and
+      order details.
+    trigger: 1
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: l1_prize
+    channel: 1
+    sender: Rewards Center
+    senderDetail: 
+    subject: Congratulations! You Won a Special Prize!
+    body: You have been selected to receive a free premium reward. Claim your prize
+      immediately by opening the link below. No purchase is required!
+    link: http://rewards-claim.example/prize
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The unexpected reward and pressure to claim it immediately are warning
+      signs. Verify promotions independently and avoid unfamiliar claim links.
+    trigger: 2
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: l1_password_done
+    channel: 1
+    sender: Example Cloud Service
+    senderDetail: 
+    subject: Your Password Update Is Complete
+    body: The password update you requested has been completed. If you made this
+      change, no further action is needed. If you did not request it, open the official
+      application and review your account security.
+    link: 
+    correctVerdict: 1
+    scenarioContext: The player previously requested a password change during the
+      simulated setup.
+    explanation: The notification matches an action you requested and gives a safe
+      way to check your account. If you did not make the change, investigate through
+      the official application.
+    trigger: 2
+    requestedAction: 
+    linkNote: 
+    clues: []
+  inboxExtras:
+  - id: old_library
+    channel: 1
+    sender: Riverside Public Library
+    senderDetail: 
+    subject: Your reserved book is ready for pickup
+    body: The book you reserved is now available at the front desk. It will be held
+      for 7 days. Log in to your library account if you need more time.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: old_team
+    channel: 1
+    sender: Sam (Volunteer Team)
+    senderDetail: 
+    subject: 'Saturday clean-up: meeting point'
+    body: Hi everyone, we'll meet at the park entrance at 9:00 on Saturday. Bring
+      gloves and water. See you there!
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: old_receipt
+    channel: 1
+    sender: Example Delivery
+    senderDetail: 
+    subject: Receipt for your desk lamp order
+    body: Thank you for your order of 1 x desk lamp. You can track this order in
+      the official Example Delivery app.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  firstMessageDelay: 8
+  delayBetweenMessages: {x: 10, y: 20}
+  minimumActivityDelay: 4
+  oneStarScore: 200
+  twoStarScore: 300
+  threeStarScore: 400
+  minScoreToUnlockNext: 300
+  nextLevelId: level_2
+  nextSceneName: Room2_InvestigationOffice
+  lessons:
+  - Check who really sent a message. Unknown numbers and vague senders deserve a
+    closer look.
+  - Urgency and threats ("today", "immediately", "restricted") are pressure tactics.
+  - Don't use links in unexpected messages. Open the official app or website yourself.
+  - Unexpected prizes and rewards are classic bait.
+  - A message that matches something you actually did, and points to the official
+    app, is more likely legitimate - but still verify.
+  learningSummary: 
+  performanceHigh: 
+  performanceModerate: 
+  performanceLow: 

@@ -1,0 +1,243 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 147873241f4f7964690daffb230f2761, type: 3}
+  m_Name: Level2_TheInvestigation
+  m_EditorClassIdentifier: 
+  levelId: level_2
+  levelNumber: 2
+  displayName: The Investigation
+  sceneName: Room2_InvestigationOffice
+  description: Flagged messages arrive in the investigation office. Inspect the sender,
+    context and requests before you decide.
+  briefingTitle: 'LEVEL 2: THE INVESTIGATION'
+  briefingText: Welcome to the investigation office. Several messages have been flagged
+    for review. Some contain subtle warning signs, while others are legitimate communications.
+    Examine the sender, context, wording, and requested actions before making your
+    decision. Your accuracy and response time will affect your score.
+  caseNotes:
+  - During setup you ordered office supplies from Northstar Office Supplies through
+    your customer account.
+  - This morning you attended a project meeting led by Daniel Reed, the project coordinator.
+  - You requested a password change for your Example Cloud Service account.
+  objectives:
+  - Review six messages.
+  - Classify each as SCAM or LEGITIMATE.
+  - Investigate suspicious details before answering.
+  - Earn a score based on accuracy and response speed.
+  messages:
+  - id: l2_updated_invoice
+    channel: 1
+    sender: "Billing Department \u2014 Northstar Office Supplies"
+    senderDetail: billing@northstar-supplies.example
+    subject: Updated Invoice Available
+    body: Hello, your recent office supply order has an updated invoice reflecting
+      the final shipping cost. Please review the invoice in your existing customer
+      account. If you have questions about the amount, contact our billing team through
+      the official website.
+    link: 
+    correctVerdict: 1
+    scenarioContext: The player previously placed an office supply order during the
+      simulated setup. The communication matches that transaction and directs the
+      player to an existing account rather than an unfamiliar attachment or link.
+    explanation: The message matches a transaction you initiated and provides a safer
+      route through your existing account. In real situations, verify the order and
+      sender independently before trusting a billing message.
+    trigger: 2
+    requestedAction: Review the invoice in your existing customer account.
+    linkNote: No link or attachment. It points to your existing account and the official
+      website.
+    clues:
+    - Refers to a recent office supply order.
+    - Questions are directed to the billing team through the official website.
+  - id: l2_account_suspension
+    channel: 0
+    sender: Unknown Number
+    senderDetail: +1 (555) 019-4471
+    subject: 
+    body: Your account will be suspended in 30 minutes due to unusual activity. Confirm
+      your identity immediately through secure-check.example.invalid to prevent permanent
+      restriction.
+    link: secure-check.example.invalid
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The message creates extreme urgency, uses an unknown sender, and
+      directs you to an unfamiliar domain. Do not enter account credentials through
+      the message. Open the official application or contact the provider independently.
+    trigger: 1
+    requestedAction: Confirm your identity on a website within 30 minutes.
+    linkNote: secure-check.example.invalid (training placeholder, not opened). The
+      domain does not name any provider.
+    clues:
+    - The number is not saved in your contacts.
+    - It does not say which account or provider it is about.
+    - 'Deadline: 30 minutes.'
+  - id: l2_project_schedule
+    channel: 1
+    sender: "Daniel Reed \u2014 Project Coordinator"
+    senderDetail: daniel.reed@yourcompany.example
+    subject: Updated Project Schedule
+    body: Hi, I've updated the project schedule following our meeting. You can review
+      the latest version in the team's usual shared workspace. Please let me know
+      if any of the dates conflict with your availability.
+    link: 
+    correctVerdict: 1
+    scenarioContext: The player attended a simulated meeting earlier. The sender
+      and subject match that context, and the message directs the player to the team's
+      established workspace.
+    explanation: The sender, topic, and timing match an expected work activity, and
+      the message uses an established workspace rather than an unfamiliar link. Still
+      verify the sender's identity and context if anything seems unusual.
+    trigger: 2
+    requestedAction: Review the schedule in the team's usual shared workspace and
+      reply about date conflicts.
+    linkNote: No link. It refers to the workspace your team already uses.
+    clues:
+    - Sent from a company address.
+    - Refers to a meeting that happened today.
+  - id: l2_gift_card_request
+    channel: 1
+    sender: Office Director
+    senderDetail: office.director.desk@quickmail.example
+    subject: "Confidential Request \u2014 Immediate Action"
+    body: I'm currently occupied and need you to purchase six gift cards for an urgent
+      client matter. Send me the redemption codes as soon as possible. Please keep
+      this confidential until I return.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The request uses authority, urgency, secrecy, and an unusual payment
+      method to pressure the recipient. Verify the request with the director through
+      a separate, established communication channel before taking action.
+    trigger: 2
+    requestedAction: Buy six gift cards and email the redemption codes.
+    linkNote: No link.
+    clues:
+    - The sender is a job title with no personal name.
+    - Sent from an external email service, not the company domain.
+    - Asks you to keep it confidential.
+  - id: l2_password_changed
+    channel: 1
+    sender: Example Cloud Service
+    senderDetail: no-reply@examplecloud.example
+    subject: 'Security Notification: Password Changed'
+    body: The password change you requested has been completed. If you made this
+      change, no further action is needed. If you did not request it, open the official
+      application directly and review your account security.
+    link: 
+    correctVerdict: 1
+    scenarioContext: The player previously requested a password change during the
+      simulated setup.
+    explanation: The message matches an action you requested and gives you a safe
+      way to check your account. If you did not make the change, use the official
+      application rather than links in unexpected messages.
+    trigger: 2
+    requestedAction: Nothing if you made the change; otherwise review security in
+      the official app.
+    linkNote: No link.
+    clues:
+    - Refers to a password change.
+    - Suggests opening the official application yourself.
+  - id: l2_it_support
+    channel: 0
+    sender: IT Helpdesk
+    senderDetail: +1 (555) 016-2208
+    subject: 
+    body: We are updating employee security records. Reply with your account password
+      and verification code so we can finish configuring your access before the end
+      of the day.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The message requests a password and verification code, which are
+      sensitive authentication details. Legitimate support staff should not ask you
+      to disclose your password or one-time verification code. Contact IT through
+      its established support channel.
+    trigger: 1
+    requestedAction: Reply by text with your account password and verification code.
+    linkNote: No link. The reply goes to this phone number.
+    clues:
+    - Sent from an ordinary phone number.
+    - 'Deadline: before the end of the day.'
+  inboxExtras:
+  - id: l2_old_order
+    channel: 1
+    sender: Northstar Office Supplies
+    senderDetail: 
+    subject: Order received
+    body: Thanks for your order of printer paper, folders and pens. You can view
+      the order status and invoice in your customer account.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: l2_old_meeting
+    channel: 1
+    sender: Calendar
+    senderDetail: 
+    subject: Project meeting with Daniel Reed - 9:00
+    body: 'Reminder: Project meeting with Daniel Reed (Project Coordinator), Room
+      2B, 9:00-9:45.'
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: l2_old_facilities
+    channel: 1
+    sender: Facilities Team
+    senderDetail: 
+    subject: Air conditioning maintenance on Friday
+    body: Technicians will service the air conditioning on Friday morning. Please
+      keep the server room door clear.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  firstMessageDelay: 8
+  delayBetweenMessages: {x: 10, y: 20}
+  minimumActivityDelay: 4
+  oneStarScore: 1
+  twoStarScore: 300
+  threeStarScore: 480
+  minScoreToUnlockNext: 300
+  nextLevelId: level_3
+  nextSceneName: 
+  lessons:
+  - 'Impersonation: names and job titles can be faked - check the actual address
+    or number.'
+  - 'Suspicious domains: a link''s domain should clearly match the organisation it
+    claims to be.'
+  - Urgency and secrecy are pressure tactics - slow down and verify through a separate
+    channel.
+  - Never share passwords, verification codes or gift card codes by message.
+  - Messages that match your own recent actions and point to official channels are
+    more likely legitimate.
+  learningSummary: You learned to recognize impersonation, suspicious domains, urgent
+    requests, unusual payment demands, credential theft attempts, and legitimate
+    communications that match your own actions.
+  performanceHigh: Excellent investigation! You identified the key warning signs
+    and made efficient decisions.
+  performanceModerate: Good work. Review the explanations to sharpen your judgment
+    and improve your response time.
+  performanceLow: Keep learning. Examine sender identity, context, urgency, and requests
+    for sensitive information before deciding.
