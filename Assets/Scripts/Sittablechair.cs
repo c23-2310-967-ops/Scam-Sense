@@ -122,7 +122,7 @@ public class SittableChair : MonoBehaviour
         var kb = Keyboard.current;
         if (Occupied == this)
         {
-            InteractionPrompt.Set(this, useKey.ToString(), "Stand up", priority: 0);
+            InteractionPrompt.Set(this, InteractionPrompt.KeyName(useKey), "Stand up", priority: 0);
             bool standPressed = kb != null &&
                 ((kb[useKey].wasPressedThisFrame && !InteractionGate.InteractBlocked) ||
                  (altStandKey != Key.None && kb[altStandKey].wasPressedThisFrame));
@@ -134,7 +134,7 @@ public class SittableChair : MonoBehaviour
         }
         else
         {
-            InteractionPrompt.Set(this, useKey.ToString(), sitLabel, priority: 2);
+            InteractionPrompt.Set(this, InteractionPrompt.KeyName(useKey), sitLabel, priority: 2);
             if (kb != null && kb[useKey].wasPressedThisFrame && !InteractionGate.InteractBlocked)
             {
                 InteractionGate.ConsumeInteract();
@@ -154,14 +154,11 @@ public class SittableChair : MonoBehaviour
         if (!FindPlayer()) return;
 
         Transform c = cam.transform;
-        var hits = Physics.RaycastAll(c.position, c.forward, 4f, ~0, QueryTriggerInteraction.Ignore);
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        foreach (var hit in hits)
+        // First thing in the way decides (own collider skipped); shared, allocation-free ray - see LookRaycast.
+        if (LookRaycast.TryGetFirstHit(cam, player, 4f, out RaycastHit hit))
         {
-            if (hit.transform.root == player.root) continue;   // own collider
             var chair = hit.collider.GetComponentInParent<SittableChair>();
             if (chair != null && chair.enabled && hit.distance <= chair.interactDistance) focused = chair;
-            break;   // first thing in the way decides
         }
         if (focused != null) return;
 

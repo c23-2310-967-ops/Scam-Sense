@@ -124,7 +124,7 @@ public class CaseFilesTerminal : MonoBehaviour
             return;
         }
 
-        InteractionPrompt.Set(this, useKey.ToString(), displayName, priority: 4);
+        InteractionPrompt.Set(this, InteractionPrompt.KeyName(useKey), displayName, priority: 4);
         var kb = Keyboard.current;
         if (kb != null && kb[useKey].wasPressedThisFrame && !InteractionGate.InteractBlocked)
         {
@@ -141,15 +141,8 @@ public class CaseFilesTerminal : MonoBehaviour
 
     bool IsLookedAt()
     {
-        Transform c = cam.transform;
-        var hits = Physics.RaycastAll(c.position, c.forward, interactDistance, ~0, QueryTriggerInteraction.Ignore);
-        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        foreach (var hit in hits)
-        {
-            if (player != null && hit.transform.root == player.root) continue;
-            return hit.transform.IsChildOf(transform);   // first thing in the way decides
-        }
-        return false;
+        // First thing in the way decides (player's own collider skipped); shared, allocation-free ray - see LookRaycast.
+        return LookRaycast.TryGetFirstHit(cam, player, interactDistance, out RaycastHit hit) && hit.transform.IsChildOf(transform);
     }
 
     // ---------- Pages (called by the tab buttons' onClick) ----------

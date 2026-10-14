@@ -58,6 +58,7 @@ public class QuizManager : MonoBehaviour
     private Phase phase = Phase.Idle;
     private int index;
     private float waitTimer, waitTarget, walked, reminderTimer, responseTime;
+    private int shownTenths = -1, shownPoints = -1;
     private Vector3 lastPlayerPos;
     private MessageDevice[] devices = new MessageDevice[0];
     private bool hasComputers;
@@ -142,7 +143,16 @@ public class QuizManager : MonoBehaviour
                 // A presenter that is still opening (phone coming out of the pocket) holds the timer at 0.
                 if (!(current is IPresenterTiming timing) || timing.TimerRunning)
                     responseTime += Time.deltaTime;
-                current?.SetTimer(responseTime, scoring.PointsFor(true, responseTime));
+                // The timer shows tenths of a second: rebuild its text only when what it shows changes
+                // (not every frame - each update allocates strings and re-meshes the text).
+                int tenths = Mathf.FloorToInt(responseTime * 10f + 0.5f);
+                int points = scoring.PointsFor(true, responseTime);
+                if (tenths != shownTenths || points != shownPoints)
+                {
+                    shownTenths = tenths;
+                    shownPoints = points;
+                    current?.SetTimer(responseTime, points);
+                }
                 break;
         }
     }
@@ -231,6 +241,7 @@ public class QuizManager : MonoBehaviour
 
         phase = Phase.Reading;
         responseTime = 0f;
+        shownTenths = shownPoints = -1;
         current = presenter;
         current.AnswerChosen += OnAnswer;
         current.ContinueClicked += OnContinue;
@@ -332,7 +343,7 @@ public class QuizManager : MonoBehaviour
         }
 
         if (phase == Phase.Notified && !NeedsComputer(Current))
-            InteractionPrompt.Set(this, interactKey.ToString(),
+            InteractionPrompt.Set(this, InteractionPrompt.KeyName(interactKey),
                 Current.channel == MessageChannel.SMS ? "Read new text message" : "Read new email", priority: 3);
         else
             InteractionPrompt.Set(this, "", device.idleLabel, priority: 1);
@@ -343,14 +354,9 @@ public class QuizManager : MonoBehaviour
     T LookedAt<T>() where T : Component
     {
         if (playerCamera == null) return null;
-        Transform cam = playerCamera.transform;
-        var hits = Physics.RaycastAll(cam.position, cam.forward, lookDistance, ~0, QueryTriggerInteraction.Ignore);
-        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        foreach (var hit in hits)
-        {
-            if (player != null && hit.transform.root == player.root) continue;   // skip the player's own collider
-            return hit.collider.GetComponentInParent<T>();                     // first thing in the way decides
-        }
-        return null;
+        // First thing in the way decides (player's own collider skipped); shared, allocation-free ray - see LookRaycast.
+        return LookRaycast.TryGetFirstHit(playerCamera, player, lookDistance, out RaycastHit hit)
+            ? hit.collider.GetComponentInParent<T>()
+            : null;
     }
 }

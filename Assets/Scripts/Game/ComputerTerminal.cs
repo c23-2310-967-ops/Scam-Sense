@@ -70,9 +70,9 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
     private GameObject paneDivider;
     private bool showingDetails;
     private GameObject toast;
-    private readonly List<GameObject> rows = new List<GameObject>();
 
     private ScamMessage shown;         // message in the reading pane
+    private int clockMinute = -1;
     private bool answering;
 
     // ---------- Unity ----------
@@ -120,7 +120,14 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
 
     void Update()
     {
-        clockText.text = DateTime.Now.ToString("h:mm tt");
+        // The clock shows minutes: format it only when the minute changes (not a new string every frame).
+        var now = DateTime.Now;
+        int minute = now.Hour * 60 + now.Minute;
+        if (minute != clockMinute)
+        {
+            clockMinute = minute;
+            clockText.text = now.ToString("h:mm tt");
+        }
         if (InUse || cam == null) return;
 
         bool focused = !InteractionGate.UIOpen && !PauseMenu.IsPaused && IsLookedAt();
@@ -132,7 +139,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
 
         bool newMail = quiz != null && quiz.PendingMessage != null && quiz.PendingMessage.channel == MessageChannel.Email;
         string secondary = SittableChair.PlayerSeated ? "Space: stand up" : null;
-        InteractionPrompt.Set(this, useKey.ToString(), newMail ? "Read new email" : displayName, priority: 4, secondary: secondary);
+        InteractionPrompt.Set(this, InteractionPrompt.KeyName(useKey), newMail ? "Read new email" : displayName, priority: 4, secondary: secondary);
 
         var kb = Keyboard.current;
         if (kb != null && kb[useKey].wasPressedThisFrame && !InteractionGate.InteractBlocked)
@@ -151,15 +158,8 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
 
     bool IsLookedAt()
     {
-        Transform c = cam.transform;
-        var hits = Physics.RaycastAll(c.position, c.forward, interactDistance, ~0, QueryTriggerInteraction.Ignore);
-        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        foreach (var hit in hits)
-        {
-            if (player != null && hit.transform.root == player.root) continue;
-            return hit.transform.IsChildOf(transform);   // first thing in the way decides
-        }
-        return false;
+        // First thing in the way decides (player's own collider skipped); shared, allocation-free ray - see LookRaycast.
+        return LookRaycast.TryGetFirstHit(cam, player, interactDistance, out RaycastHit hit) && hit.transform.IsChildOf(transform);
     }
 
     // ---------- Enter / exit ----------
@@ -322,9 +322,6 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
     {
         if (canvas == null || quiz == null || quiz.Level == null) return;
 
-        foreach (var r in rows) Destroy(r);
-        rows.Clear();
-
         var level = quiz.Level;
         ScamMessage open = quiz.OpenMessage;
         ScamMessage pending = quiz.PendingMessage;
@@ -339,14 +336,50 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
             var m = level.messages[i];
             if (m.channel == MessageChannel.Email && quiz.Scoring.HasAnswered(m.id) && m != open) list.Add(m);
         }
-        foreach (var m in list) rows.Add(MakeRow(m, m == pending, m == open, false));
+        // Rows are reused: only a row whose state changed (new -> open -> answered) is rebuilt. Rebuilding the
+        // whole inbox on every message event created dozens of UI objects and text buffers at once (a hitch).
+        usedRows.Clear();
+        int sibling = 0;
+        foreach (var m in list) PlaceRow(m, m == pending, m == open, false, sibling++);
         if (level.inboxExtras != null)
-            foreach (var m in level.inboxExtras) rows.Add(MakeRow(m, false, false, true));
+            foreach (var m in level.inboxExtras) PlaceRow(m, false, false, true, sibling++);
+        staleRows.Clear();
+        foreach (var kv in rowCache) if (!usedRows.Contains(kv.Key)) staleRows.Add(kv.Key);
+        foreach (var m in staleRows) { DestroyRow(rowCache[m].go); rowCache.Remove(m); }
 
         unreadText.text = unread > 0 ? $"{unread} new" : "No new mail";
         toast.SetActive(!InUse && unread > 0);
         if (unread > 0) toastText.text = $"New email from {pending.sender}";
     }
+
+    struct RowEntry { public GameObject go; public int state; }
+    private readonly Dictionary<ScamMessage, RowEntry> rowCache = new Dictionary<ScamMessage, RowEntry>();
+    private readonly HashSet<ScamMessage> usedRows = new HashSet<ScamMessage>();
+    private readonly List<ScamMessage> staleRows = new List<ScamMessage>();
+
+    /// <summary>Shows the row for a message at the given position, reusing it if its state hasn't changed.</summary>
+    void PlaceRow(ScamMessage m, bool isNew, bool isOpen, bool isOld, int sibling)
+    {
+        int state = isOpen ? 1 : isNew ? 2 : isOld ? 3 : (FindResult(m).isCorrect ? 4 : 5);
+        if (!rowCache.TryGetValue(m, out var entry) || entry.go == null || entry.state != state)
+        {
+            if (entry.go != null) DestroyRow(entry.go);
+            entry = new RowEntry { go = MakeRow(m, isNew, isOpen, isOld), state = state };
+            rowCache[m] = entry;
+        }
+        entry.go.transform.SetSiblingIndex(sibling);
+        usedRows.Add(m);
+    }
+
+    static void DestroyRow(GameObject go)
+    {
+        go.SetActive(false);   // leaves the layout immediately; the object itself is destroyed at the end of the frame
+        Destroy(go);
+    }
+
+    /// <summary>The inbox preview shows about 45 characters before "…"; passing the whole body only made the text bigger to process.</summary>
+    static string PreviewText(string body) =>
+        string.IsNullOrEmpty(body) || body.Length <= 100 ? body : body.Substring(0, 100);
 
     GameObject MakeRow(ScamMessage m, bool isNew, bool isOpen, bool isOld)
     {
@@ -379,7 +412,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
         bool answered = !isNew && !isOpen && !isOld;   // leaves room for the "you were right" line
         UIKit.Place(subject.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(32, -44), new Vector2(answered ? 270 : 440, 28));
 
-        var preview = UIKit.Text(row, "Preview", m.body, 19, UIKit.TextSecondary);
+        var preview = UIKit.Text(row, "Preview", PreviewText(m.body), 19, UIKit.TextSecondary);
         preview.textWrappingMode = TextWrappingModes.NoWrap;
         preview.overflowMode = TextOverflowModes.Ellipsis;
         UIKit.Place(preview.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(32, -74), new Vector2(440, 26));

@@ -22,7 +22,7 @@ public class PlayerInteractor : MonoBehaviour
             return;
         }
 
-        InteractionPrompt.Set(this, interactKey.ToString(), lookedAtDoor.IsOpen ? "Close door" : "Open door", priority: 1);
+        InteractionPrompt.Set(this, InteractionPrompt.KeyName(interactKey), lookedAtDoor.IsOpen ? "Close door" : "Open door", priority: 1);
 
         if (Keyboard.current != null && Keyboard.current[interactKey].wasPressedThisFrame &&
             !InteractionGate.InteractBlocked)   // E already used this frame (message, computer...)
@@ -34,20 +34,19 @@ public class PlayerInteractor : MonoBehaviour
 
     void OnDisable() => InteractionPrompt.Clear(this);
 
+    Camera cam;
+
     Door FindDoor()
     {
-        var ray = new Ray(transform.position, transform.forward);
-        var hits = Physics.RaycastAll(ray, interactDistance, ~0, QueryTriggerInteraction.Ignore);
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-        foreach (var hit in hits)
+        if (cam == null)
         {
-            // Skip the player's own collider (the Character Controller)
-            if (hit.transform.root == transform.root) continue;
-
-            // The first thing in the way decides: a door, or a wall blocking the view
-            return hit.collider.GetComponentInParent<Door>();
+            cam = GetComponent<Camera>();
+            if (cam == null) cam = Camera.main;
         }
-        return null;
+        // The first thing in the way decides (a door, or a wall blocking the view); the player's own
+        // collider is skipped. Shared, allocation-free ray - see LookRaycast.
+        return LookRaycast.TryGetFirstHit(cam, transform.root, interactDistance, out RaycastHit hit)
+            ? hit.collider.GetComponentInParent<Door>()
+            : null;
     }
 }

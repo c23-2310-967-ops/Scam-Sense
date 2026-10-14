@@ -39,6 +39,15 @@ public class InteractionPrompt : MonoBehaviour
         if (owner != null) requests.Remove(owner);
     }
 
+    static readonly Dictionary<UnityEngine.InputSystem.Key, string> keyNames = new Dictionary<UnityEngine.InputSystem.Key, string>();
+
+    /// <summary>The key's label ("E"), cached: enum ToString() allocates a new string every call.</summary>
+    public static string KeyName(UnityEngine.InputSystem.Key key)
+    {
+        if (!keyNames.TryGetValue(key, out var name)) keyNames[key] = name = key.ToString();
+        return name;
+    }
+
     static void Ensure()
     {
         if (instance != null) return;
