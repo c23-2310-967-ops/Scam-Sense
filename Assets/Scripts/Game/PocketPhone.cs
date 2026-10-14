@@ -25,6 +25,8 @@ public class PocketPhone : MonoBehaviour
     [SerializeField] private Color edgeColor = new Color32(0x3A, 0x44, 0x55, 255);
     [Tooltip("Matches FloatingHand's default skin colour.")]
     [SerializeField] private Color skinColor = new Color(0.87f, 0.69f, 0.55f);
+    [Tooltip("Hoodie sleeve on the holding arm (matches the KidHoodie character).")]
+    [SerializeField] private Color sleeveColor = new Color32(0x2F, 0x80, 0xA8, 255);
 
     [Header("Held pose")]
     [Tooltip("Metres in front of the camera. Keep it above the near clip plane and below the player's collider radius.")]
@@ -228,7 +230,11 @@ public class PocketPhone : MonoBehaviour
         }
         Block(hand, "Thumb", new Vector3(bw * 0.5f + 0.028f, -0.27f, depth * 0.5f), new Vector3(0.06f, 0.28f, depth + 0.03f), new Vector3(0f, 0f, 12f), skin);
         Block(hand, "Wrist", new Vector3(0.14f, -0.58f, depth + 0.07f), new Vector3(0.34f, 0.34f, 0.13f), new Vector3(0f, 0f, -18f), skin);
-        Block(hand, "Forearm", new Vector3(0.26f, -0.98f, depth + 0.12f), new Vector3(0.32f, 0.6f, 0.15f), new Vector3(0f, 0f, -22f), skin);
+        // Hoodie sleeve over the forearm, with a darker cuff at the wrist
+        var sleeve = MakeMaterial(sleeveColor, 0.12f, 0.35f);
+        var cuff = MakeMaterial(sleeveColor * 0.78f, 0.12f, 0.35f);
+        Block(hand, "Sleeve", new Vector3(0.28f, -1.0f, depth + 0.12f), new Vector3(0.38f, 0.64f, 0.19f), new Vector3(0f, 0f, -22f), sleeve);
+        Block(hand, "Cuff", new Vector3(0.19f, -0.75f, depth + 0.1f), new Vector3(0.36f, 0.08f, 0.17f), new Vector3(0f, 0f, -20f), cuff);
     }
 
     static void Block(Transform parent, string name, Vector3 pos, Vector3 scale, Vector3 euler, Material mat)

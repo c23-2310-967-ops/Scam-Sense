@@ -7,18 +7,20 @@ public class ExitConfirmation : MonoBehaviour
 
     private void Start()
     {
+        // The rebuilt main menu has its own QUIT confirmation (MainMenuUI), so this panel may be gone.
+        if (confirmPanel == null) { enabled = false; return; }
         confirmPanel.SetActive(false);
     }
 
     private void Update()
     {
-        if (confirmPanel.activeSelf && Keyboard.current != null
+        if (confirmPanel != null && confirmPanel.activeSelf && Keyboard.current != null
             && Keyboard.current.escapeKey.wasPressedThisFrame)
             ClosePanel();
     }
 
-    public void OpenPanel()  => confirmPanel.SetActive(true);
-    public void ClosePanel() => confirmPanel.SetActive(false);
+    public void OpenPanel()  { if (confirmPanel != null) confirmPanel.SetActive(true); }
+    public void ClosePanel() { if (confirmPanel != null) confirmPanel.SetActive(false); }
 
     public void QuitGame()
     {

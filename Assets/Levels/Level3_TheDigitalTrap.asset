@@ -1,0 +1,273 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 147873241f4f7964690daffb230f2761, type: 3}
+  m_Name: Level3_TheDigitalTrap
+  m_EditorClassIdentifier: 
+  levelId: level_3
+  levelNumber: 3
+  displayName: The Digital Trap
+  sceneName: Room3_DigitalTrap
+  description: Convincing messages in a cybersecurity operations room. Compare each
+    one with the evidence before you decide.
+  briefingTitle: "LEVEL 3 \u2014 THE DIGITAL TRAP"
+  briefingText: Welcome to the next stage of your investigation. These messages are
+    more convincing, and some contain only subtle warning signs. Examine the sender,
+    verify the context, and investigate suspicious requests before making your decision.
+  caseNotes:
+  - This morning you signed in on a new workstation, OPS-WS3.
+  - You ordered a wireless headset (order ED-48213). Delivery is due tomorrow.
+  - You requested a password change for your Example Cloud Service account.
+  - The case-files computer by the west wall lists trusted contacts, orders, account
+    activity and the IT policy.
+  objectives:
+  - Investigate six messages.
+  - Classify each message as SCAM or LEGITIMATE.
+  - Examine suspicious details before answering.
+  - Complete the investigation to unlock the next room.
+  messages:
+  - id: l3_signin_alert
+    channel: 1
+    sender: Example Cloud Security
+    senderDetail: security-alerts@examplecloud.example
+    subject: Unusual Sign-In Activity
+    body: We noticed a sign-in to your account from a new device. If this was you,
+      no action is needed. If you do not recognize this activity, open the official
+      application and review your recent sign-ins.
+    link: 
+    correctVerdict: 1
+    scenarioContext: The notification comes from the fictional cloud service used
+      by the player. Its sender information matches the trusted service details provided
+      in the investigation environment.
+    explanation: Security alerts can be legitimate. The message provides a safe way
+      to investigate the activity through the official application and does not pressure
+      you to disclose your password.
+    trigger: 1
+    requestedAction: Nothing if the sign-in was you; otherwise review recent sign-ins
+      in the official app.
+    linkNote: No link. It tells you to open the official application yourself.
+    clues:
+    - Reports a sign-in from a new device.
+    - Does not ask for a password, code or payment.
+    - Compare the sender's domain and the sign-in with the case files.
+  - id: l3_lookalike_bank
+    channel: 1
+    sender: Example Bank Security
+    senderDetail: security@examplebank-protect.example
+    subject: 'Action Required: Account Protection'
+    body: Our monitoring system detected unusual activity. To prevent temporary restrictions,
+      confirm your account information through our verification page immediately.
+    link: examplebank-protect.example/verify
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The sender's domain does not match the verified bank domain, and
+      the message pressures you to act quickly. Do not use the supplied link. Contact
+      the bank through its official application or a verified website.
+    trigger: 2
+    requestedAction: Confirm your account information on a verification page, immediately.
+    linkNote: examplebank-protect.example/verify (training placeholder, never opened).
+    clues:
+    - The display name says Example Bank Security.
+    - Warns of restrictions unless you act immediately.
+    - Compare the full sender domain with the Trusted Contacts file.
+  - id: l3_it_password
+    channel: 1
+    sender: IT Support Desk
+    senderDetail: it.support@yourcompany.example
+    subject: Required Security Verification
+    body: We are updating our security records. Please reply with your current password
+      so we can confirm your account and avoid interruption to your access.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: Legitimate support teams should not ask you to disclose your password
+      by email. Verify the request through an established IT support channel and
+      never send credentials in a message.
+    trigger: 1
+    requestedAction: Reply to this email with your current password.
+    linkNote: No link. The reply goes back to the sender.
+    clues:
+    - The address shows the company domain - addresses can be spoofed.
+    - Warns that your access may be interrupted.
+    - Check what the IT Security Policy says about passwords.
+  - id: l3_delivery_sms
+    channel: 0
+    sender: Example Delivery
+    senderDetail: Saved contact
+    subject: 
+    body: Your delivery is scheduled for tomorrow. Your order reference is included
+      in your official order history. Open the delivery app you normally use to view
+      the latest status.
+    link: 
+    correctVerdict: 1
+    scenarioContext: The player previously placed an order in the simulated environment.
+      The reference number matches the order shown in the trusted order history.
+    explanation: The message matches a transaction you initiated, and its information
+      is consistent with the order record. Checking through the official delivery
+      app is safer than relying on an unfamiliar link.
+    trigger: 1
+    requestedAction: Check the delivery status in the delivery app you already use.
+    linkNote: No link.
+    clues:
+    - Notification preview shows order reference ED-48213.
+    - Sent from a saved contact.
+    - Compare the reference with the Orders file.
+  - id: l3_exec_giftcards
+    channel: 1
+    sender: Operations Director
+    senderDetail: ops.director@yourcompany-exec.example
+    subject: "Confidential \u2014 Urgent Request"
+    body: I need you to purchase several digital gift vouchers for a client meeting.
+      Please keep this confidential and send the redemption codes as soon as possible.
+      I am currently unavailable for a call.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The request combines urgency, secrecy, an unusual payment method,
+      and avoidance of normal verification. Confirm unusual financial requests through
+      a separate, trusted communication channel.
+    trigger: 2
+    requestedAction: Buy digital gift vouchers and email the redemption codes.
+    linkNote: No link.
+    clues:
+    - Signed with a job title only.
+    - Asks you to keep it confidential and says a call isn't possible.
+    - Compare the domain with your company's domain.
+  - id: l3_password_confirm
+    channel: 1
+    sender: Example Cloud Service
+    senderDetail: no-reply@examplecloud.example
+    subject: Password Change Confirmation
+    body: The password change you requested has been completed. If you made this
+      change, no further action is needed. If you did not request it, open the official
+      application and review your account security.
+    link: 
+    correctVerdict: 1
+    scenarioContext: The player requested a password change in the simulated investigation
+      setup.
+    explanation: The notification matches an action you initiated and provides a
+      safe method to review your account. If the change were unexpected, you should
+      investigate through the official application.
+    trigger: 2
+    requestedAction: Nothing if you made the change; otherwise review security in
+      the official app.
+    linkNote: No link.
+    clues:
+    - Confirms a password change.
+    - Suggests opening the official application yourself.
+    - Compare with the Account Activity file.
+  inboxExtras:
+  - id: l3_old_welcome
+    channel: 1
+    sender: Security Team
+    senderDetail: security@yourcompany.example
+    subject: Welcome to the operations room
+    body: Your workstation OPS-WS3 is ready. The case-files computer by the west
+      wall holds trusted contacts, order history, account activity and the IT policy.
+      Compare every flagged message with it before you decide.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: l3_old_statement
+    channel: 1
+    sender: Example Bank
+    senderDetail: statements@examplebank.example
+    subject: Your monthly statement is ready
+    body: Your statement is available in the Example Bank app. We will never ask
+      for your password or full card number by email.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: l3_old_order
+    channel: 1
+    sender: Example Delivery
+    senderDetail: orders@exampledelivery.example
+    subject: Order ED-48213 confirmed
+    body: 'Thanks for your order: wireless headset. We''ll text you from our saved
+      number when it''s on its way.'
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  caseFiles:
+  - title: Trusted Contacts
+    body: "Verified sender domains (from your onboarding pack):\n\u2022  Example
+      Bank \u2014 <b>examplebank.example</b>\n\u2022  Example Cloud Service / Example
+      Cloud Security \u2014 <b>examplecloud.example</b>\n\u2022  Example Delivery
+      \u2014 <b>exampledelivery.example</b>, texts from the saved contact \"Example
+      Delivery\"\n\u2022  Your company \u2014 <b>yourcompany.example</b> (all staff,
+      including IT and directors)\n\nCompare the whole domain after the @, letter
+      by letter. A display name can say anything."
+  - title: Orders
+    body: "Your recent orders and transactions:\n\u2022  <b>ED-48213</b> \u2014 Wireless
+      headset \u2014 Example Delivery \u2014 out for delivery, arriving tomorrow\n\u2022 
+      ED-47790 \u2014 Phone case \u2014 Example Delivery \u2014 delivered last week\n\u2022 
+      Example Bank \u2014 no pending payments, no open support requests\n\u2022 
+      Company purchasing \u2014 no voucher or gift card purchases on record"
+  - title: Account Activity
+    body: "Example Cloud Service \u2014 today:\n\u2022  08:15  Sign-in from a new
+      device: <b>OPS-WS3</b> (this operations workstation)\n\u2022  08:42  Password
+      change requested by you\n\u2022  08:43  Password change completed\n\nExample
+      Bank \u2014 today:\n\u2022  No sign-ins or account changes"
+  - title: IT Policy
+    body: "IT Security Policy (fictional):\n\u2022  IT Support will never ask for
+      your password \u2014 not by email, phone or chat.\n\u2022  Password resets
+      happen only in the self-service portal you already use.\n\u2022  Any purchase
+      or payment needs approval in the finance system, never by email alone.\n\u2022 
+      Gift cards and vouchers are not a payment method for company business.\n\u2022 
+      Report suspicious messages to the security team with the Report button."
+  - title: Notes
+    body: "Investigator notes \u2014 Case 03:\n\u2022  The Operations Director is
+      travelling today but can be reached on the company chat and phone.\n\u2022 
+      Earlier lookalike domains added a word or a hyphen next to a real brand name.\n\u2022 
+      A real alert tells you to use the official app; a fake one sends you to its
+      own page.\n\u2022  Ask yourself: did I start this? Does it match my records?"
+  firstMessageDelay: 10
+  delayBetweenMessages: {x: 10, y: 20}
+  minimumActivityDelay: 5
+  oneStarScore: 1
+  twoStarScore: 300
+  threeStarScore: 480
+  minScoreToUnlockNext: 300
+  nextLevelId: level_4
+  nextSceneName: 
+  lessons:
+  - 'Security alerts can be real: judge them by what they ask and where they send
+    you.'
+  - Compare the full sender address with trusted records - display names are easy
+    to fake.
+  - No genuine support team needs your password, even from a familiar-looking address.
+  - 'Urgency, secrecy and gift cards together mean: verify through a separate channel.'
+  - Messages that match actions you started are more likely legitimate - still check
+    in the official app.
+  learningSummary: You compared messages against trusted records, spotted a lookalike
+    domain, a credential request and an executive impersonation, and recognised genuine
+    alerts that matched your own activity.
+  performanceHigh: Outstanding analysis! You weighed every clue against the evidence
+    and made sharp decisions.
+  performanceModerate: Solid investigation. Review the explanations - the subtle
+    cases reward checking the case files.
+  performanceLow: Keep practising. Compare each sender and request with the case
+    files before you decide.

@@ -213,6 +213,7 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+  caseFiles: []
   firstMessageDelay: 8
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 4
@@ -221,7 +222,7 @@ MonoBehaviour:
   threeStarScore: 480
   minScoreToUnlockNext: 300
   nextLevelId: level_3
-  nextSceneName: 
+  nextSceneName: Room3_DigitalTrap
   lessons:
   - 'Impersonation: names and job titles can be faked - check the actual address
     or number.'

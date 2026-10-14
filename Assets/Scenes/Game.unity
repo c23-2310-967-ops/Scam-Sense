@@ -3209,6 +3209,8 @@ MonoBehaviour:
   wrongAnswer: {fileID: 0}
   uiClick: {fileID: 0}
   starReveal: {fileID: 0}
+  levelComplete: {fileID: 0}
+  roomUnlocked: {fileID: 0}
   ambienceLoop: {fileID: 0}
   generateAmbience: 1
   ambienceVolume: 0.06
@@ -22583,6 +22585,68 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1001 &1831919831
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 6385960839903715253}
+    m_Modifications:
+    - target: {fileID: 4875028613979865929, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_Name
+      value: KidHoodie
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+--- !u!4 &1831919832 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5574480462982353708, guid: 3adf76471c183924dbe92e38fa0ad86d, type: 3}
+  m_PrefabInstance: {fileID: 1831919831}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1834787076
 GameObject:
   m_ObjectHideFlags: 0
@@ -25879,9 +25943,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 2.375
       objectReference: {fileID: 0}
+    - target: {fileID: 7049540489428843463, guid: de1d64999d082684b99be28c28099189, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 2910745029515960324, guid: de1d64999d082684b99be28c28099189, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1831919832}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 2268770022089651401, guid: de1d64999d082684b99be28c28099189, type: 3}
       insertIndex: -1
@@ -25965,6 +26036,7 @@ MonoBehaviour:
   buildPlaceholder: 0
   showBothHands: 1
   skinColor: {r: 0.87, g: 0.69, b: 0.55, a: 1}
+  sleeveColor: {r: 0.18431373, g: 0.5019608, b: 0.65882355, a: 1}
   restOffset: {x: 0.32, y: -0.28, z: 0.6}
   restRotation: {x: -10, y: -15, z: 0}
   bobAmplitude: 0.015

@@ -6,6 +6,14 @@ using UnityEngine;
 /// star thresholds and the score needed to unlock the next room.
 /// Create more with Assets > Create > Scam Sense > Level Definition.
 /// </summary>
+/// <summary>One page of reference evidence on the case-files computer.</summary>
+[System.Serializable]
+public class CaseFile
+{
+    public string title = "Trusted Contacts";
+    [TextArea(4, 12)] public string body = "";
+}
+
 [CreateAssetMenu(fileName = "LevelDefinition", menuName = "Scam Sense/Level Definition")]
 public class LevelDefinition : ScriptableObject
 {
@@ -32,6 +40,10 @@ public class LevelDefinition : ScriptableObject
     [Header("Computer Inbox")]
     [Tooltip("Older, already-read emails shown in the computer inbox for realism. Read-only, never scored.")]
     public List<ScamMessage> inboxExtras = new List<ScamMessage>();
+
+    [Header("Case Files (optional evidence computer)")]
+    [Tooltip("Reference pages shown on a CaseFilesTerminal (trusted contacts, orders, policy...). Never state an answer.")]
+    public List<CaseFile> caseFiles = new List<CaseFile>();
 
     [Header("Message Timing (seconds)")]
     [Tooltip("Delay before the first message after the briefing closes.")]

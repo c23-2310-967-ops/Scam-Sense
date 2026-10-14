@@ -438,6 +438,12 @@ public class MainMenuUI : MonoBehaviour
         foreach (Transform c in levelRow) Destroy(c.gameObject);
         if (catalog == null) return;
 
+        // The next room after the last catalogued one, if the save knows about it. The panel fits three
+        // cards, so from three rooms on it becomes a note on the last card instead of a fourth card.
+        var last = catalog.Count > 0 ? catalog.levels[catalog.Count - 1] : null;
+        bool hasUnbuiltNext = last != null && !string.IsNullOrEmpty(last.nextLevelId);
+        bool nextAsCard = hasUnbuiltNext && catalog.Count < 3;
+
         for (int i = 0; i < catalog.Count; i++)
         {
             var lvl = catalog.levels[i];
@@ -447,17 +453,18 @@ public class MainMenuUI : MonoBehaviour
             string req = i > 0 && catalog.levels[i - 1] != null
                 ? $"Score {catalog.levels[i - 1].minScoreToUnlockNext} in Level {catalog.levels[i - 1].levelNumber} to unlock."
                 : "";
+            string note = LevelCatalog.SceneAvailable(lvl) ? null
+                              : string.IsNullOrEmpty(lvl.sceneName) ? "Coming soon - this room isn't built yet"
+                              : "Scene missing from build";
+            if (note == null && lvl == last && hasUnbuiltNext && !nextAsCard && LocalDataManager.IsUnlocked(last.nextLevelId))
+                note = $"Level {last.levelNumber + 1} unlocked · coming in a future update";
             int idx = i;
             MakeLevelCard(lvl.levelNumber, lvl.displayName, lvl.description, unlocked, p, req,
                           unlocked && LevelCatalog.SceneAvailable(lvl) ? () => LoadLevel(idx) : (UnityEngine.Events.UnityAction)null,
-                          LevelCatalog.SceneAvailable(lvl) ? null
-                              : string.IsNullOrEmpty(lvl.sceneName) ? "Coming soon - this room isn't built yet"
-                              : "Scene missing from build");
+                          note);
         }
 
-        // The next room after the last catalogued one, if the save knows about it.
-        var last = catalog.Count > 0 ? catalog.levels[catalog.Count - 1] : null;
-        if (last != null && !string.IsNullOrEmpty(last.nextLevelId))
+        if (nextAsCard)
         {
             bool unlocked = LocalDataManager.IsUnlocked(last.nextLevelId);
             MakeLevelCard(last.levelNumber + 1, "Coming soon", "The next case is still being prepared.", unlocked, null,

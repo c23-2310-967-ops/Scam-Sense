@@ -17,6 +17,8 @@ public class FloatingHand : MonoBehaviour
     [SerializeField] private bool buildPlaceholder = true;
     [SerializeField] private bool showBothHands = true;
     [SerializeField] private Color skinColor = new Color(0.87f, 0.69f, 0.55f);
+    [Tooltip("Hoodie sleeve on the placeholder hands (matches the KidHoodie character). Alpha 0 = no sleeve.")]
+    [SerializeField] private Color sleeveColor = new Color32(0x2F, 0x80, 0xA8, 255);
 
     [Header("Position (right hand, relative to camera)")]
     [Tooltip("The left hand uses the mirrored X value.")]
@@ -123,6 +125,7 @@ public class FloatingHand : MonoBehaviour
 
             // The hands are visual only, so strip colliders: they can't push the player or props.
             foreach (var c in model.GetComponentsInChildren<Collider>()) Destroy(c);
+            AddSleeveToModel(model);
         }
         else if (buildPlaceholder)
         {
@@ -260,6 +263,44 @@ public class FloatingHand : MonoBehaviour
     public void ReachToPoint(Vector3 worldPoint) { reachPoint = worldPoint; reachTimer = reachHoldTime; }
     public void Retract() { reachTarget = null; reachTimer = 0f; }
 
+    // ---------- Hoodie sleeve on a custom hand model ----------
+
+    /// <summary>
+    /// Colours the model's "Cuff" part like the hoodie cuff and adds a sleeve running back from it along the
+    /// arm (direction taken from Palm -> Cuff, so it fits the model and the mirrored left hand).
+    /// Does nothing if the model has no "Cuff" part or sleeveColor alpha is 0.
+    /// </summary>
+    private void AddSleeveToModel(Transform model)
+    {
+        if (sleeveColor.a <= 0f) return;
+        Transform cuff = null, palm = null;
+        foreach (var t in model.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name == "Cuff") cuff = t;
+            else if (t.name == "Palm") palm = t;
+        }
+        var cuffR = cuff != null ? cuff.GetComponent<Renderer>() : null;
+        if (cuffR == null) return;
+
+        cuffR.material.color = sleeveColor * 0.78f;   // darker ribbed cuff (instance material: the asset is untouched)
+        Bounds cb = cuffR.bounds;
+        Vector3 from = palm != null && palm.GetComponent<Renderer>() != null ? palm.GetComponent<Renderer>().bounds.center : model.position;
+        Vector3 dir = (cb.center - from).normalized;
+        if (dir.sqrMagnitude < 0.001f) dir = -model.forward;
+
+        float thick = Mathf.Max(cb.size.x, Mathf.Max(cb.size.y, cb.size.z)) * 1.1f;
+        const float length = 0.22f;
+        var sleeve = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        sleeve.name = "Sleeve";
+        Destroy(sleeve.GetComponent<Collider>());
+        sleeve.transform.SetPositionAndRotation(cb.center + dir * (length * 0.5f), Quaternion.LookRotation(dir, model.up));
+        sleeve.transform.localScale = new Vector3(thick, thick, length);
+        sleeve.transform.SetParent(model, true);   // keeps the world size, follows the hand
+        var r = sleeve.GetComponent<Renderer>();
+        r.sharedMaterial = MakeMaterial(sleeveColor);
+        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+    }
+
     // ---------- Placeholder hand ----------
 
     private Transform BuildPlaceholderHand(Transform parent)
@@ -286,6 +327,13 @@ public class FloatingHand : MonoBehaviour
 
         // Wrist
         Block(root, "Wrist", new Vector3(0f, 0f, -0.075f), new Vector3(0.07f, 0.022f, 0.06f), Vector3.zero, mat);
+
+        // Hoodie sleeve + darker cuff (the kid character's sleeves)
+        if (sleeveColor.a > 0f)
+        {
+            Block(root, "Sleeve", new Vector3(0f, 0f, -0.175f), new Vector3(0.095f, 0.05f, 0.15f), Vector3.zero, MakeMaterial(sleeveColor));
+            Block(root, "Cuff", new Vector3(0f, 0f, -0.1f), new Vector3(0.088f, 0.044f, 0.025f), Vector3.zero, MakeMaterial(sleeveColor * 0.78f));
+        }
         return root;
     }
 
