@@ -7,6 +7,8 @@
     "com.unity.feature.development": "1.0.2",
     "com.unity.inputsystem": "1.14.2",
     "com.unity.multiplayer.center": "1.0.0",
+    "com.unity.services.authentication": "3.8.0",
+    "com.unity.services.cloudsave": "3.4.2",
     "com.unity.test-framework": "1.4.6",
     "com.unity.timeline": "1.8.7",
     "com.unity.ugui": "2.0.0",
@@ -42,17 +44,6 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0",
-    "com.ivanmurzak.unity.mcp": "0.93.4"
-  },
-  "scopedRegistries": [
-    {
-      "name": "package.openupm.com",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.ivanmurzak",
-        "extensions.unity"
-      ]
-    }
-  ]
+    "com.unity.modules.xr": "1.0.0"
+  }
 }

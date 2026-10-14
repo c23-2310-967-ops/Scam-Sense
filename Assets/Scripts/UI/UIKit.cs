@@ -489,14 +489,43 @@ public static class UIKit
         if (t != null) t.text = text;
     }
 
-    // ---------- Procedural sprites (no extra assets needed) ----------
+    // ---------- Sprites ----------
+    // Each sprite is loaded from Assets/Resources/UIKit/<name>.png when that asset exists (so UI saved in
+    // scenes can reference it), otherwise generated procedurally exactly as before.
+    // Tools > Scam Sense > Build Menu UI In Scene writes the assets from GenerateSpriteSet().
+
+    const string SpriteFolder = "UIKit/";
+
+    static Sprite LoadOrMake(string name, System.Func<Sprite> make)
+    {
+        var s = Resources.Load<Sprite>(SpriteFolder + name);
+        if (s != null) return s;
+        s = make();
+        s.name = name;
+        return s;
+    }
+
+    /// <summary>Freshly generated copies of every UIKit sprite (used to write the sprite assets).</summary>
+    public static (string name, Sprite sprite)[] GenerateSpriteSet() => new[]
+    {
+        ("UIKit_Rounded", MakeRounded()),
+        ("UIKit_Chamfer", MakeChamfer(false)),
+        ("UIKit_ChamferOutline", MakeChamfer(true)),
+        ("UIKit_Sweep", MakeSweep()),
+        ("UIKit_Circle", MakeCircle()),
+        ("UIKit_Star", MakeStar()),
+    };
+
+    /// <summary>Forget cached sprites so the next access re-loads them (after the assets were written).</summary>
+    public static void ClearSpriteCache() =>
+        roundedSprite = starSprite = circleSprite = chamferSprite = chamferOutlineSprite = sweepSprite = null;
 
     /// <summary>White 9-sliced rounded rectangle; tint it with Image.color.</summary>
-    public static Sprite RoundedSprite
+    public static Sprite RoundedSprite => roundedSprite != null ? roundedSprite : (roundedSprite = LoadOrMake("UIKit_Rounded", MakeRounded));
+
+    static Sprite MakeRounded()
     {
-        get
         {
-            if (roundedSprite != null) return roundedSprite;
             const int s = 64, radius = 14;
             var tex = new Texture2D(s, s, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
             for (int y = 0; y < s; y++)
@@ -508,10 +537,10 @@ public static class UIKit
                     tex.SetPixel(x, y, new Color(1, 1, 1, Mathf.Clamp01(radius - d + 0.5f)));
                 }
             tex.Apply();
-            roundedSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f, 0,
+            var rounded = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f, 0,
                 SpriteMeshType.FullRect, new Vector4(radius, radius, radius, radius));
-            roundedSprite.name = "UIKit_Rounded";
-            return roundedSprite;
+            rounded.name = "UIKit_Rounded";
+            return rounded;
         }
     }
 
@@ -549,17 +578,17 @@ public static class UIKit
     }
 
     /// <summary>9-sliced HUD panel shape with cut top-left and bottom-right corners (white; tint with Image.color).</summary>
-    public static Sprite ChamferSprite => chamferSprite != null ? chamferSprite : (chamferSprite = MakeChamfer(false));
+    public static Sprite ChamferSprite => chamferSprite != null ? chamferSprite : (chamferSprite = LoadOrMake("UIKit_Chamfer", () => MakeChamfer(false)));
 
     /// <summary>2 px outline of ChamferSprite.</summary>
-    public static Sprite ChamferOutlineSprite => chamferOutlineSprite != null ? chamferOutlineSprite : (chamferOutlineSprite = MakeChamfer(true));
+    public static Sprite ChamferOutlineSprite => chamferOutlineSprite != null ? chamferOutlineSprite : (chamferOutlineSprite = LoadOrMake("UIKit_ChamferOutline", () => MakeChamfer(true)));
 
     /// <summary>Soft vertical band of light with a bright core, for DigitalLightSweep.</summary>
-    public static Sprite SweepSprite
+    public static Sprite SweepSprite => sweepSprite != null ? sweepSprite : (sweepSprite = LoadOrMake("UIKit_Sweep", MakeSweep));
+
+    static Sprite MakeSweep()
     {
-        get
         {
-            if (sweepSprite != null) return sweepSprite;
             const int w = 128, h = 4;
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
             for (int x = 0; x < w; x++)
@@ -569,17 +598,17 @@ public static class UIKit
                 for (int y = 0; y < h; y++) tex.SetPixel(x, y, new Color(1, 1, 1, Mathf.Clamp01(a)));
             }
             tex.Apply();
-            sweepSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f));
-            sweepSprite.name = "UIKit_Sweep";
-            return sweepSprite;
+            var sweep = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f));
+            sweep.name = "UIKit_Sweep";
+            return sweep;
         }
     }
 
-    public static Sprite CircleSprite
+    public static Sprite CircleSprite => circleSprite != null ? circleSprite : (circleSprite = LoadOrMake("UIKit_Circle", MakeCircle));
+
+    static Sprite MakeCircle()
     {
-        get
         {
-            if (circleSprite != null) return circleSprite;
             const int s = 64;
             var tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
             float c = (s - 1) / 2f, r = s / 2f - 1f;
@@ -590,18 +619,18 @@ public static class UIKit
                     tex.SetPixel(x, y, new Color(1, 1, 1, Mathf.Clamp01(r - d + 1f)));
                 }
             tex.Apply();
-            circleSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f));
-            circleSprite.name = "UIKit_Circle";
-            return circleSprite;
+            var circle = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f));
+            circle.name = "UIKit_Circle";
+            return circle;
         }
     }
 
     /// <summary>White five-pointed star; tint with Image.color.</summary>
-    public static Sprite StarSprite
+    public static Sprite StarSprite => starSprite != null ? starSprite : (starSprite = LoadOrMake("UIKit_Star", MakeStar));
+
+    static Sprite MakeStar()
     {
-        get
         {
-            if (starSprite != null) return starSprite;
             const int s = 128;
             var pts = new Vector2[10];
             Vector2 centre = new Vector2(s / 2f, s / 2f - 4f);
@@ -623,9 +652,9 @@ public static class UIKit
                     tex.SetPixel(x, y, new Color(1, 1, 1, inside / 4f));
                 }
             tex.Apply();
-            starSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f));
-            starSprite.name = "UIKit_Star";
-            return starSprite;
+            var star = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f));
+            star.name = "UIKit_Star";
+            return star;
         }
     }
 
@@ -672,47 +701,4 @@ public static class UIKit
     }
 
     public static string VerdictWord(MessageVerdict v) => v == MessageVerdict.Scam ? "SCAM" : "LEGITIMATE";
-}
-
-/// <summary>
-/// Hover grow + press "squish" so buttons feel responsive (unscaled time, works while paused).
-/// Optional onHover callback (e.g. a hover sound).
-/// </summary>
-public class ButtonPressFeedback : MonoBehaviour,
-    UnityEngine.EventSystems.IPointerDownHandler, UnityEngine.EventSystems.IPointerUpHandler,
-    UnityEngine.EventSystems.IPointerEnterHandler, UnityEngine.EventSystems.IPointerExitHandler
-{
-    public System.Action onHover;
-    bool hovered, pressed;
-
-    public void OnPointerDown(UnityEngine.EventSystems.PointerEventData e) { if (IsOn()) pressed = true; }
-    public void OnPointerUp(UnityEngine.EventSystems.PointerEventData e) => pressed = false;
-
-    public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData e)
-    {
-        if (!IsOn()) return;
-        hovered = true;
-        onHover?.Invoke();
-    }
-
-    public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e) { hovered = false; pressed = false; }
-
-    bool IsOn()
-    {
-        var b = GetComponent<Selectable>();
-        return b == null || b.IsInteractable();
-    }
-
-    void OnDisable()
-    {
-        hovered = pressed = false;
-        transform.localScale = Vector3.one;
-    }
-
-    void Update()
-    {
-        float target = pressed ? 0.96f : (hovered && IsOn() ? 1.02f : 1f);
-        float s = Mathf.MoveTowards(transform.localScale.x, target, Time.unscaledDeltaTime * 1.5f);
-        transform.localScale = new Vector3(s, s, 1f);
-    }
 }

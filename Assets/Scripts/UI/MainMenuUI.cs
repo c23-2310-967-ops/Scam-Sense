@@ -8,10 +8,18 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor.Events;
+#endif
 
 /// <summary>
-/// Scam Sense main menu. Builds itself at runtime with the same style as the in-game UI (UIKit):
+/// Scam Sense main menu, in the same style as the in-game UI (UIKit):
 ///   Play - Continue (only with saved progress) - Level Selection - Settings - How to Play - About - Quit.
+/// The menu UI lives in the scene ("MainMenu Canvas"), created once with
+/// Tools > Scam Sense > Build Menu UI In Scene. Every button's OnClick is a normal persistent event you can see
+/// and edit in the Inspector, and all references below are assigned. If the scene UI is missing, the menu is
+/// built at runtime instead (same look), so the scene never breaks.
+/// Only the level cards are generated at runtime, because they come from the LevelCatalog data.
 /// Background: slow cinematic shots of the game's house (or the existing workstation video).
 /// Uses the existing systems: LevelCatalog + LocalDataManager (progress / unlocks), GameAudioSettings and
 /// GameDisplaySettings (same saved keys as the old Settings panel), SceneLoader (loading screen), MainMixer.
@@ -45,33 +53,55 @@ public class MainMenuUI : MonoBehaviour
     [Tooltip("The previous menu canvas. Hidden at runtime (not deleted) so it can be restored.")]
     [SerializeField] private GameObject legacyMenuRoot;
 
+    [System.Serializable]
+    public class NamedPanel
+    {
+        public string id;
+        public RectTransform panel;
+    }
+
+    // ---------- Scene UI (assigned by Tools > Scam Sense > Build Menu UI In Scene) ----------
+    [Header("Scene UI (built in the scene - see tooltip)")]
+    [Tooltip("True once the menu UI exists in the scene. Untick (or delete 'MainMenu Canvas') to fall back to building it at runtime.")]
+    [SerializeField] private bool builtInScene;
+    [SerializeField] private RectTransform root;
+    [SerializeField] private RectTransform bgLayer, menuColumn, panelHost, feedCard;
+    [SerializeField] private Image bgA, bgB;
+    [SerializeField] private CanvasGroup fade, titleGroup, columnGroup, panelDim;
+    [SerializeField] private RectTransform titleLine;
+    [SerializeField] private Button playButton, continueButton;
+    [SerializeField] private TMP_Text continueSub, progressChip, statusText;
+    [SerializeField] private List<NamedPanel> panelList = new List<NamedPanel>();
+
     // ---------- runtime ----------
-    private RectTransform root, bgLayer, menuColumn, panelHost, feedCard;
-    private Image bgA, bgB;
     private int shotIndex;
     private float shotTimer;
-    private CanvasGroup fade, titleGroup, columnGroup, panelDim;
-    private RectTransform titleLine;
-    private Button continueButton;
-    private TMP_Text continueSub, progressChip, statusText;
     private readonly Dictionary<string, RectTransform> panels = new Dictionary<string, RectTransform>();
     private RectTransform openPanel;
     private bool loading;
+    private AccountUI account;
+
+    /// <summary>The menu canvas root and the panel container (AccountUI puts its panels here).</summary>
+    public RectTransform Root => root;
+    public RectTransform PanelHost => panelHost;
+    public CanvasGroup Fade => fade;
+
+    [Header("Scene UI - settings panel")]
+    [SerializeField] private Slider masterSlider;
+    [SerializeField] private Slider musicSlider, sfxSlider, sensSlider;
+    [SerializeField] private TMP_Text resValue, modeValue, qualityValue, pendingText;
+    [SerializeField] private Button applyButton;
+
+    [Header("Scene UI - level selection & live feed")]
+    [Tooltip("Level cards are generated here at runtime from the LevelCatalog.")]
+    [SerializeField] private RectTransform levelRow;
+    [SerializeField] private TMP_Text feedSender, feedBody, feedTime;
+    [SerializeField] private CanvasGroup feedGroup;
 
     // Settings state
-    private Slider masterSlider, musicSlider, sfxSlider, sensSlider;
     private List<Resolution> resolutions;
     private int resIndex, qualityIndex;
     private bool fullscreen;
-    private TMP_Text resValue, modeValue, qualityValue, pendingText;
-    private Button applyButton;
-
-    // Level selection
-    private RectTransform levelRow;
-
-    // Live feed
-    private TMP_Text feedSender, feedBody, feedTime;
-    private CanvasGroup feedGroup;
     private int feedIndex;
     private static readonly string[,] FeedSamples =
     {
@@ -100,10 +130,77 @@ public class MainMenuUI : MonoBehaviour
 
         if (catalog == null) Debug.LogError("MainMenuUI: assign the LevelCatalog asset (Assets/Levels/LevelCatalog.asset).", this);
 
-        Build(useShots);
+        bool inScene = builtInScene && root != null;
+        if (inScene) root.gameObject.SetActive(true);
+        else Build(useShots);   // fallback: same UI, created at runtime
+        BindRuntime();
         RefreshProgress();
+
+        // Account panels (guest / sign-in / cloud status) - in the scene under MainMenu Canvas/Panels.
+        account = GetComponent<AccountUI>();
+        if (account == null) account = gameObject.AddComponent<AccountUI>();
+        account.Init(this);
+
         StartCoroutine(Intro());
         StartCoroutine(FeedLoop());
+    }
+
+    /// <summary>Things that can't be saved in a scene: the panel lookup and hover sounds (C# callbacks).</summary>
+    void BindRuntime()
+    {
+        panels.Clear();
+        foreach (var p in panelList)
+            if (p != null && p.panel != null && !string.IsNullOrEmpty(p.id)) panels[p.id] = p.panel;
+        foreach (var fx in root.GetComponentsInChildren<ButtonPressFeedback>(true)) fx.onHover = Hover;
+    }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Editor only (Tools > Scam Sense > Build Menu UI In Scene): creates the whole menu as scene objects,
+    /// assigns every reference above and connects all buttons with persistent OnClick events.
+    /// </summary>
+    public void BuildIntoScene()
+    {
+        bool useShots = backgroundMode == BackgroundMode.HouseShots && backgroundShots != null && backgroundShots.Length > 0;
+        panelList.Clear();
+        Build(useShots);
+        fade.alpha = 0f;   // Intro() fades in at runtime; keep the scene view visible while editing
+        builtInScene = true;
+    }
+#endif
+
+    // ---------- Wiring: persistent (Inspector-visible) events when built in the editor, listeners at runtime ----------
+
+    void Wire(Button b, UnityEngine.Events.UnityAction call)
+    {
+#if UNITY_EDITOR
+        if (!Application.isPlaying) { UnityEventTools.AddPersistentListener(b.onClick, call); return; }
+#endif
+        b.onClick.AddListener(call);
+    }
+
+    void Wire(Button b, UnityEngine.Events.UnityAction<string> call, string arg)
+    {
+#if UNITY_EDITOR
+        if (!Application.isPlaying) { UnityEventTools.AddStringPersistentListener(b.onClick, call, arg); return; }
+#endif
+        b.onClick.AddListener(() => call(arg));
+    }
+
+    void Wire(Button b, UnityEngine.Events.UnityAction<int> call, int arg)
+    {
+#if UNITY_EDITOR
+        if (!Application.isPlaying) { UnityEventTools.AddIntPersistentListener(b.onClick, call, arg); return; }
+#endif
+        b.onClick.AddListener(() => call(arg));
+    }
+
+    void Wire(Slider s, UnityEngine.Events.UnityAction<float> call)
+    {
+#if UNITY_EDITOR
+        if (!Application.isPlaying) { UnityEventTools.AddPersistentListener(s.onValueChanged, call); return; }
+#endif
+        s.onValueChanged.AddListener(call);
     }
 
     void Update()
@@ -111,26 +208,34 @@ public class MainMenuUI : MonoBehaviour
         AnimateBackground();
 
         var kb = Keyboard.current;
-        if (kb != null && kb.escapeKey.wasPressedThisFrame && !loading)
+        if (kb != null && kb.escapeKey.wasPressedThisFrame && !loading && !AccountUI.IsBlocking)
         {
             if (openPanel != null) ClosePanel();
             else OpenPanel("quit");
         }
     }
 
-    // ---------- Actions ----------
+    // ---------- Actions (public so they can be picked in a Button's OnClick list) ----------
 
-    void Play() => LoadLevel(0);
+    /// <summary>PLAY: asks how to play (guest / sign in) if nobody is signed in yet, then starts Level 1.</summary>
+    public void Play() => LoadLevel(0);
 
-    void Continue()
+    public void Continue()
     {
         if (catalog == null || !catalog.HasProgress()) return;
         LoadLevel(catalog.ContinueIndex());
     }
 
-    void LoadLevel(int index)
+    /// <summary>Starts a level. Without an account choice yet, the Authentication panel opens first.</summary>
+    public void LoadLevel(int index)
     {
         if (loading || catalog == null || index < 0 || index >= catalog.Count) return;
+        if (account != null && !account.ReadyToPlay)
+        {
+            ClosePanel();
+            account.RequestAccount(() => LoadLevel(index));
+            return;
+        }
         var level = catalog.levels[index];
         if (!catalog.IsUnlocked(index))
         {
@@ -166,7 +271,7 @@ public class MainMenuUI : MonoBehaviour
         else SceneManager.LoadScene(sceneName);
     }
 
-    void QuitGame()
+    public void QuitGame()
     {
         GameAudioSettings.Save();
 #if UNITY_EDITOR
@@ -180,7 +285,7 @@ public class MainMenuUI : MonoBehaviour
 
     // ---------- Panels ----------
 
-    void OpenPanel(string id)
+    public void OpenPanel(string id)
     {
         if (!panels.TryGetValue(id, out var p)) return;
         if (openPanel == p) return;
@@ -193,7 +298,7 @@ public class MainMenuUI : MonoBehaviour
         StartCoroutine(PanelIn(p));
     }
 
-    void ClosePanel()
+    public void ClosePanel()
     {
         if (openPanel == null) return;
         if (openPanel == panels["settings"]) GameAudioSettings.Save();
@@ -224,7 +329,8 @@ public class MainMenuUI : MonoBehaviour
 
     // ---------- Progress ----------
 
-    void RefreshProgress()
+    /// <summary>Re-reads saved progress (also called by AccountUI after the save profile changes).</summary>
+    public void RefreshProgress()
     {
         bool has = catalog != null && catalog.HasProgress();
         continueButton.gameObject.SetActive(has);
@@ -292,11 +398,17 @@ public class MainMenuUI : MonoBehaviour
         UIKit.SetInteractable(applyButton, pending);
     }
 
-    void StepResolution(int d) { resIndex = (resIndex + d + resolutions.Count) % resolutions.Count; RefreshSettingsLabels(true); }
-    void StepMode(int d) { fullscreen = !fullscreen; RefreshSettingsLabels(true); }
-    void StepQuality(int d) { int n = Mathf.Max(1, QualitySettings.names.Length); qualityIndex = (qualityIndex + d + n) % n; RefreshSettingsLabels(true); }
+    // Slider handlers (persistent OnValueChanged events on the settings sliders)
+    public void OnMasterVolume(float v) { GameAudioSettings.SetVolume(mixer, GameAudioSettings.ParamMaster, GameAudioSettings.KeyMaster, v); RefreshSettingsLabels(applyButton.interactable); }
+    public void OnMusicVolume(float v) { GameAudioSettings.SetVolume(mixer, GameAudioSettings.ParamMusic, GameAudioSettings.KeyMusic, v); RefreshSettingsLabels(applyButton.interactable); }
+    public void OnSfxVolume(float v) { GameAudioSettings.SetVolume(mixer, GameAudioSettings.ParamSfx, GameAudioSettings.KeySfx, v); RefreshSettingsLabels(applyButton.interactable); }
+    public void OnSensitivity(float v) { GameAudioSettings.MouseSensitivity = v; RefreshSettingsLabels(applyButton.interactable); }
 
-    void ApplyDisplay()
+    public void StepResolution(int d) { resIndex = (resIndex + d + resolutions.Count) % resolutions.Count; RefreshSettingsLabels(true); }
+    public void StepMode(int d) { fullscreen = !fullscreen; RefreshSettingsLabels(true); }
+    public void StepQuality(int d) { int n = Mathf.Max(1, QualitySettings.names.Length); qualityIndex = (qualityIndex + d + n) % n; RefreshSettingsLabels(true); }
+
+    public void ApplyDisplay()
     {
         GameDisplaySettings.Apply(resolutions[resIndex], fullscreen, qualityIndex);
         RefreshSettingsLabels(false);
@@ -305,7 +417,7 @@ public class MainMenuUI : MonoBehaviour
 #endif
     }
 
-    void ResetSettings()
+    public void ResetSettings()
     {
         foreach (var k in new[] { GameAudioSettings.KeyMaster, GameAudioSettings.KeyMusic, GameAudioSettings.KeySfx, GameAudioSettings.KeySensitivity })
             PlayerPrefs.DeleteKey(k);
@@ -481,7 +593,8 @@ public class MainMenuUI : MonoBehaviour
 
     // ---------- Sounds & button feel ----------
 
-    void Click()
+    /// <summary>Click sound (added to every menu button's OnClick list).</summary>
+    public void PlayClickSound()
     {
         if (uiSource != null && clickClip != null) uiSource.PlayOneShot(clickClip, uiVolume);
     }
@@ -492,11 +605,11 @@ public class MainMenuUI : MonoBehaviour
     }
 
     /// <summary>Hover + click sounds (the hover/press scaling comes from UIKit's ButtonPressFeedback).</summary>
-    void AddFx(Button b)
+    public void AddFx(Button b)
     {
         var fx = b.GetComponent<ButtonPressFeedback>();
         if (fx != null) fx.onHover = Hover;
-        b.onClick.AddListener(Click);
+        Wire(b, PlayClickSound);
     }
 
     // ---------- Build ----------
@@ -520,11 +633,11 @@ public class MainMenuUI : MonoBehaviour
         UIKit.AddImage(tint, new Color(0.03f, 0.07f, 0.14f, useShots ? 0.45f : 0.35f)).raycastTarget = false;
         var grad = UIKit.Rect("Gradient", root);
         UIKit.Stretch(grad);
-        var gi = UIKit.AddImage(grad, Color.white, GradientSprite());
+        var gi = UIKit.AddImage(grad, Color.white, MenuSprite("Menu_Gradient", GradientSprite));
         gi.raycastTarget = false;
         var grid = UIKit.Rect("Grid", root);
         UIKit.Stretch(grid);
-        var gimg = UIKit.AddImage(grid, Color.white, GridSprite());
+        var gimg = UIKit.AddImage(grid, Color.white, MenuSprite("Menu_Grid", GridSprite));
         gimg.type = Image.Type.Tiled;
         gimg.raycastTarget = false;
 
@@ -553,14 +666,16 @@ public class MainMenuUI : MonoBehaviour
         UIKit.FitHeight(menuColumn);
         columnGroup = menuColumn.gameObject.AddComponent<CanvasGroup>();
 
-        MenuButton("PLAY", "New case", Play, primary: true);
-        continueButton = MenuButton("CONTINUE", "", Continue, primary: false);
+        playButton = MenuButton("PLAY", "New case", primary: true);
+        Wire(playButton, Play);
+        continueButton = MenuButton("CONTINUE", "", primary: false);
+        Wire(continueButton, Continue);
         continueSub = continueButton.transform.Find("Sub").GetComponent<TMP_Text>();
-        MenuButton("LEVEL SELECTION", "", () => OpenPanel("levels"));
-        MenuButton("SETTINGS", "", () => OpenPanel("settings"));
-        MenuButton("HOW TO PLAY", "", () => OpenPanel("how"));
-        MenuButton("ABOUT", "", () => OpenPanel("about"));
-        MenuButton("QUIT GAME", "", () => OpenPanel("quit"));
+        Wire(MenuButton("LEVEL SELECTION", ""), OpenPanel, "levels");
+        Wire(MenuButton("SETTINGS", ""), OpenPanel, "settings");
+        Wire(MenuButton("HOW TO PLAY", ""), OpenPanel, "how");
+        Wire(MenuButton("ABOUT", ""), OpenPanel, "about");
+        Wire(MenuButton("QUIT GAME", ""), OpenPanel, "quit");
 
         statusText = UIKit.Text(menuColumn, "Status", "", UIKit.SizeSmall, UIKit.Warning);
         statusText.gameObject.SetActive(false);
@@ -576,7 +691,8 @@ public class MainMenuUI : MonoBehaviour
 
         // Panels
         panelDim = UIKit.Dimmer(root, 0.7f).gameObject.AddComponent<CanvasGroup>();
-        panelDim.gameObject.AddComponent<Button>().onClick.AddListener(ClosePanel);   // click outside closes
+        panelDim.name = "PanelDim";
+        Wire(panelDim.gameObject.AddComponent<Button>(), ClosePanel);   // click outside closes
         panelDim.gameObject.SetActive(false);
         panelHost = UIKit.Rect("Panels", root);
         UIKit.Stretch(panelHost);
@@ -608,10 +724,10 @@ public class MainMenuUI : MonoBehaviour
         return img;
     }
 
-    Button MenuButton(string label, string subLabel, UnityEngine.Events.UnityAction onClick, bool primary = false)
+    Button MenuButton(string label, string subLabel, bool primary = false)
     {
         // HUD-style button with the Digital Light Sweep; PLAY also gets a gentle idle sweep every 6 s.
-        var b = UIKit.HudButton(menuColumn, label, onClick, primary, 28, primary ? 6f : 0f);
+        var b = UIKit.HudButton(menuColumn, label, null, primary, 28, primary ? 6f : 0f);
         UIKit.Size(b, 500, primary ? 84 : 72);
         var lbl = b.transform.Find("Label").GetComponent<TMP_Text>();
         lbl.alignment = TextAlignmentOptions.MidlineLeft;
@@ -672,12 +788,14 @@ public class MainMenuUI : MonoBehaviour
         var t = UIKit.Text(head, "Title", title, UIKit.SizeH1, UIKit.TextPrimary, TextAlignmentOptions.MidlineLeft, bold: true);
         t.characterSpacing = 6f;
         UIKit.Stretch(t.rectTransform);
-        var close = UIKit.Button(head, "×", ClosePanel, UIKit.Secondary, 34);
+        var close = UIKit.Button(head, "×", null, UIKit.Secondary, 34);
+        Wire(close, ClosePanel);
         UIKit.Place((RectTransform)close.transform, new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(56, 56));
         close.transform.Find("Accent")?.gameObject.SetActive(false);
 
         p.gameObject.SetActive(false);
         panels[id] = p;
+        panelList.Add(new NamedPanel { id = id, panel = p });
         return p;
     }
 
@@ -688,7 +806,8 @@ public class MainMenuUI : MonoBehaviour
         UIKit.Size(row, -1, 72);
         foreach (var b in buttons)
         {
-            var btn = UIKit.HudButton(row, b.label, b.action, b.variant, 26);
+            var btn = UIKit.HudButton(row, b.label, null, b.variant, 26);
+            Wire(btn, b.action);
             AddFx(btn);
         }
     }
@@ -704,11 +823,15 @@ public class MainMenuUI : MonoBehaviour
         UIKit.Vertical(left, 0, 10);
         Column(left, 540);
         UIKit.Header(left, "Audio");
-        masterSlider = UIKit.LabeledSlider(left, "Master volume", 0f, 1f, v => { GameAudioSettings.SetVolume(mixer, GameAudioSettings.ParamMaster, GameAudioSettings.KeyMaster, v); RefreshSettingsLabels(applyButton.interactable); });
-        musicSlider = UIKit.LabeledSlider(left, "Music", 0f, 1f, v => { GameAudioSettings.SetVolume(mixer, GameAudioSettings.ParamMusic, GameAudioSettings.KeyMusic, v); RefreshSettingsLabels(applyButton.interactable); });
-        sfxSlider = UIKit.LabeledSlider(left, "Sound effects", 0f, 1f, v => { GameAudioSettings.SetVolume(mixer, GameAudioSettings.ParamSfx, GameAudioSettings.KeySfx, v); RefreshSettingsLabels(applyButton.interactable); });
+        masterSlider = UIKit.LabeledSlider(left, "Master volume", 0f, 1f, null);
+        Wire(masterSlider, OnMasterVolume);
+        musicSlider = UIKit.LabeledSlider(left, "Music", 0f, 1f, null);
+        Wire(musicSlider, OnMusicVolume);
+        sfxSlider = UIKit.LabeledSlider(left, "Sound effects", 0f, 1f, null);
+        Wire(sfxSlider, OnSfxVolume);
         UIKit.Header(left, "Controls");
-        sensSlider = UIKit.LabeledSlider(left, "Mouse sensitivity", 0.1f, 3f, v => { GameAudioSettings.MouseSensitivity = v; RefreshSettingsLabels(applyButton.interactable); });
+        sensSlider = UIKit.LabeledSlider(left, "Mouse sensitivity", 0.1f, 3f, null);
+        Wire(sensSlider, OnSensitivity);
 
         var right = UIKit.Rect("Display", cols);
         UIKit.Vertical(right, 0, 14);
@@ -724,12 +847,12 @@ public class MainMenuUI : MonoBehaviour
         var row = UIKit.Rect("Footer", p);
         UIKit.Horizontal(row, 16);
         UIKit.Size(row, -1, 72);
-        var reset = UIKit.HudButton(row, "RESET TO DEFAULTS", ResetSettings, UIKit.HudVariant.Secondary, 24); AddFx(reset);
-        applyButton = UIKit.HudButton(row, "APPLY", ApplyDisplay, UIKit.HudVariant.Primary, 26); AddFx(applyButton);
-        var back = UIKit.HudButton(row, "BACK", ClosePanel, UIKit.HudVariant.Secondary, 26); AddFx(back);
+        var reset = UIKit.HudButton(row, "RESET TO DEFAULTS", null, UIKit.HudVariant.Secondary, 24); Wire(reset, ResetSettings); AddFx(reset);
+        applyButton = UIKit.HudButton(row, "APPLY", null, UIKit.HudVariant.Primary, 26); Wire(applyButton, ApplyDisplay); AddFx(applyButton);
+        var back = UIKit.HudButton(row, "BACK", null, UIKit.HudVariant.Secondary, 26); Wire(back, ClosePanel); AddFx(back);
     }
 
-    TMP_Text Stepper(RectTransform parent, string label, System.Action<int> step)
+    TMP_Text Stepper(RectTransform parent, string label, UnityEngine.Events.UnityAction<int> step)
     {
         var block = UIKit.Rect("Stepper_" + label, parent);
         UIKit.Size(block, -1, 104);
@@ -740,10 +863,12 @@ public class MainMenuUI : MonoBehaviour
         row.anchorMin = new Vector2(0, 0); row.anchorMax = new Vector2(1, 0); row.pivot = new Vector2(0.5f, 0);
         row.sizeDelta = new Vector2(0, 58); row.anchoredPosition = Vector2.zero;
         UIKit.AddImage(row, UIKit.Background, rounded: true);
-        var prev = UIKit.Button(row, "←", () => step(-1), UIKit.Secondary, 28);
+        var prev = UIKit.Button(row, "←", null, UIKit.Secondary, 28);
+        Wire(prev, step, -1);
         UIKit.Place((RectTransform)prev.transform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 0), new Vector2(64, 50));
         prev.transform.Find("Accent")?.gameObject.SetActive(false);
-        var next = UIKit.Button(row, "→", () => step(1), UIKit.Secondary, 28);
+        var next = UIKit.Button(row, "→", null, UIKit.Secondary, 28);
+        Wire(next, step, 1);
         UIKit.Place((RectTransform)next.transform, new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-4, 0), new Vector2(64, 50));
         next.transform.Find("Accent")?.gameObject.SetActive(false);
         AddFx(prev); AddFx(next);
@@ -851,7 +976,20 @@ public class MainMenuUI : MonoBehaviour
             ("YES, QUIT", (UnityEngine.Events.UnityAction)QuitGame, UIKit.HudVariant.Danger));
     }
 
-    // ---------- Procedural background sprites ----------
+    // ---------- Procedural background sprites (saved as assets in Assets/Resources/UIKit/ by the menu builder) ----------
+
+    static Sprite MenuSprite(string name, System.Func<Sprite> make)
+    {
+        var s = Resources.Load<Sprite>("UIKit/" + name);
+        return s != null ? s : make();
+    }
+
+    /// <summary>Freshly generated menu background sprites (used to write the sprite assets).</summary>
+    public static (string name, Sprite sprite)[] GenerateMenuSprites() => new[]
+    {
+        ("Menu_Gradient", GradientSprite()),
+        ("Menu_Grid", GridSprite()),
+    };
 
     static Sprite GradientSprite()
     {
