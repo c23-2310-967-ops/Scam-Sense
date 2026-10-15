@@ -66,7 +66,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
     private TMP_Text timerText, worthText, verdictText, pointsText, answerText, explanationText, scoreText;
     private TMP_Text reviewVerdict, reviewExplanation;
     private Button scamButton, legitButton, backButton, exitButton, detailsToggle;
-    private TMP_Text paneDetails;
+    private TMP_Text paneDetails, question;
     private GameObject paneDivider;
     private bool showingDetails;
     private GameObject toast;
@@ -137,9 +137,9 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
             return;
         }
 
-        bool newMail = quiz != null && quiz.PendingMessage != null && quiz.PendingMessage.channel == MessageChannel.Email;
+        bool newMail = quiz != null && quiz.PendingMessage != null && MessageChannels.OnComputer(quiz.PendingMessage.channel);
         string secondary = SittableChair.PlayerSeated ? "Space: stand up" : null;
-        InteractionPrompt.Set(this, InteractionPrompt.KeyName(useKey), newMail ? "Read new email" : displayName, priority: 4, secondary: secondary);
+        InteractionPrompt.Set(this, InteractionPrompt.KeyName(useKey), newMail ? (quiz.PendingMessage.channel == MessageChannel.Website ? "Review web page" : "Read new email") : displayName, priority: 4, secondary: secondary);
 
         var kb = Keyboard.current;
         if (kb != null && kb[useKey].wasPressedThisFrame && !InteractionGate.InteractBlocked)
@@ -279,12 +279,12 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
         if (r.isCorrect)
         {
             verdictText.text = $"<color={UIKit.HexSafe}>✓  CORRECT</color>";
-            answerText.text = $"This email is <color={hex}><b>{word}</b></color>.";
+            answerText.text = $"This {MessageChannels.Noun(r.message.channel)} is <color={hex}><b>{word}</b></color>.";
         }
         else
         {
             verdictText.text = $"<color={UIKit.HexWarning}>×  NOT QUITE</color>";
-            answerText.text = $"You chose {UIKit.VerdictWord(r.chosen)}. This email is <color={hex}><b>{word}</b></color>.";
+            answerText.text = $"You chose {UIKit.VerdictWord(r.chosen)}. This {MessageChannels.Noun(r.message.channel)} is <color={hex}><b>{word}</b></color>.";
         }
         pointsText.text = $"<color={UIKit.HexAccent}><b>+{r.points} points</b></color>   ·   answered in {UIKit.FormatSeconds(r.seconds)}";
         explanationText.text = r.message.explanation;
@@ -329,12 +329,12 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
 
         // Newest first: the waiting/open email, then answered ones (latest first), then older inbox mail.
         var list = new List<ScamMessage>();
-        if (open != null && open.channel == MessageChannel.Email) list.Add(open);
-        if (pending != null && pending.channel == MessageChannel.Email) { list.Add(pending); unread++; }
+        if (open != null && MessageChannels.OnComputer(open.channel)) list.Add(open);
+        if (pending != null && MessageChannels.OnComputer(pending.channel)) { list.Add(pending); unread++; }
         for (int i = level.messages.Count - 1; i >= 0; i--)
         {
             var m = level.messages[i];
-            if (m.channel == MessageChannel.Email && quiz.Scoring.HasAnswered(m.id) && m != open) list.Add(m);
+            if (MessageChannels.OnComputer(m.channel) && quiz.Scoring.HasAnswered(m.id) && m != open) list.Add(m);
         }
         // Rows are reused: only a row whose state changed (new -> open -> answered) is rebuilt. Rebuilding the
         // whole inbox on every message event created dozens of UI objects and text buffers at once (a hitch).
@@ -349,7 +349,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
 
         unreadText.text = unread > 0 ? $"{unread} new" : "No new mail";
         toast.SetActive(!InUse && unread > 0);
-        if (unread > 0) toastText.text = $"New email from {pending.sender}";
+        if (unread > 0) toastText.text = pending.channel == MessageChannel.Website ? $"Web page to review: {pending.sender}" : $"New email from {pending.sender}";
     }
 
     struct RowEntry { public GameObject go; public int state; }
@@ -474,7 +474,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
             string hex = m.correctVerdict == MessageVerdict.Scam ? UIKit.HexDanger : UIKit.HexSafe;
             reviewVerdict.text = (r.isCorrect ? $"<color={UIKit.HexSafe}>✓ You answered correctly</color>"
                                               : $"<color={UIKit.HexWarning}>× You answered {UIKit.VerdictWord(r.chosen)}</color>")
-                                 + $"  ·  This email is <color={hex}><b>{word}</b></color>";
+                                 + $"  ·  This {MessageChannels.Noun(m.channel)} is <color={hex}><b>{word}</b></color>";
             reviewExplanation.text = m.explanation;
         }
     }
@@ -492,14 +492,17 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
         emptyPane.gameObject.SetActive(false);
         pane.gameObject.SetActive(true);
         paneSubject.text = string.IsNullOrEmpty(m.subject) ? "(no subject)" : m.subject;
+        bool site = m.channel == MessageChannel.Website;
         // <noparse> shows the angle brackets literally (TMP does not decode &lt; / &gt;).
-        paneFrom.text = $"From: <b>{m.sender}</b>" +
-                        (string.IsNullOrEmpty(m.senderDetail) ? "" : $"  <color={UIKit.HexSecondary}><noparse><{m.senderDetail}></noparse></color>");
-        paneMeta.text = "To: me   ·   Today";
+        paneFrom.text = site
+            ? $"Site: <b>{m.sender}</b>" + (string.IsNullOrEmpty(m.senderDetail) ? "" : $"  <color={UIKit.HexSecondary}><noparse>{m.senderDetail}</noparse></color>")
+            : $"From: <b>{m.sender}</b>" + (string.IsNullOrEmpty(m.senderDetail) ? "" : $"  <color={UIKit.HexSecondary}><noparse><{m.senderDetail}></noparse></color>");
+        paneMeta.text = site ? "Captured page (training copy - nothing here is live)   ·   Today" : "To: me   ·   Today";
         paneBody.text = m.body;
+        question.text = $"Is this {MessageChannels.Noun(m.channel)} a scam or legitimate?";
         bool hasLink = !string.IsNullOrEmpty(m.link);
         paneLink.gameObject.SetActive(hasLink);
-        paneLink.text = hasLink ? $"Link in email: <u>{m.link}</u>" : "";
+        paneLink.text = hasLink ? (site ? $"Address bar: <u>{m.link}</u>" : $"Link in email: <u>{m.link}</u>") : "";
 
         string details = UIKit.MessageDetailsText(m, quiz != null && quiz.Level != null ? quiz.Level.caseNotes : null);
         paneDetails.text = details;
@@ -739,7 +742,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
         var qh = UIKit.Horizontal(qRow, 12, TextAnchor.MiddleLeft);
         qh.childForceExpandHeight = false;
         UIKit.Size(qRow, -1, 48);
-        var question = UIKit.Text(qRow, "Question", "Is this email a scam or legitimate?", 24, UIKit.TextPrimary, TextAlignmentOptions.MidlineLeft, bold: true);
+        question = UIKit.Text(qRow, "Question", "Is this email a scam or legitimate?", 24, UIKit.TextPrimary, TextAlignmentOptions.MidlineLeft, bold: true);
         question.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
         detailsToggle = UIKit.HudButton(qRow, "DETAILS", () => SetDetailsView(!showingDetails), UIKit.HudVariant.Secondary, 20);
         UIKit.Size(detailsToggle, 200, 46);

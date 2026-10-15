@@ -61,7 +61,7 @@ public class QuizManager : MonoBehaviour
     private int shownTenths = -1, shownPoints = -1;
     private Vector3 lastPlayerPos;
     private MessageDevice[] devices = new MessageDevice[0];
-    private bool hasComputers;
+    private bool hasComputers, hasCaseTerminal;
     private IMessagePresenter current;
 
     private int Total => level != null ? level.MessageCount : 0;
@@ -108,6 +108,7 @@ public class QuizManager : MonoBehaviour
         if (playerCamera == null) playerCamera = Camera.main;
         devices = FindObjectsByType<MessageDevice>(FindObjectsSortMode.None);
         hasComputers = FindObjectsByType<ComputerTerminal>(FindObjectsSortMode.None).Length > 0;
+        hasCaseTerminal = FindObjectsByType<FinalCaseTerminal>(FindObjectsSortMode.None).Length > 0;
 
         if (level == null || scoring == null || popup == null)
         {
@@ -189,7 +190,9 @@ public class QuizManager : MonoBehaviour
     {
         phase = Phase.Notified;
         reminderTimer = 0f;
-        if (hud != null) hud.ShowNotification(Current, NeedsComputer(Current) ? "Read it at a computer" : $"Press [{interactKey}] to read");
+        if (hud != null) hud.ShowNotification(Current, NeedsComputer(Current) ? "Read it at a computer"
+                                                     : NeedsCaseTerminal(Current) ? "Submit at the final case terminal"
+                                                     : $"Press [{interactKey}] to read");
         if (levelAudio != null) levelAudio.PlayNotification(Current.channel);
         StateChanged?.Invoke();
     }
@@ -212,11 +215,20 @@ public class QuizManager : MonoBehaviour
         var kb = Keyboard.current;
         if (kb != null && kb[interactKey].wasPressedThisFrame && !InteractionGate.InteractBlocked)
         {
+            if (NeedsCaseTerminal(Current))
+            {
+                // The final case terminal opens it (once the evidence has been reviewed).
+                if (LookedAt<FinalCaseTerminal>() == null && hud != null)
+                    hud.ShowToast("Final case: review the evidence, then go to the final case terminal and press E.");
+                return;
+            }
             if (NeedsComputer(Current))
             {
                 // Looking at a monitor? Let the ComputerTerminal handle this press.
                 if (!LookingAtComputer() && hud != null)
-                    hud.ShowToast("Emails are read on a computer - look at a monitor and press E.");
+                    hud.ShowToast(Current.channel == MessageChannel.Website
+                        ? "Web pages are reviewed on a computer - look at a monitor and press E."
+                        : "Emails are read on a computer - look at a monitor and press E.");
                 return;
             }
             InteractionGate.ConsumeInteract();   // doors/chairs ignore this press
@@ -224,11 +236,14 @@ public class QuizManager : MonoBehaviour
         }
     }
 
-    bool NeedsComputer(ScamMessage msg) => msg.channel == MessageChannel.Email && hasComputers;
+    bool NeedsComputer(ScamMessage msg) => MessageChannels.OnComputer(msg.channel) && hasComputers;
+    bool NeedsCaseTerminal(ScamMessage msg) => msg.channel == MessageChannel.Case && hasCaseTerminal;
+    /// <summary>Opened on a station (computer or final case terminal) rather than the phone pop-up.</summary>
+    bool NeedsStation(ScamMessage msg) => NeedsComputer(msg) || NeedsCaseTerminal(msg);
 
     void OnNotificationClicked()
     {
-        if (phase == Phase.Notified && !NeedsComputer(Current)) OpenPending(popup);
+        if (phase == Phase.Notified && !NeedsStation(Current)) OpenPending(popup);
     }
 
     /// <summary>
@@ -342,7 +357,7 @@ public class QuizManager : MonoBehaviour
             return;
         }
 
-        if (phase == Phase.Notified && !NeedsComputer(Current))
+        if (phase == Phase.Notified && !NeedsStation(Current))
             InteractionPrompt.Set(this, InteractionPrompt.KeyName(interactKey),
                 Current.channel == MessageChannel.SMS ? "Read new text message" : "Read new email", priority: 3);
         else

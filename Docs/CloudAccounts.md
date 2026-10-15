@@ -74,6 +74,25 @@ Originals are in `Backups/2026-10-14_before_cloud_accounts/`.
 - **Room unlocking is still decided by score in GameManager.** Stars never unlock rooms.
 - **Local cache:** each Unity player has its own local save (`scamsense_progress_v1_<playerId>`), so two people on one PC don't mix. Progress made before accounts existed is merged into the first profile that signs in (tested: Level 1's 500 points carried over).
 
+### Keeping players' progress apart (2026-10-15)
+- **Sync only touches the signed-in player's own save.** `SyncAsync` checks that the signed-in player ID matches the active local save before starting. It checks again after each network request; if someone signed out or switched account meanwhile, the sync is abandoned and re-run for the new player. Before this, a sync that was still downloading could merge the previous player's cloud progress into the next player's save.
+- **Signing out of an account puts its save away.**
+  - Its progress stays in its own local save and in Cloud Save.
+  - The menu and PLAY OFFLINE switch back to this PC's guest save (`scamsense_last_guest_profile`), or a fresh offline save if there's no guest.
+  - Whoever plays next therefore can't add results to the signed-out account.
+  - Signing out as a guest still keeps the guest's save and session; PLAY AS GUEST continues it.
+- **A renewed session must be the same player.** If an expired session comes back as a different player, the game stays offline on the local save instead of syncing it into the wrong cloud slot.
+- **Account → account never mixes.**
+- **Guest → existing account still merges, on purpose.** The guest's progress is added to the account, as the sign-in screen says. Once the guest's login is replaced, the guest can't come back, so not merging would lose its progress.
+
+### Account popup
+- **SIGN OUT asks first.** The button turns into CONFIRM SIGN OUT and explains what happens to the progress. Closing or reopening the popup cancels it.
+- **SYNC NOW feedback:** it shows SYNCING… and reports "Progress synced." or the reason it failed (it retries automatically).
+- **Buttons disable** while an account operation or sync is running, so nothing can start twice.
+- **Feedback line:** `AccountPanel/AccountMessage` (field *Account Message* on AccountUI) shows these messages and any outstanding sync problem.
+- **The menu's saved-progress line refreshes** when a background sync brings progress down from the cloud.
+- **Footer:** the saved-progress line is now one line that shrinks to fit. The "Offline training" note sits underneath. Before, the two overlapped on narrower screens and in small Game views.
+
 ### Offline
 - If the services can't be reached, the game uses the PC's last save and shows **OFFLINE**.
 - It tries to reconnect every 20 s. Once it reconnects as the same player, pending results upload.

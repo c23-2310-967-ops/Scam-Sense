@@ -92,6 +92,11 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private TMP_Text resValue, modeValue, qualityValue, pendingText;
     [SerializeField] private Button applyButton;
 
+    [Header("Scene UI - reset progress (Settings > Saved progress)")]
+    [SerializeField] private Button resetConfirmButton;
+    [SerializeField] private Button resetCancelButton;
+    [SerializeField] private TMP_Text resetScopeText, resetResultTitle, resetResultBody;
+
     [Header("Scene UI - level selection & live feed")]
     [Tooltip("Level cards are generated here at runtime from the LevelCatalog.")]
     [SerializeField] private RectTransform levelRow;
@@ -134,6 +139,7 @@ public class MainMenuUI : MonoBehaviour
         if (inScene) root.gameObject.SetActive(true);
         else Build(useShots);   // fallback: same UI, created at runtime
         BindRuntime();
+        if (!panels.ContainsKey("resetprogress")) BuildResetProgress();   // menu baked before RESET PROGRESS existed
         RefreshProgress();
 
         // Account panels (guest / sign-in / cloud status) - in the scene under MainMenu Canvas/Panels.
@@ -289,9 +295,14 @@ public class MainMenuUI : MonoBehaviour
     {
         if (!panels.TryGetValue(id, out var p)) return;
         if (openPanel == p) return;
-        if (openPanel != null) openPanel.gameObject.SetActive(false);
+        if (openPanel != null)
+        {
+            if (panels.TryGetValue("settings", out var s) && openPanel == s) GameAudioSettings.Save();   // leaving Settings for another panel
+            openPanel.gameObject.SetActive(false);
+        }
         if (id == "settings") LoadSettingsIntoUI();
         if (id == "levels") BuildLevelCards();
+        if (id == "resetprogress") PrepareResetProgress();
         openPanel = p;
         panelDim.gameObject.SetActive(true);
         p.gameObject.SetActive(true);
@@ -359,6 +370,29 @@ public class MainMenuUI : MonoBehaviour
     {
         n = Mathf.Clamp(n, 0, 3);
         return $"<color={UIKit.HexWarning}>{new string('★', n)}</color><color=#FFFFFF33>{new string('★', 3 - n)}</color> <size=80%><color={UIKit.HexSecondary}>{n}/3</color></size>";
+    }
+
+    /// <summary>
+    /// Footer: the saved-progress line spans the bottom on one line and shrinks to fit (it used to wrap and run
+    /// into the offline note on narrower screens); the offline note sits on its own line underneath.
+    /// </summary>
+    public static void LayoutFooter(TMP_Text progress, TMP_Text offline)
+    {
+        var p = progress.rectTransform;
+        p.anchorMin = new Vector2(0, 0); p.anchorMax = new Vector2(1, 0); p.pivot = new Vector2(0, 0);
+        p.offsetMin = new Vector2(120, 44); p.offsetMax = new Vector2(-80, 44 + 34);
+        progress.textWrappingMode = TextWrappingModes.NoWrap;
+        progress.overflowMode = TextOverflowModes.Ellipsis;
+        progress.enableAutoSizing = true;
+        progress.fontSizeMax = 22f;
+        progress.fontSizeMin = 15f;
+
+        var o = offline.rectTransform;
+        o.anchorMin = new Vector2(0, 0); o.anchorMax = new Vector2(1, 0); o.pivot = new Vector2(1, 0);
+        o.offsetMin = new Vector2(120, 14); o.offsetMax = new Vector2(-80, 14 + 26);
+        offline.fontSize = 18f;
+        offline.textWrappingMode = TextWrappingModes.NoWrap;
+        offline.overflowMode = TextOverflowModes.Ellipsis;
     }
 
     /// <summary>Makes a column share the row width equally instead of collapsing to its minimum.</summary>
@@ -435,11 +469,14 @@ public class MainMenuUI : MonoBehaviour
 
     void BuildLevelCards()
     {
+        EnsureCardScroll();
         foreach (Transform c in levelRow) Destroy(c.gameObject);
         if (catalog == null) return;
+        if (cardScroll != null) cardScroll.horizontalNormalizedPosition = 0f;
+        if (cardScrollHint != null) cardScrollHint.gameObject.SetActive(catalog.Count > 3);
 
-        // The next room after the last catalogued one, if the save knows about it. The panel fits three
-        // cards, so from three rooms on it becomes a note on the last card instead of a fourth card.
+        // The next room after the last catalogued one, if the save knows about it. From three rooms on it is
+        // a note on the last card rather than a placeholder card, so the row only shows rooms that exist.
         var last = catalog.Count > 0 ? catalog.levels[catalog.Count - 1] : null;
         bool hasUnbuiltNext = last != null && !string.IsNullOrEmpty(last.nextLevelId);
         bool nextAsCard = hasUnbuiltNext && catalog.Count < 3;
@@ -471,6 +508,48 @@ public class MainMenuUI : MonoBehaviour
                           $"Score {last.minScoreToUnlockNext} in Level {last.levelNumber} to unlock.", null,
                           unlocked ? "Unlocked · available in a future update" : null);
         }
+    }
+
+    ScrollRect cardScroll;
+    TMP_Text cardScrollHint;
+
+    /// <summary>
+    /// The level cards sit in a horizontally scrolling row (mouse wheel or drag), so any number of rooms fits
+    /// the Level Selection panel without shrinking the cards. Set up once, the first time the panel opens.
+    /// </summary>
+    void EnsureCardScroll()
+    {
+        if (cardScroll != null || levelRow == null) return;
+        cardScroll = levelRow.parent != null ? levelRow.parent.GetComponent<ScrollRect>() : null;
+        if (cardScroll != null) return;
+
+        var panel = levelRow.parent;
+        int index = levelRow.GetSiblingIndex();
+        var viewport = UIKit.Rect("CardsViewport", panel);
+        viewport.SetSiblingIndex(index);
+        UIKit.Size(viewport, -1, 470);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        viewport.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0);   // catches wheel/drag between cards
+
+        levelRow.SetParent(viewport, false);
+        levelRow.anchorMin = new Vector2(0, 0);
+        levelRow.anchorMax = new Vector2(0, 1);
+        levelRow.pivot = new Vector2(0, 0.5f);
+        levelRow.anchoredPosition = Vector2.zero;
+        levelRow.sizeDelta = Vector2.zero;
+        var fit = levelRow.gameObject.AddComponent<ContentSizeFitter>();
+        fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        cardScroll = viewport.gameObject.AddComponent<ScrollRect>();
+        cardScroll.viewport = viewport;
+        cardScroll.content = levelRow;
+        cardScroll.horizontal = true;
+        cardScroll.vertical = false;
+        cardScroll.movementType = ScrollRect.MovementType.Clamped;
+        cardScroll.scrollSensitivity = 60f;
+
+        cardScrollHint = UIKit.Text(panel, "ScrollHint", "Scroll or drag sideways to see every room  ›", UIKit.SizeSmall - 4, UIKit.TextSecondary, TextAlignmentOptions.MidlineRight);
+        cardScrollHint.transform.SetSiblingIndex(index + 1);
     }
 
     void MakeLevelCard(int number, string title, string desc, bool unlocked, LocalDataManager.LevelProgress p,
@@ -689,10 +768,9 @@ public class MainMenuUI : MonoBehaviour
 
         // Footer: saved progress + offline note
         progressChip = UIKit.Text(root, "Progress", "", 22, UIKit.TextSecondary, TextAlignmentOptions.BottomLeft);
-        UIKit.Place(progressChip.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(120, 48), new Vector2(1100, 36));
         var offline = UIKit.Text(root, "Offline", "Offline training  ·  all messages are fictional  ·  no real links",
                                  20, new Color(1, 1, 1, 0.55f), TextAlignmentOptions.BottomRight);
-        UIKit.Place(offline.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-80, 48), new Vector2(900, 30));
+        LayoutFooter(progressChip, offline);
 
         BuildFeed();
 
@@ -709,6 +787,7 @@ public class MainMenuUI : MonoBehaviour
         BuildHowTo();
         BuildAbout();
         BuildQuit();
+        BuildResetProgress();
 
         // Fade overlay (named so SceneLoader waits for it before showing the loading screen)
         var fadeCanvas = UIKit.CreateCanvas(transform, "MainMenu Fade Canvas", 500);
@@ -981,6 +1060,109 @@ public class MainMenuUI : MonoBehaviour
         FooterButtons(p,
             ("CANCEL", (UnityEngine.Events.UnityAction)ClosePanel, UIKit.HudVariant.Secondary),
             ("YES, QUIT", (UnityEngine.Events.UnityAction)QuitGame, UIKit.HudVariant.Danger));
+    }
+
+    // ---------- Reset progress (Settings > Saved progress) ----------
+
+    const string ResetQuestion = "Are you sure you want to reset your game progress? Your completed levels, scores, stars, " +
+                                 "and unlocked levels will be reset. This action cannot be undone.";
+    bool resetting;
+
+    /// <summary>
+    /// Adds a "Saved progress" section with RESET PROGRESS to Settings, plus the confirmation and result panels.
+    /// Built with the rest of the menu; a menu baked into the scene before this existed gets it at runtime.
+    /// </summary>
+    void BuildResetProgress()
+    {
+        if (!panels.TryGetValue("settings", out var settings) || settings == null) return;
+
+        var section = UIKit.Rect("SavedProgress", settings);
+        var footer = settings.Find("Footer");
+        if (footer != null) section.SetSiblingIndex(footer.GetSiblingIndex());   // above RESET TO DEFAULTS / APPLY / BACK
+        UIKit.Vertical(section, 0, 8);
+        UIKit.Header(section, "Saved progress");
+        var row = UIKit.Rect("Row", section);
+        var h = UIKit.Horizontal(row, 24, TextAnchor.MiddleLeft);
+        h.childForceExpandWidth = false;
+        UIKit.Size(row, -1, 64);
+        var info = UIKit.Text(row, "Info", "Start every room again from the beginning. Your settings and account are kept.",
+                              20, UIKit.TextSecondary, TextAlignmentOptions.MidlineLeft);
+        UIKit.Size(info, 600, 64).flexibleWidth = 1f;
+        var open = UIKit.HudButton(row, "RESET PROGRESS", null, UIKit.HudVariant.Danger, 22);   // red: never mistaken for PLAY
+        open.name = "ResetProgressButton";
+        UIKit.Size(open, 330, 60);
+        Wire(open, OpenPanel, "resetprogress");
+        AddFx(open);
+
+        var p = MakePanel("resetprogress", "RESET PROGRESS", 860);
+        UIKit.Text(p, "Question", ResetQuestion, UIKit.SizeBody, UIKit.TextPrimary);
+        resetScopeText = UIKit.Text(p, "Scope", "", UIKit.SizeSmall, UIKit.TextSecondary);
+        var buttons = UIKit.Rect("Footer", p);
+        UIKit.Horizontal(buttons, 16);
+        UIKit.Size(buttons, -1, 72);
+        resetCancelButton = UIKit.HudButton(buttons, "CANCEL", null, UIKit.HudVariant.Secondary, 26);
+        Wire(resetCancelButton, BackToSettings);
+        AddFx(resetCancelButton);
+        resetConfirmButton = UIKit.HudButton(buttons, "RESET EVERYTHING", null, UIKit.HudVariant.Danger, 26);
+        Wire(resetConfirmButton, ConfirmResetProgress);
+        AddFx(resetConfirmButton);
+
+        var r = MakePanel("resetresult", "PROGRESS RESET SUCCESSFULLY", 860);
+        resetResultTitle = r.Find("Header/Title").GetComponent<TMP_Text>();
+        resetResultBody = UIKit.Text(r, "Message", "", UIKit.SizeBody, UIKit.TextPrimary);
+        FooterButtons(r, ("OK", (UnityEngine.Events.UnityAction)BackToSettings, UIKit.HudVariant.Primary));
+    }
+
+    void PrepareResetProgress()
+    {
+        resetting = false;
+        UIKit.SetInteractable(resetConfirmButton, true);
+        UIKit.SetInteractable(resetCancelButton, true);
+        if (resetScopeText != null) resetScopeText.text = ResetScope();
+    }
+
+    /// <summary>Which save is affected and what happens to the cloud copy (shown before confirming).</summary>
+    static string ResetScope()
+    {
+        var cloud = CloudAccountService.Instance;
+        if (cloud.SyncsActiveSave)
+            return $"This resets the progress of <b>{cloud.DisplayName}</b> on this PC and in its cloud save. " +
+                   "Your account, your settings and other players' progress are kept.";
+        if (!string.IsNullOrEmpty(LocalDataManager.ProfileId))
+            return $"This resets the progress of <b>{cloud.DisplayName}</b> on this PC now; its cloud save is updated the next " +
+                   "time you're online. Your account, your settings and other players' progress are kept.";
+        return "This resets the progress saved on this PC. Your settings are kept.";
+    }
+
+    /// <summary>CANCEL / OK: back to Settings. Nothing is changed by cancelling.</summary>
+    public void BackToSettings() => OpenPanel("settings");
+
+    /// <summary>RESET EVERYTHING: resets through LocalDataManager, then shows what actually happened.</summary>
+    public void ConfirmResetProgress()
+    {
+        if (resetting) return;   // one reset per confirmation
+        resetting = true;
+        UIKit.SetInteractable(resetConfirmButton, false);
+        UIKit.SetInteractable(resetCancelButton, false);
+
+        bool ok = LocalDataManager.ResetProgress(out string error);
+        RefreshProgress();   // Continue, saved-progress line; level cards rebuild when Level Selection opens
+
+        var cloud = CloudAccountService.Instance;
+        if (ok)
+        {
+            resetResultTitle.text = "PROGRESS RESET SUCCESSFULLY";
+            resetResultBody.text = "Your game progress has been reset. You can start your investigation again." +
+                (cloud.SyncsActiveSave ? $"\n<size=80%><color={UIKit.HexSecondary}>Your cloud save is being updated - the account status shows SYNCING, then ONLINE.</color></size>"
+                 : !string.IsNullOrEmpty(LocalDataManager.ProfileId) ? $"\n<size=80%><color={UIKit.HexSecondary}>Your cloud save will be updated the next time you're online.</color></size>"
+                 : "");
+        }
+        else
+        {
+            resetResultTitle.text = "RESET FAILED";
+            resetResultBody.text = error;
+        }
+        OpenPanel("resetresult");
     }
 
     // ---------- Procedural background sprites (saved as assets in Assets/Resources/UIKit/ by the menu builder) ----------

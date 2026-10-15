@@ -148,7 +148,7 @@ public static class Room3Builder
 
     // ---------- Environment ----------
 
-    static Transform structure, furniture, screens, props, lighting, shadows;
+    internal static Transform structure, furniture, screens, props, lighting, shadows;
 
     public static void BuildEnvironment()
     {
@@ -309,10 +309,10 @@ public static class Room3Builder
         Shadow(new Vector3(1.75f, 0f, 3.9f), new Vector2(1.0f, 0.9f));
     }
 
-    static void BuildWallDisplayUI(RectTransform root, OpsWallDisplay display)
+    internal static void BuildWallDisplayUI(RectTransform root, OpsWallDisplay display, string title = "THREAT ANALYSIS  ·  CASE 03  ·  THE DIGITAL TRAP")
     {
         UIKit.AddImage(root, new Color32(0x07, 0x0F, 0x1C, 255)).raycastTarget = false;
-        Txt(root, "Title", "THREAT ANALYSIS  ·  CASE 03  ·  THE DIGITAL TRAP", 46, UIKit.Accent, new Vector2(48, -30), new Vector2(1500, 64), bold: true).characterSpacing = 4;
+        Txt(root, "Title", title, 46, UIKit.Accent, new Vector2(48, -30), new Vector2(1500, 64), bold: true).characterSpacing = 4;
         Txt(root, "Clock", "OPS-WS3  ·  LIVE", 34, UIKit.TextSecondary, new Vector2(-48, -36), new Vector2(400, 56), align: TextAlignmentOptions.TopRight, anchor: new Vector2(1, 1));
 
         Txt(root, "ReviewedLabel", "MESSAGES REVIEWED", 30, UIKit.TextSecondary, new Vector2(48, -130), new Vector2(560, 40), bold: true);
@@ -461,7 +461,7 @@ public static class Room3Builder
         if (chairSrc != null) SpareChair(chairSrc, new Vector3(-4.35f, 0f, 2.55f), 115f);
     }
 
-    static void BuildCaseFilesUI(RectTransform root, CaseFilesTerminal terminal, Transform viewPoint)
+    internal static void BuildCaseFilesUI(RectTransform root, CaseFilesTerminal terminal, Transform viewPoint, string headerTitle = "CASE FILES  ·  OPS-WS3")
     {
         UIKit.AddImage(root, UIKit.Background).raycastTarget = false;
 
@@ -469,7 +469,7 @@ public static class Room3Builder
         header.anchorMin = new Vector2(0, 1); header.anchorMax = new Vector2(1, 1); header.pivot = new Vector2(0.5f, 1);
         header.sizeDelta = new Vector2(0, 70); header.anchoredPosition = Vector2.zero;
         UIKit.AddImage(header, new Color32(0x07, 0x0C, 0x16, 255)).raycastTarget = false;
-        var ht = UIKit.Text(header, "Title", "CASE FILES  ·  OPS-WS3", 28, UIKit.Accent, TextAlignmentOptions.MidlineLeft, bold: true);
+        var ht = UIKit.Text(header, "Title", headerTitle, 28, UIKit.Accent, TextAlignmentOptions.MidlineLeft, bold: true);
         UIKit.Stretch(ht.rectTransform); ht.margin = new Vector4(24, 0, 0, 0); ht.characterSpacing = 3;
         var status = UIKit.Text(header, "Status", "Messages reviewed 0/6", 22, UIKit.TextSecondary, TextAlignmentOptions.MidlineRight);
         UIKit.Stretch(status.rectTransform); status.margin = new Vector4(0, 0, 24, 0);
@@ -768,7 +768,7 @@ public static class Room3Builder
     /// The desk/chair models come from the earlier rooms (warm wood, pink seat). In this scene only, their
     /// renderers use the operations palette instead. The model assets and the other rooms are not changed.
     /// </summary>
-    static void Recolor(Transform env)
+    internal static void Recolor(Transform env)
     {
         var map = new Dictionary<string, Material>
         {
@@ -795,7 +795,7 @@ public static class Room3Builder
 
     // ---------- Small builders ----------
 
-    static void Mug(string name, Vector3 basePos, Material m)
+    internal static void Mug(string name, Vector3 basePos, Material m)
     {
         var g = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         g.name = name;
@@ -816,7 +816,7 @@ public static class Room3Builder
         handle.transform.localScale = new Vector3(0.25f, 1.1f, 0.2f);
     }
 
-    static void Badge(Vector3 pos, float rotY)
+    internal static void Badge(Vector3 pos, float rotY)
     {
         var b = Box("SecurityBadge", props, pos + new Vector3(0, 0.002f, 0), new Vector3(0.086f, 0.003f, 0.054f), M("R3_BadgeWhite", "#F1F5F9", 0.3f), rotY: rotY, shadow: false);
         var stripe = Box("Stripe", b.transform, Vector3.zero, Vector3.one, M("R3_LedCyan", "#22D3EE", 0.5f, "#22D3EE", 0.5f), shadow: false);
@@ -832,7 +832,7 @@ public static class Room3Builder
         Txt(canvasRoot, "T", "SCAM SENSE OPS\n<size=38>ANALYST</size>\n<size=30>ID SS-0317  ·  Level 3 access</size>", 40, new Color32(0x1F, 0x29, 0x37, 255), new Vector2(24, -80), new Vector2(400, 180), bold: true);
     }
 
-    static void Plant(Vector3 pos)
+    internal static void Plant(Vector3 pos)
     {
         var root = new GameObject("Plant").transform;
         root.SetParent(props, false);
@@ -854,7 +854,7 @@ public static class Room3Builder
         Shadow(pos, new Vector2(0.55f, 0.55f));
     }
 
-    static void SpareChair(Transform chairSrc, Vector3 pos, float yaw)
+    internal static void SpareChair(Transform chairSrc, Vector3 pos, float yaw)
     {
         var model = chairSrc.Find("chair");
         if (model == null) return;
@@ -871,7 +871,7 @@ public static class Room3Builder
         Shadow(new Vector3(b.center.x, 0f, b.center.z), new Vector2(b.size.x, b.size.z));
     }
 
-    static void StringBetween(Transform parent, Vector3 a, Vector3 b, Material m)
+    internal static void StringBetween(Transform parent, Vector3 a, Vector3 b, Material m)
     {
         var g = Box("RedString", parent, (a + b) / 2f, new Vector3(0.004f, 0.004f, Vector3.Distance(a, b)), m, shadow: false);
         g.transform.rotation = Quaternion.LookRotation(b - a);
@@ -879,16 +879,16 @@ public static class Room3Builder
 
     // ---------- Helpers ----------
 
-    static Transform Group(string name, Transform parent)
+    internal static Transform Group(string name, Transform parent)
     {
         var t = new GameObject(name).transform;
         t.SetParent(parent, false);
         return t;
     }
 
-    static Color Hex(string hex) { ColorUtility.TryParseHtmlString(hex, out var c); return c; }
+    internal static Color Hex(string hex) { ColorUtility.TryParseHtmlString(hex, out var c); return c; }
 
-    static Material M(string name, string hex, float smooth, string emissionHex = null, float emission = 0f)
+    internal static Material M(string name, string hex, float smooth, string emissionHex = null, float emission = 0f)
     {
         string path = "Assets/Materials/" + name + ".mat";
         var m = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -905,9 +905,9 @@ public static class Room3Builder
         return m;
     }
 
-    static Material ScreenMat() => M("R3_Screen", "#050B14", 0.85f, "#0A2A3A", 1f);
+    internal static Material ScreenMat() => M("R3_Screen", "#050B14", 0.85f, "#0A2A3A", 1f);
 
-    static GameObject Box(string name, Transform parent, Vector3 worldPos, Vector3 size, Material m, bool collider = false, float rotY = 0f, bool shadow = true)
+    internal static GameObject Box(string name, Transform parent, Vector3 worldPos, Vector3 size, Material m, bool collider = false, float rotY = 0f, bool shadow = true)
     {
         var g = GameObject.CreatePrimitive(PrimitiveType.Cube);
         g.name = name;
@@ -922,7 +922,7 @@ public static class Room3Builder
         return g;
     }
 
-    static GameObject LocalBox(string name, Transform parent, Vector3 localPos, Vector3 size, Material m, bool collider = false, bool shadow = true)
+    internal static GameObject LocalBox(string name, Transform parent, Vector3 localPos, Vector3 size, Material m, bool collider = false, bool shadow = true)
     {
         var g = Box(name, parent, Vector3.zero, size, m, collider, 0f, shadow);
         g.transform.localPosition = localPos;
@@ -930,7 +930,7 @@ public static class Room3Builder
         return g;
     }
 
-    static void Light(string name, LightType type, Vector3 pos, Quaternion rot, string hex, float intensity, float range, float angle, LightShadows shadowsMode)
+    internal static void Light(string name, LightType type, Vector3 pos, Quaternion rot, string hex, float intensity, float range, float angle, LightShadows shadowsMode)
     {
         var g = new GameObject(name, typeof(UnityEngine.Light));
         g.transform.SetParent(lighting, false);
@@ -947,7 +947,7 @@ public static class Room3Builder
     }
 
     /// <summary>World Space canvas whose front faces 'facing' (the direction of the viewer).</summary>
-    static RectTransform WorldCanvas(string name, Transform parent, Vector3 centre, Vector3 facing, float widthMetres, Vector2 px, bool interactive)
+    internal static RectTransform WorldCanvas(string name, Transform parent, Vector3 centre, Vector3 facing, float widthMetres, Vector2 px, bool interactive)
     {
         var types = interactive
             ? new[] { typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster) }
@@ -965,7 +965,7 @@ public static class Room3Builder
     }
 
     /// <summary>World Space canvas placed in a parent's local space (front = parent's -Z).</summary>
-    static RectTransform WorldCanvasLocal(string name, Transform parent, Vector3 localPos, float widthMetres, Vector2 px)
+    internal static RectTransform WorldCanvasLocal(string name, Transform parent, Vector3 localPos, float widthMetres, Vector2 px)
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         var rt = (RectTransform)go.transform;
@@ -981,7 +981,7 @@ public static class Room3Builder
         return rt;
     }
 
-    static TextMeshProUGUI Txt(RectTransform parent, string name, string text, float size, Color color, Vector2 pos, Vector2 box,
+    internal static TextMeshProUGUI Txt(RectTransform parent, string name, string text, float size, Color color, Vector2 pos, Vector2 box,
                                bool bold = false, TextAlignmentOptions align = TextAlignmentOptions.TopLeft, Vector2? anchor = null)
     {
         var t = UIKit.Text(parent, name, text, size, color, align, bold);
@@ -990,7 +990,7 @@ public static class Room3Builder
         return t;
     }
 
-    static Bounds RendererBounds(GameObject g)
+    internal static Bounds RendererBounds(GameObject g)
     {
         var rs = g.GetComponentsInChildren<Renderer>();
         var b = rs[0].bounds;
@@ -999,13 +999,13 @@ public static class Room3Builder
     }
 
     /// <summary>Moves an object so its footprint is centred on (x, z) and it stands on the floor.</summary>
-    static void Fit(GameObject g, float x, float z)
+    internal static void Fit(GameObject g, float x, float z)
     {
         var b = RendererBounds(g);
         g.transform.position += new Vector3(x - b.center.x, -b.min.y, z - b.center.z);
     }
 
-    static void Shadow(Vector3 centre, Vector2 size)
+    internal static void Shadow(Vector3 centre, Vector2 size)
     {
         var mat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/FX_ContactShadow.mat");
         if (mat == null) return;

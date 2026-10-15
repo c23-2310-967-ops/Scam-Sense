@@ -26,6 +26,8 @@ public class CloudAccountService : MonoBehaviour
     const string KeyLastProfile = "scamsense_last_profile";
     const string KeyLastName = "scamsense_last_name";
     const string KeySignedOut = "scamsense_signed_out";
+    /// <summary>This PC's guest save (what PLAY OFFLINE uses after an account signs out).</summary>
+    const string KeyLastGuestProfile = "scamsense_last_guest_profile";
     const float RetrySeconds = 20f;
 
     static CloudAccountService instance;
@@ -52,7 +54,12 @@ public class CloudAccountService : MonoBehaviour
     public bool ServicesReady { get; private set; }
     public string Username { get; private set; }
     public string LastError { get; private set; }
+    /// <summary>Why the last cloud sync failed (null after a successful sync). Sync retries automatically.</summary>
+    public string LastSyncError { get; private set; }
+    public bool Syncing => syncing;
     public bool SignedIn => ServicesReady && AuthenticationService.Instance.IsSignedIn;
+    /// <summary>True when the active local save is the signed-in player's, i.e. the one SyncAsync uploads.</summary>
+    public bool SyncsActiveSave => SignedIn && AuthenticationService.Instance.PlayerId == LocalDataManager.ProfileId;
     /// <summary>A previous guest/player session is cached and the player didn't sign out.</summary>
     public bool CanRestore => ServicesReady && AuthenticationService.Instance.SessionTokenExists && PlayerPrefs.GetInt(KeySignedOut, 0) == 0;
     public bool HasOfflineProfile => PlayerPrefs.HasKey(KeyLastProfile);
@@ -193,7 +200,8 @@ public class CloudAccountService : MonoBehaviour
 
     /// <summary>
     /// CREATE ACCOUNT. Signed in as a guest: links the username to the guest (same player ID and
-    /// cloud progress). Otherwise: signs up a new player (local progress on this PC is merged in).
+    /// cloud progress, nothing is copied or reset). Otherwise: signs up a new player with its own new save
+    /// (other players' saves on this PC are left alone).
     /// </summary>
     public async Task<bool> CreateAccountAsync(string username, string password)
     {
@@ -223,18 +231,34 @@ public class CloudAccountService : MonoBehaviour
     }
 
     /// <summary>
-    /// SIGN OUT. Progress is never deleted. A guest keeps Unity's cached session so PLAY AS GUEST
-    /// returns to the same guest; an account clears it (the password is needed next time).
+    /// SIGN OUT. Progress is never deleted: it stays in the player's local save and in Cloud Save.
+    /// A guest keeps Unity's cached session so PLAY AS GUEST returns to the same guest, and the guest's save
+    /// stays active. An account clears its session (the password is needed next time) and its save is put
+    /// away: the menu and PLAY OFFLINE go back to this PC's guest save, so whoever plays next can't add
+    /// results to the signed-out account.
     /// </summary>
-    public void SignOut()
+    /// <returns>False if an account operation is still running (nothing was changed).</returns>
+    public bool SignOut()
     {
+        if (Busy) return false;
+        bool wasAccount = CurrentMode == Mode.Player;
         if (ServicesReady && AuthenticationService.Instance.IsSignedIn)
-            AuthenticationService.Instance.SignOut(clearCredentials: CurrentMode == Mode.Player);
+            AuthenticationService.Instance.SignOut(clearCredentials: wasAccount);
         PlayerPrefs.SetInt(KeySignedOut, 1);
+        if (wasAccount)
+        {
+            string guest = PlayerPrefs.GetString(KeyLastGuestProfile, "");
+            if (guest == "") PlayerPrefs.DeleteKey(KeyLastProfile);
+            else PlayerPrefs.SetString(KeyLastProfile, guest);
+            PlayerPrefs.SetString(KeyLastName, guest == "" ? "" : "Guest player");
+            LocalDataManager.SetProfile(guest == "" ? null : guest);
+            LocalDataManager.RememberActiveProfile();
+        }
         PlayerPrefs.Save();
         CurrentMode = Mode.None;
         Username = null;
         Notify();
+        return true;
     }
 
     /// <summary>PLAY OFFLINE: uses this PC's last save; results upload later when signed in again.</summary>
@@ -260,6 +284,8 @@ public class CloudAccountService : MonoBehaviour
         catch (Exception e) { Debug.LogWarning("CloudAccountService: couldn't read player info. " + e.Message); }
 
         CurrentMode = string.IsNullOrEmpty(Username) ? Mode.Guest : Mode.Player;
+        if (CurrentMode == Mode.Guest) PlayerPrefs.SetString(KeyLastGuestProfile, id);
+        else if (PlayerPrefs.GetString(KeyLastGuestProfile, "") == id) PlayerPrefs.DeleteKey(KeyLastGuestProfile);   // this guest became an account
         PlayerPrefs.SetString(KeyLastProfile, id);
         PlayerPrefs.SetString(KeyLastName, CurrentMode == Mode.Player ? Username : "Guest player");
         PlayerPrefs.DeleteKey(KeySignedOut);
@@ -269,28 +295,40 @@ public class CloudAccountService : MonoBehaviour
         await SyncAsync();
     }
 
-    /// <summary>Download -> merge (keeps the best of both) -> upload. Safe to repeat.</summary>
+    /// <summary>
+    /// Download -> merge (keeps the best of both) -> upload. Safe to repeat.
+    /// Only ever syncs the local save that belongs to the signed-in player, and abandons the sync if the
+    /// player changes while a request is in flight (sign out / switch account), so one player's cloud
+    /// progress can never be merged into, or uploaded as, another player's save.
+    /// </summary>
     async Task SyncAsync()
     {
         if (!SignedIn || syncing) return;
+        string playerId = AuthenticationService.Instance.PlayerId;
+        if (string.IsNullOrEmpty(playerId) || playerId != LocalDataManager.ProfileId) return;
+
         syncing = true;
+        bool abandoned = false;
         Notify();
         try
         {
             var player = CloudSaveService.Instance.Data.Player;
             var loaded = await player.LoadAsync(new HashSet<string> { CloudKey },
                 new Unity.Services.CloudSave.Models.Data.Player.LoadOptions());
+            if (!SamePlayer(playerId)) { abandoned = true; return; }
             if (loaded.TryGetValue(CloudKey, out var item) && item?.Value != null)
                 LocalDataManager.MergeFromJson(item.Value.GetAs<string>());
 
             int revision = LocalDataManager.Revision;
             await player.SaveAsync(new Dictionary<string, object> { { CloudKey, LocalDataManager.ExportJson() } },
                 new Unity.Services.CloudSave.Models.Data.Player.SaveOptions());
+            if (!SamePlayer(playerId)) { abandoned = true; return; }
             LocalDataManager.MarkSynced(revision);
+            LastSyncError = null;
         }
         catch (Exception e)
         {
-            LastError = Friendly(e);
+            LastSyncError = Friendly(e);
             Debug.LogWarning("CloudAccountService: sync failed, will retry. " + e.Message);
         }
         finally
@@ -298,7 +336,14 @@ public class CloudAccountService : MonoBehaviour
             syncing = false;
             Notify();
         }
+
+        // The player changed mid-sync: sync the new player's own save instead (never the old one's data).
+        if (abandoned && SignedIn) _ = SyncAsync();
     }
+
+    /// <summary>True if the same player is still signed in and their save is still the active one.</summary>
+    bool SamePlayer(string playerId) =>
+        SignedIn && AuthenticationService.Instance.PlayerId == playerId && LocalDataManager.ProfileId == playerId;
 
     void OnLocalProgressChanged()
     {
@@ -323,7 +368,17 @@ public class CloudAccountService : MonoBehaviour
 
     async void OnSessionExpired()
     {
-        try { await AuthenticationService.Instance.SignInAnonymouslyAsync(); }
+        try
+        {
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            // The renewed session must be the same player; otherwise keep playing offline on the local save
+            // rather than syncing it into a different player's cloud slot.
+            if (AuthenticationService.Instance.PlayerId != LocalDataManager.ProfileId)
+            {
+                AuthenticationService.Instance.SignOut(false);
+                EnterOffline();
+            }
+        }
         catch { EnterOffline(); }
     }
 

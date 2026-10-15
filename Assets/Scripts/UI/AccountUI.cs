@@ -48,6 +48,8 @@ public class AccountUI : MonoBehaviour
     [Header("Account panel")]
     [SerializeField] private TMP_Text accountInfo;
     [SerializeField] private TMP_Text accountDetail;
+    [Tooltip("Feedback line under the account details (sign-out confirmation, sync result, errors).")]
+    [SerializeField] private TMP_Text accountMessage;
     [SerializeField] private GameObject accountCreateButton, accountSignInOtherButton, accountSyncButton, accountTryConnectButton, accountSignOutButton;
 
     [Header("Busy panel & status chip")]
@@ -61,6 +63,9 @@ public class AccountUI : MonoBehaviour
     Action pendingAction;
     string busyLabel = "";
     float busyDots;
+    bool confirmingSignOut;              // SIGN OUT was pressed once; the next press signs out
+    string accountNote;                  // feedback shown on the account panel (null = none)
+    bool accountNoteIsError;
 
     /// <summary>True once the player chose how to play (guest, account or offline).</summary>
     public bool ReadyToPlay => svc != null && svc.CurrentMode != CloudAccountService.Mode.None;
@@ -198,19 +203,55 @@ public class AccountUI : MonoBehaviour
         else { Show(Screen.CreateAccount, keepFields: true); SetMessage(createError, svc.LastError, true); }
     }
 
+    /// <summary>
+    /// SIGN OUT asks once ("CONFIRM SIGN OUT"), then signs out. Progress is never deleted: an account's progress
+    /// stays saved to the account, a guest's stays on this PC (PLAY AS GUEST brings it back).
+    /// </summary>
     public void SignOut()
     {
-        svc.SignOut();
+        bool account = svc.CurrentMode == CloudAccountService.Mode.Player;
+        string name = svc.DisplayName;
+        if (!confirmingSignOut)
+        {
+            confirmingSignOut = true;
+            SetAccountNote(account
+                ? $"Sign out of {name}? Its progress stays saved to the account - you'll need your password to sign back in. Press CONFIRM SIGN OUT."
+                : "Sign out of this guest? Its progress stays saved on this PC - PLAY AS GUEST brings it back. Press CONFIRM SIGN OUT.", false);
+            RefreshAccountPanel();
+            return;
+        }
+
+        confirmingSignOut = false;
+        if (!svc.SignOut())
+        {
+            SetAccountNote("Please wait - an account operation is still running.", true);
+            RefreshAccountPanel();
+            return;
+        }
         menu.RefreshProgress();
         pendingAction = null;
         Show(Screen.Authentication);
-        SetMessage(authStatusText, "Signed out. Your progress is kept. Choose how to play next time you press PLAY.", false);
+        SetMessage(authStatusText, account
+            ? $"Signed out of {name}. Its progress is saved to the account. Choose how to play next."
+            : "Signed out. This guest's progress is kept on this PC - PLAY AS GUEST continues it.", false);
     }
 
     public async void SyncNow()
     {
+        if (svc.Syncing || svc.Busy) return;   // one sync at a time
+        SetAccountNote(null, false);
         await svc.SyncNowAsync();
-        if (this != null && screen == Screen.Account) RefreshAccountPanel();
+        if (this == null || screen != Screen.Account) return;
+        menu.RefreshProgress();                // cloud progress may have been merged in
+        SetAccountNote(svc.LastSyncError != null ? "Sync failed: " + svc.LastSyncError + " It will retry automatically." : "Progress synced.",
+                       svc.LastSyncError != null);
+        RefreshAccountPanel();
+    }
+
+    void SetAccountNote(string note, bool error)
+    {
+        accountNote = note;
+        accountNoteIsError = error;
     }
 
     public async void TryConnect()
@@ -269,7 +310,12 @@ public class AccountUI : MonoBehaviour
             if (!keepFields) { createPassword.text = createConfirmPassword.text = ""; SetMessage(createError, "", false); }
             createUsername.ActivateInputField();
         }
-        if (s == Screen.Account) RefreshAccountPanel();
+        if (s == Screen.Account)
+        {
+            confirmingSignOut = false;         // a fresh open never starts half-way through signing out
+            SetAccountNote(null, false);
+            RefreshAccountPanel();
+        }
         if (s == Screen.Busy) { busyLabel = label ?? "PLEASE WAIT"; busyDots = 0f; }
 
         foreach (var p in new[] { authenticationPanel, playerSignInPanel, createAccountPanel, accountPanel, busyPanel })
@@ -301,13 +347,40 @@ public class AccountUI : MonoBehaviour
         accountSyncButton.SetActive(player);
         accountTryConnectButton.SetActive(offline);
         accountSignOutButton.SetActive(guest || player);
+
+        // Nothing can be started twice: every action waits while an account operation or sync is running.
+        bool busy = svc.Busy;
+        foreach (var go in new[] { accountCreateButton, accountSignInOtherButton, accountTryConnectButton, accountSignOutButton })
+            SetButton(go, null, !busy);
+        SetButton(accountSyncButton, svc.Syncing ? "SYNCING..." : "SYNC NOW", !busy && !svc.Syncing);
+        SetButton(accountSignOutButton, confirmingSignOut ? "CONFIRM SIGN OUT" : "SIGN OUT", !busy);
+
+        // Feedback line: the latest note, otherwise an outstanding sync problem.
+        string note = accountNote;
+        bool error = accountNoteIsError;
+        if (note == null && !offline && svc.LastSyncError != null && !svc.Syncing)
+        {
+            note = "Last sync failed: " + svc.LastSyncError + " It will retry automatically - your progress is safe on this PC.";
+            error = true;
+        }
+        SetMessage(accountMessage, note, error);
+    }
+
+    static void SetButton(GameObject go, string label, bool interactable)
+    {
+        var b = go != null ? go.GetComponent<Button>() : null;
+        if (b == null) return;
+        if (label != null) UIKit.SetLabel(b, label);
+        UIKit.SetInteractable(b, interactable);
     }
 
     void OnServiceState()
     {
         if (this == null) return;
         RefreshChip();
-        if (screen == Screen.Account) accountInfo.text = $"<b>{svc.DisplayName}</b>   <color={StatusHex()}>{svc.StatusText}</color>";
+        if (screen == Screen.Account) RefreshAccountPanel();
+        // A background sync may have brought progress down from the cloud: keep the menu's numbers current.
+        if ((screen == Screen.None || screen == Screen.Account) && !svc.Busy && !svc.Syncing && menu != null) menu.RefreshProgress();
     }
 
     void RefreshChip()
@@ -412,6 +485,7 @@ public class AccountUI : MonoBehaviour
         accountInfo = UIKit.Text(accountPanel, "AccountInfo", "", 28, UIKit.TextPrimary);
         accountDetail = UIKit.Text(accountPanel, "AccountDetail", "", 21, UIKit.TextSecondary);
         accountDetail.lineSpacing = 5f;
+        accountMessage = MakeAccountMessage(accountPanel, accountDetail.transform.GetSiblingIndex() + 1);
         accountCreateButton = Hud(accountPanel, "CreateAccountKeepProgressButton", "CREATE ACCOUNT  (KEEP PROGRESS)", OpenCreateAccount, UIKit.HudVariant.Primary, 62, 24, owner).gameObject;
         accountSignInOtherButton = Hud(accountPanel, "SignInOtherAccountButton", "SIGN IN TO ANOTHER ACCOUNT", OpenSignIn, UIKit.HudVariant.Secondary, 62, 24, owner).gameObject;
         accountSyncButton = Hud(accountPanel, "SyncNowButton", "SYNC NOW", SyncNow, UIKit.HudVariant.Primary, 62, 24, owner).gameObject;
@@ -447,6 +521,26 @@ public class AccountUI : MonoBehaviour
             g.SetActive(false);
         foreach (var t in new[] { authStatusText, signInError, createError }) t.gameObject.SetActive(false);
     }
+
+    /// <summary>The account panel's feedback line (hidden while empty).</summary>
+    static TMP_Text MakeAccountMessage(RectTransform panel, int siblingIndex)
+    {
+        var t = UIKit.Text(panel, "AccountMessage", "", 21, UIKit.TextSecondary);
+        t.lineSpacing = 4f;
+        t.transform.SetSiblingIndex(siblingIndex);
+        t.gameObject.SetActive(false);
+        return t;
+    }
+
+#if UNITY_EDITOR
+    /// <summary>Editor only: adds the feedback line to a panel built before it existed (keeps everything else).</summary>
+    public bool AddMissingAccountMessage()
+    {
+        if (accountMessage != null || accountPanel == null || accountDetail == null) return false;
+        accountMessage = MakeAccountMessage(accountPanel, accountDetail.transform.GetSiblingIndex() + 1);
+        return true;
+    }
+#endif
 
     // ---------- Build helpers ----------
 

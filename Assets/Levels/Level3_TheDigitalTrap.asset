@@ -252,7 +252,7 @@ MonoBehaviour:
   threeStarScore: 480
   minScoreToUnlockNext: 300
   nextLevelId: level_4
-  nextSceneName: 
+  nextSceneName: Room4_DigitalForensicsLab
   lessons:
   - 'Security alerts can be real: judge them by what they ask and where they send
     you.'
