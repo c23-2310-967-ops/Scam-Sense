@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -307,7 +308,7 @@ public class MainMenuUI : MonoBehaviour
         if (id == "settings") LoadSettingsIntoUI();
         if (id == "levels") BuildLevelCards();
         if (id == "resetprogress") PrepareResetProgress();
-        if (id == "career") FillCareerPanel();
+        if (id == "career") { careerTab = 0; FillCareerPanel(); }   // always opens on OVERVIEW
         openPanel = p;
         panelDim.gameObject.SetActive(true);
         p.gameObject.SetActive(true);
@@ -941,7 +942,7 @@ public class MainMenuUI : MonoBehaviour
         if (careerCard == null)
         {
             careerCard = UIKit.Rect("CareerProfile", root);
-            UIKit.Place(careerCard, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-120, -104), new Vector2(560, 156));
+            UIKit.Place(careerCard, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-120, -104), new Vector2(580, 176));
             var bg = UIKit.PanelImage(careerCard, new Color(UIKit.Panel.r, UIKit.Panel.g, UIKit.Panel.b, 0.9f));
             UIKit.AccentStrip(careerCard);
             var b = careerCard.gameObject.AddComponent<Button>();
@@ -951,35 +952,38 @@ public class MainMenuUI : MonoBehaviour
             AddFx(b);
 
             var badge = UIKit.Rect("Badge", careerCard);
-            UIKit.Place(badge, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(108, 108));
+            UIKit.Place(badge, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(112, 112));
             careerCardBadge = UIKit.AddImage(badge, Color.white, RankBadge.For(0));
             careerCardBadge.preserveAspect = true;
             careerCardBadge.raycastTarget = false;
 
-            var head = UIKit.Text(careerCard, "Header", "CAREER PROFILE", 16, UIKit.Accent, TextAlignmentOptions.TopLeft, bold: true);
+            var head = UIKit.Text(careerCard, "Header", "CAREER PROFILE", 17, UIKit.Accent, TextAlignmentOptions.TopLeft, bold: true);
             head.characterSpacing = 3f;
             UIKit.Place(head.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -14), new Vector2(260, 22));
-            var open = UIKit.Text(careerCard, "Open", "VIEW CAREER  ›", 15, new Color(1f, 1f, 1f, 0.75f), TextAlignmentOptions.TopRight, bold: true);
+            var open = UIKit.Text(careerCard, "Open", "VIEW CAREER  ›", 17, new Color(1f, 1f, 1f, 0.85f), TextAlignmentOptions.TopRight, bold: true);
             open.characterSpacing = 2f;
             UIKit.Place(open.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -15), new Vector2(200, 22));
             careerCardRank = UIKit.Text(careerCard, "Rank", "", 26, UIKit.TextPrimary, TextAlignmentOptions.TopLeft, bold: true);
-            UIKit.Place(careerCardRank.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -38), new Vector2(400, 34));
+            UIKit.Place(careerCardRank.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -40), new Vector2(414, 36));
             careerCardRank.textWrappingMode = TextWrappingModes.NoWrap;
             careerCardRank.overflowMode = TextOverflowModes.Ellipsis;
+            careerCardRank.enableAutoSizing = true;   // long ranks ("Senior Cybersecurity Investigator") fit instead of being cut
+            careerCardRank.fontSizeMin = 20f;
+            careerCardRank.fontSizeMax = 26f;
 
             var bar = UIKit.Rect("XpBar", careerCard);
-            UIKit.Place(bar, new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -80), new Vector2(390, 10));
+            UIKit.Place(bar, new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -84), new Vector2(410, 12));
             UIKit.AddImage(bar, new Color(1f, 1f, 1f, 0.1f)).raycastTarget = false;
             careerBarFill = UIKit.Rect("Fill", bar);
             careerBarFill.anchorMin = Vector2.zero;
             careerBarFill.anchorMax = new Vector2(0f, 1f);
             careerBarFill.offsetMin = careerBarFill.offsetMax = Vector2.zero;
             UIKit.AddImage(careerBarFill, UIKit.Accent).raycastTarget = false;
-            careerCardProgress = UIKit.Text(careerCard, "Progress", "", 15, UIKit.TextSecondary, TextAlignmentOptions.TopLeft);
-            UIKit.Place(careerCardProgress.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -96), new Vector2(400, 22));
+            careerCardProgress = UIKit.Text(careerCard, "Progress", "", 18, CpMuted, TextAlignmentOptions.TopLeft);
+            UIKit.Place(careerCardProgress.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -104), new Vector2(420, 26));
             careerCardProgress.textWrappingMode = TextWrappingModes.NoWrap;
-            careerCardStats = UIKit.Text(careerCard, "Stats", "", 15, UIKit.TextPrimary, TextAlignmentOptions.TopLeft);
-            UIKit.Place(careerCardStats.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -120), new Vector2(400, 22));
+            careerCardStats = UIKit.Text(careerCard, "Stats", "", 18, UIKit.TextPrimary, TextAlignmentOptions.TopLeft);
+            UIKit.Place(careerCardStats.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(146, -136), new Vector2(420, 26));
             careerCardStats.textWrappingMode = TextWrappingModes.NoWrap;
             careerCard.SetSiblingIndex(menuColumn != null ? menuColumn.GetSiblingIndex() : careerCard.GetSiblingIndex());   // under the panels
         }
@@ -1000,112 +1004,288 @@ public class MainMenuUI : MonoBehaviour
                                $"   ·   <b>{LocalDataManager.Achievements.Count}</b> <color={UIKit.HexWarning}>★</color>";
     }
 
-    /// <summary>Full career dashboard: rank, stats, best XP per case, the rank ladder and all achievements.</summary>
+    // Career dashboard type scale (same scale as the rest of the menu: body 27, small 23 on a 1920x1080 canvas).
+    const float CpRank = 42f, CpValue = 36f, CpHeading = 24f, CpBody = 22f, CpLabel = 19f;
+    static readonly Color CpMuted = new Color32(0xC9, 0xD4, 0xE3, 255);   // supporting text: softer than white, still high contrast
+    RectTransform careerTabs;
+    int careerTab;   // 0 = overview, 1 = achievements
+
+    /// <summary>Career dashboard: OVERVIEW (rank, XP, stats, career path, best XP per case) and ACHIEVEMENTS tabs.</summary>
     void BuildCareerPanel()
     {
         if (panels.ContainsKey("career")) return;
-        var p = MakePanel("career", "CAREER PROFILE", 1500);
+        var p = MakePanel("career", "CAREER PROFILE", 1600);
+        careerTabs = UIKit.Rect("Tabs", p);
+        var th = UIKit.Horizontal(careerTabs, 14, TextAnchor.MiddleLeft);
+        th.childForceExpandWidth = false;
+        UIKit.Size(careerTabs, -1, 60);
         careerPanelBody = UIKit.Rect("Body", p);
-        var h = UIKit.Horizontal(careerPanelBody, 30, TextAnchor.UpperLeft);
-        h.childForceExpandWidth = false;
-        h.childForceExpandHeight = false;
-        UIKit.Size(careerPanelBody, -1, 640);
+        UIKit.Size(careerPanelBody, -1, 660);
         FooterButtons(p, ("BACK", (UnityEngine.Events.UnityAction)ClosePanel, UIKit.HudVariant.Secondary));
+    }
+
+    /// <summary>The body's single vertical layout (created once; the tabs only change its spacing).</summary>
+    void BodyLayout(float spacing)
+    {
+        var v = careerPanelBody.GetComponent<VerticalLayoutGroup>();
+        if (v == null) v = UIKit.Vertical(careerPanelBody, 0, spacing);
+        v.spacing = spacing;
+        v.childForceExpandHeight = false;
+    }
+
+    void ShowCareerTab(int tab)
+    {
+        if (careerTab == tab) return;
+        careerTab = tab;
+        FillCareerPanel();
     }
 
     void FillCareerPanel()
     {
+        // Never wider than the screen (the canvas matches height, so 4:3 screens are only 1440 wide).
+        var panel = (RectTransform)careerPanelBody.parent;
+        float canvasW = root != null ? root.rect.width : 1920f;
+        panel.sizeDelta = new Vector2(Mathf.Min(1600f, canvasW - 80f), panel.sizeDelta.y);
+        float innerW = panel.sizeDelta.x - 104f;   // MakePanel's side padding
+
+        foreach (Transform c in careerTabs) { c.gameObject.SetActive(false); Destroy(c.gameObject); }
         foreach (Transform c in careerPanelBody) { c.gameObject.SetActive(false); Destroy(c.gameObject); }
+
+        int got = LocalDataManager.Achievements.Count, all = CareerSystem.Config.achievements.Count;
+        Tab("OVERVIEW", 0);
+        Tab($"ACHIEVEMENTS  {got}/{all}", 1);
+
+        if (careerTab == 0) FillCareerOverview(innerW);
+        else FillCareerAchievements(innerW);
+    }
+
+    void Tab(string label, int index)
+    {
+        bool on = careerTab == index;
+        var b = UIKit.HudButton(careerTabs, (on ? "›  " : "") + label, () => ShowCareerTab(index), on ? UIKit.HudVariant.Primary : UIKit.HudVariant.Secondary, 22);
+        b.name = "Tab_" + index;
+        UIKit.Size(b, index == 0 ? 260 : 340, 56);
+        AddFx(b);
+    }
+
+    void FillCareerOverview(float width)
+    {
+        BodyLayout(18f);
         int xp = CareerSystem.TotalXp;
         CareerSystem.ProgressInRank(xp, out int rank, out int into, out int span);
         var rk = CareerSystem.RankAt(rank);
 
-        // Left: current rank and statistics
-        var left = Column(careerPanelBody, "Overview", 520, 10);
-        var top = UIKit.Rect("Rank", left);
-        UIKit.Size(top, -1, 150);
-        var badge = UIKit.Rect("Badge", top);
-        UIKit.Place(badge, new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(140, 140));
-        var bi = UIKit.AddImage(badge, rk.color, RankBadge.For(rank));
-        bi.preserveAspect = true;
-        var title = UIKit.Text(top, "Title", $"<size=55%><color={UIKit.HexSecondary}>CURRENT RANK  ·  {rank + 1} OF {CareerSystem.Ranks.Count}</color></size>\n{rk.title}",
-                               32, UIKit.TextPrimary, TextAlignmentOptions.MidlineLeft, bold: true);
-        UIKit.Place(title.rectTransform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(160, 0), new Vector2(360, 140));
-        UIKit.Text(left, "Summary", rk.summary, 19, UIKit.TextSecondary);
-        var bar = UIKit.Rect("XpBar", left);
-        UIKit.Size(bar, -1, 14);
-        UIKit.AddImage(bar, new Color(1f, 1f, 1f, 0.1f)).raycastTarget = false;
+        // 1) Rank header: insignia + rank | XP to next rank with a large bar
+        var head = UIKit.Rect("RankHeader", careerPanelBody);
+        UIKit.Size(head, -1, 196);
+        UIKit.AddImage(head, UIKit.PanelRaised, rounded: true).raycastTarget = false;
+        var badge = UIKit.Rect("Badge", head);
+        UIKit.Place(badge, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(24, 0), new Vector2(160, 160));
+        UIKit.AddImage(badge, rk.color, RankBadge.For(rank)).preserveAspect = true;
+        float leftW = Mathf.Max(420f, width * 0.5f - 210f);
+        var rankLabel = UIKit.Text(head, "RankLabel", $"CURRENT RANK  ·  {rank + 1} OF {CareerSystem.Ranks.Count}", CpLabel, UIKit.Accent, TextAlignmentOptions.TopLeft, bold: true);
+        rankLabel.characterSpacing = 3f;
+        UIKit.Place(rankLabel.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(208, -26), new Vector2(leftW, 28));
+        var rankTitle = UIKit.Text(head, "RankTitle", rk.title, CpRank, UIKit.TextPrimary, TextAlignmentOptions.TopLeft, bold: true);
+        UIKit.Place(rankTitle.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(208, -58), new Vector2(leftW, 56));
+        rankTitle.enableAutoSizing = true; rankTitle.fontSizeMin = 30f; rankTitle.fontSizeMax = CpRank;
+        rankTitle.textWrappingMode = TextWrappingModes.NoWrap;
+        var summary = UIKit.Text(head, "Summary", rk.summary, CpBody, CpMuted, TextAlignmentOptions.TopLeft);
+        UIKit.Place(summary.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(208, -118), new Vector2(leftW, 64));
+
+        float xpW = Mathf.Min(620f, width - leftW - 260f);
+        var xpValue = UIKit.Text(head, "XpValue", span > 0 ? $"{into:N0} <size=60%><color={UIKit.HexSecondary}>/ {span:N0} XP</color></size>" : "MAX RANK",
+                                 CpValue, UIKit.TextPrimary, TextAlignmentOptions.TopLeft, bold: true);
+        UIKit.Place(xpValue.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-30, -26), new Vector2(xpW, 46));
+        var xpNext = UIKit.Text(head, "XpNext", span > 0 ? $"to <b>{CareerSystem.RankAt(rank + 1).title}</b>" : "You hold the highest rank in Scam Sense.",
+                                CpBody, CpMuted, TextAlignmentOptions.TopLeft);
+        UIKit.Place(xpNext.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-30, -76), new Vector2(xpW, 32));
+        xpNext.textWrappingMode = TextWrappingModes.NoWrap; xpNext.overflowMode = TextOverflowModes.Ellipsis;
+        var bar = UIKit.Rect("XpBar", head);
+        UIKit.Place(bar, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-30, -120), new Vector2(xpW, 20));
+        UIKit.AddImage(bar, new Color(1f, 1f, 1f, 0.12f), rounded: true).raycastTarget = false;
         var fill = UIKit.Rect("Fill", bar);
         fill.anchorMin = Vector2.zero;
         fill.anchorMax = new Vector2(span > 0 ? Mathf.Clamp01((float)into / span) : 1f, 1f);
         fill.offsetMin = fill.offsetMax = Vector2.zero;
-        UIKit.AddImage(fill, rk.color).raycastTarget = false;
-        UIKit.Text(left, "Progress", span > 0 ? $"<b>{into:N0} / {span:N0} XP</b> to <b>{CareerSystem.RankAt(rank + 1).title}</b>" : "<b>Highest rank reached.</b>", 19, UIKit.TextPrimary);
+        UIKit.AddImage(fill, rk.color, rounded: true).raycastTarget = false;
+        var total = UIKit.Text(head, "Total", $"<b>{xp:N0}</b> total career XP", CpLabel, CpMuted, TextAlignmentOptions.TopLeft);
+        UIKit.Place(total.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-30, -150), new Vector2(xpW, 28));
 
+        // 2) Stat tiles
         float acc = CareerSystem.BestRunAccuracy;
         int cases = catalog != null ? catalog.Count : CareerSystem.Config.casesInGame;
-        UIKit.Header(left, "Statistics");
-        UIKit.Text(left, "Stats",
-            $"Total career XP   <b>{xp:N0}</b>\n" +
-            $"Cases solved   <b>{CareerSystem.CasesSolved} / {cases}</b>\n" +
-            $"Perfect cases   <b>{CareerSystem.PerfectCases}</b>\n" +
-            $"Best-run accuracy   <b>{(acc >= 0f ? Mathf.RoundToInt(acc * 100f) + "%" : "-")}</b>\n" +
-            $"Achievements   <b>{LocalDataManager.Achievements.Count} / {CareerSystem.Config.achievements.Count}</b>", 19, UIKit.TextPrimary).lineSpacing = 8f;
-        if (catalog != null)
-        {
-            UIKit.Header(left, "Best XP per case");
-            var sb = new StringBuilder();
-            foreach (var l in catalog.levels)
-            {
-                if (l == null) continue;
-                var lp = LocalDataManager.Peek(l.levelId);
-                int best = CareerSystem.CaseXp(lp);
-                sb.Append($"<color={UIKit.HexAccent}>{l.levelNumber:00}</color>  {l.displayName}   ")
-                  .Append(best > 0 ? $"<b>{best} XP</b>" : $"<color={UIKit.HexSecondary}>not played yet</color>").Append('\n');
-            }
-            UIKit.Text(left, "Cases", sb.ToString().TrimEnd(), 18, UIKit.TextPrimary).lineSpacing = 6f;
-        }
+        var tiles = UIKit.Rect("Stats", careerPanelBody);
+        var tl = UIKit.Horizontal(tiles, 14);
+        tl.childForceExpandWidth = true;
+        UIKit.Size(tiles, -1, 104);
+        StatTile(tiles, $"{xp:N0}", "TOTAL XP");
+        StatTile(tiles, $"{CareerSystem.CasesSolved} / {cases}", "CASES SOLVED");
+        StatTile(tiles, $"{CareerSystem.PerfectCases}", "PERFECT CASES");
+        StatTile(tiles, acc >= 0f ? $"{Mathf.RoundToInt(acc * 100f)}%" : "-", "BEST-RUN ACCURACY");
+        StatTile(tiles, $"{LocalDataManager.Achievements.Count} / {CareerSystem.Config.achievements.Count}", "ACHIEVEMENTS");
 
-        // Middle: the rank ladder (lowest at the bottom)
-        var mid = Column(careerPanelBody, "Ladder", 420, 6);
-        UIKit.Header(mid, "Career ladder");
-        for (int i = CareerSystem.Ranks.Count - 1; i >= 0; i--)
+        // 3) Career path: every rank left to right
+        UIKit.Header(careerPanelBody, "Career path", CpLabel).characterSpacing = 3f;
+        var path = UIKit.Rect("CareerPath", careerPanelBody);
+        var ph = UIKit.Horizontal(path, 8, TextAnchor.UpperCenter);
+        ph.childForceExpandWidth = true;
+        ph.childForceExpandHeight = false;
+        UIKit.Size(path, -1, 182);
+        for (int i = 0; i < CareerSystem.Ranks.Count; i++)
         {
             var r = CareerSystem.RankAt(i);
             bool reached = i <= rank, current = i == rank;
-            var row = UIKit.Rect("Rank_" + i, mid);
-            UIKit.Size(row, -1, 58);
-            if (current) UIKit.AddImage(row, new Color(UIKit.AccentDark.r, UIKit.AccentDark.g, UIKit.AccentDark.b, 0.55f), rounded: true).raycastTarget = false;
-            var ib = UIKit.Rect("Badge", row);
-            UIKit.Place(ib, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(46, 46));
-            var img = UIKit.AddImage(ib, reached ? r.color : new Color(0.45f, 0.5f, 0.58f, 0.6f), RankBadge.For(i));
-            img.preserveAspect = true;
-            var t = UIKit.Text(row, "Title", $"{r.title}\n<size=75%><color={UIKit.HexSecondary}>{r.minXp:N0} XP{(current ? "  ·  YOU ARE HERE" : "")}</color></size>",
-                               18, reached ? UIKit.TextPrimary : UIKit.TextSecondary, TextAlignmentOptions.MidlineLeft, bold: current);
-            UIKit.Place(t.rectTransform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(66, 0), new Vector2(340, 56));
-            t.lineSpacing = -4f;
+            var step = UIKit.Rect("Rank_" + i, path);
+            UIKit.Size(step, 60, 182).flexibleWidth = 1f;
+            if (current) UIKit.AddImage(step, new Color(UIKit.AccentDark.r, UIKit.AccentDark.g, UIKit.AccentDark.b, 0.45f), rounded: true).raycastTarget = false;
+            var ib = UIKit.Rect("Badge", step);
+            UIKit.Place(ib, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -8), new Vector2(60, 60));
+            UIKit.AddImage(ib, reached ? r.color : new Color(0.5f, 0.56f, 0.64f, 0.75f), RankBadge.For(i)).preserveAspect = true;
+            var t = UIKit.Text(step, "Title", r.title, 18, reached ? UIKit.TextPrimary : CpMuted, TextAlignmentOptions.Top, bold: current);
+            UIKit.Place(t.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -74), new Vector2(160, 48));
+            t.rectTransform.anchorMin = new Vector2(0, 1); t.rectTransform.anchorMax = new Vector2(1, 1);
+            t.rectTransform.offsetMin = new Vector2(4, -142); t.rectTransform.offsetMax = new Vector2(-4, -74);   // up to three lines
+            t.enableAutoSizing = true; t.fontSizeMin = 15f; t.fontSizeMax = 18f;
+            t.lineSpacing = -6f;
+            string state = current ? "YOU ARE HERE" : reached ? "✓ EARNED" : $"{r.minXp:N0} XP";
+            var s = UIKit.Text(step, "State", state, 16, current ? UIKit.Accent : reached ? UIKit.Safe : CpMuted, TextAlignmentOptions.Top, bold: true);
+            s.rectTransform.anchorMin = new Vector2(0, 1); s.rectTransform.anchorMax = new Vector2(1, 1);
+            s.rectTransform.offsetMin = new Vector2(2, -174); s.rectTransform.offsetMax = new Vector2(-2, -146);
+            s.textWrappingMode = TextWrappingModes.NoWrap;
+            s.enableAutoSizing = true; s.fontSizeMin = 12f; s.fontSizeMax = 16f;
         }
 
-        // Right: achievements
-        var right = Column(careerPanelBody, "Achievements", 440, 8);
-        UIKit.Header(right, $"Achievements  ·  {LocalDataManager.Achievements.Count}/{CareerSystem.Config.achievements.Count}");
-        foreach (var a in CareerSystem.Config.achievements)
+        // 4) Best XP per case
+        if (catalog != null)
         {
-            bool got = LocalDataManager.HasAchievement(a.id);
-            UIKit.Text(right, "Ach_" + a.id,
-                       (got ? $"<color={UIKit.HexWarning}>★</color>  <b>{a.title}</b>" : $"<color=#FFFFFF44>★</color>  <color={UIKit.HexSecondary}>{a.title}</color>") +
-                       $"\n<size=80%><color={UIKit.HexSecondary}>{a.description}</color></size>",
-                       18, got ? UIKit.TextPrimary : UIKit.TextSecondary).lineSpacing = -2f;
+            var row = UIKit.Rect("Cases", careerPanelBody);
+            var rh = UIKit.Horizontal(row, 14);
+            rh.childForceExpandWidth = true;
+            UIKit.Size(row, -1, 56);
+            foreach (var l in catalog.levels)
+            {
+                if (l == null) continue;
+                int best = CareerSystem.CaseXp(LocalDataManager.Peek(l.levelId));
+                var chip = UIKit.Rect("Case_" + l.levelNumber, row);
+                UIKit.AddImage(chip, UIKit.PanelRaised, rounded: true).raycastTarget = false;
+                var ct = UIKit.Text(chip, "Text", $"<color={UIKit.HexAccent}><b>{l.levelNumber:00}</b></color>  {l.displayName}   " +
+                                    (best > 0 ? $"<b>{best} XP</b>" : $"<color={UIKit.HexSecondary}>not played</color>"),
+                                    CpLabel, UIKit.TextPrimary, TextAlignmentOptions.MidlineLeft);
+                UIKit.Stretch(ct.rectTransform);
+                ct.margin = new Vector4(16, 0, 12, 0);
+                ct.textWrappingMode = TextWrappingModes.NoWrap;
+                ct.enableAutoSizing = true; ct.fontSizeMin = 15f; ct.fontSizeMax = CpLabel;
+            }
         }
     }
 
-    static RectTransform Column(RectTransform parent, string name, float width, float spacing)
+    void StatTile(RectTransform parent, string value, string label)
     {
-        var c = UIKit.Rect(name, parent);
-        var v = UIKit.Vertical(c, 0, spacing);
-        v.childForceExpandHeight = false;
-        UIKit.Size(c, width, -1);
-        return c;
+        var tile = UIKit.Rect("Stat_" + label, parent);
+        UIKit.AddImage(tile, UIKit.PanelRaised, rounded: true).raycastTarget = false;
+        var v = UIKit.Text(tile, "Value", value, CpValue, UIKit.TextPrimary, TextAlignmentOptions.Top, bold: true);
+        v.rectTransform.anchorMin = new Vector2(0, 1); v.rectTransform.anchorMax = new Vector2(1, 1);
+        v.rectTransform.offsetMin = new Vector2(8, -60); v.rectTransform.offsetMax = new Vector2(-8, -12);
+        v.textWrappingMode = TextWrappingModes.NoWrap;
+        var l = UIKit.Text(tile, "Label", label, 17, CpMuted, TextAlignmentOptions.Top, bold: true);
+        l.characterSpacing = 2f;
+        l.rectTransform.anchorMin = new Vector2(0, 1); l.rectTransform.anchorMax = new Vector2(1, 1);
+        l.rectTransform.offsetMin = new Vector2(8, -94); l.rectTransform.offsetMax = new Vector2(-8, -66);
+        l.textWrappingMode = TextWrappingModes.NoWrap;
+        l.enableAutoSizing = true; l.fontSizeMin = 13f; l.fontSizeMax = 17f;
+    }
+
+    /// <summary>Achievement cards in two columns; scrolls (wheel/drag) only if the list outgrows the panel.</summary>
+    void FillCareerAchievements(float width)
+    {
+        BodyLayout(12f);
+        int got = LocalDataManager.Achievements.Count, all = CareerSystem.Config.achievements.Count;
+        UIKit.Text(careerPanelBody, "Summary", $"<b>{got}</b> of <b>{all}</b> unlocked  ·  achievements come from what you do in cases and are kept until RESET PROGRESS.",
+                   CpLabel, CpMuted);
+
+        var viewport = UIKit.Rect("Viewport", careerPanelBody);
+        UIKit.Size(viewport, -1, 600);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        viewport.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0);   // catches wheel/drag between cards
+        var content = UIKit.Rect("Cards", viewport);
+        content.anchorMin = new Vector2(0, 1); content.anchorMax = new Vector2(1, 1);
+        content.pivot = new Vector2(0.5f, 1f);
+        content.anchoredPosition = Vector2.zero;
+        content.sizeDelta = Vector2.zero;
+        var grid = content.gameObject.AddComponent<GridLayoutGroup>();
+        float cellW = Mathf.Floor((width - 16f) / 2f);
+        grid.cellSize = new Vector2(cellW, 108f);
+        grid.spacing = new Vector2(16f, 12f);
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 2;
+        var fit = content.gameObject.AddComponent<ContentSizeFitter>();
+        fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var scroll = viewport.gameObject.AddComponent<ScrollRect>();
+        scroll.viewport = viewport;
+        scroll.content = content;
+        scroll.horizontal = false;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+        scroll.scrollSensitivity = 40f;
+
+        // Unlocked first, then the ones in progress, then locked - in the configured order within each group.
+        var defs = CareerSystem.Config.achievements;
+        var ordered = defs.Where(a => LocalDataManager.HasAchievement(a.id))
+                          .Concat(defs.Where(a => !LocalDataManager.HasAchievement(a.id) && CareerSystem.AchievementProgress(a.id, out int c, out _) && c > 0))
+                          .Concat(defs.Where(a => !LocalDataManager.HasAchievement(a.id) && !(CareerSystem.AchievementProgress(a.id, out int c, out _) && c > 0)));
+        foreach (var a in ordered) AchievementCard(content, a);
+    }
+
+    void AchievementCard(RectTransform parent, CareerConfig.Achievement a)
+    {
+        bool unlocked = LocalDataManager.HasAchievement(a.id);
+        bool counted = CareerSystem.AchievementProgress(a.id, out int cur, out int target);
+        bool inProgress = !unlocked && counted && cur > 0;
+
+        var card = UIKit.Rect("Ach_" + a.id, parent);
+        UIKit.AddImage(card, unlocked ? UIKit.PanelRaised : new Color(0.08f, 0.11f, 0.18f, 1f), rounded: true).raycastTarget = false;
+        var edge = card.gameObject.AddComponent<Outline>();
+        edge.effectColor = unlocked ? new Color(UIKit.Warning.r, UIKit.Warning.g, UIKit.Warning.b, 0.55f) : UIKit.Border;
+        edge.effectDistance = new Vector2(2f, -2f);
+
+        // Icon: gold star when unlocked, padlock when not (shape differs, not only colour).
+        var icon = UIKit.Rect("Icon", card);
+        UIKit.Place(icon, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 0), new Vector2(56, 56));
+        UIKit.AddImage(icon, unlocked ? UIKit.Warning : new Color(0.62f, 0.68f, 0.76f, 1f), unlocked ? UIKit.StarSprite : PadlockSprite()).preserveAspect = true;
+
+        var title = UIKit.Text(card, "Title", a.title, CpHeading, unlocked ? UIKit.TextPrimary : new Color32(0xE2, 0xE8, 0xF0, 255), TextAlignmentOptions.TopLeft, bold: true);
+        title.rectTransform.anchorMin = new Vector2(0, 1); title.rectTransform.anchorMax = new Vector2(1, 1);
+        title.rectTransform.offsetMin = new Vector2(94, -46); title.rectTransform.offsetMax = new Vector2(-190, -14);
+        title.textWrappingMode = TextWrappingModes.NoWrap;
+        title.overflowMode = TextOverflowModes.Ellipsis;
+        var desc = UIKit.Text(card, "Description", a.description, 20f, CpMuted, TextAlignmentOptions.TopLeft);
+        desc.rectTransform.anchorMin = new Vector2(0, 0); desc.rectTransform.anchorMax = new Vector2(1, 1);
+        desc.rectTransform.offsetMin = new Vector2(94, 10); desc.rectTransform.offsetMax = new Vector2(-24, -50);
+        desc.enableAutoSizing = true; desc.fontSizeMin = 16f; desc.fontSizeMax = 20f;
+        desc.lineSpacing = 0f;
+
+        // Status, top right: words + symbol, plus a count where the achievement has one.
+        string status = unlocked ? "✓  UNLOCKED" : inProgress ? "IN PROGRESS" : "LOCKED";
+        Color statusColor = unlocked ? UIKit.Safe : inProgress ? UIKit.Accent : new Color(0.72f, 0.77f, 0.84f, 1f);
+        var st = UIKit.Text(card, "Status", status, 18f, statusColor, TextAlignmentOptions.TopRight, bold: true);
+        st.characterSpacing = 1.5f;
+        UIKit.Place(st.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-22, -16), new Vector2(170, 26));
+        st.textWrappingMode = TextWrappingModes.NoWrap;
+        if (inProgress)
+        {
+            var bar = UIKit.Rect("Progress", card);
+            UIKit.Place(bar, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-22, -44), new Vector2(150, 8));
+            UIKit.AddImage(bar, new Color(1f, 1f, 1f, 0.12f)).raycastTarget = false;
+            var f = UIKit.Rect("Fill", bar);
+            f.anchorMin = Vector2.zero;
+            f.anchorMax = new Vector2(target > 0 ? Mathf.Clamp01((float)cur / target) : 0f, 1f);
+            f.offsetMin = f.offsetMax = Vector2.zero;
+            UIKit.AddImage(f, UIKit.Accent).raycastTarget = false;
+            var count = UIKit.Text(card, "Count", $"{cur:N0} / {target:N0}", 18f, UIKit.TextPrimary, TextAlignmentOptions.TopRight, bold: true);
+            UIKit.Place(count.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-22, -58), new Vector2(170, 26));
+            count.textWrappingMode = TextWrappingModes.NoWrap;
+            desc.rectTransform.offsetMax = new Vector2(-190, -50);   // keep clear of the bar and count
+        }
     }
 
     // ---------- 3D background (Level 1 room) ----------
