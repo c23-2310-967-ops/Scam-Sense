@@ -18,6 +18,7 @@ MonoBehaviour:
   sceneName: Room4_DigitalForensicsLab
   description: Trace the evidence. Expose the scam. Compare emails, web pages and
     records before you decide.
+  previewImage: {fileID: 21300000, guid: 868639aac13a5e34aab9a889c77ee51d, type: 3}
   briefingTitle: 'LEVEL 4: DIGITAL FORENSICS LAB'
   briefingText: Several suspicious communications have been reported to the cybersecurity
     team. Examine the available evidence, identify fraudulent messages, and submit

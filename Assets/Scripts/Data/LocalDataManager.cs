@@ -42,6 +42,23 @@ public static class LocalDataManager
         public long lastPlayedUtc;
         /// <summary>UTC ticks of the last unlock or finished run (0 in saves made before resets existed).</summary>
         public long changedUtc;
+
+        // Career (CareerSystem): the best result ever reached in this case. Only improvements earn new XP.
+        /// <summary>Best career XP earned in this case (0 = not played since the career system was added).</summary>
+        public int bestXp;
+        /// <summary>Most messages answered correctly in one run, out of <see cref="messageCount"/>.</summary>
+        public int bestCorrect;
+        public int messageCount;
+        /// <summary>True once a run identified every message correctly.</summary>
+        public bool perfect;
+    }
+
+    /// <summary>A career achievement, stamped like level entries so RESET PROGRESS also clears it.</summary>
+    [Serializable]
+    public class AchievementRecord
+    {
+        public string id;
+        public long unlockedUtc;
     }
 
     [Serializable]
@@ -53,6 +70,7 @@ public static class LocalDataManager
         public long updatedUtc;
         /// <summary>UTC ticks of the last RESET PROGRESS (0 = never reset). Older progress is ignored when merging.</summary>
         public long resetUtc;
+        public List<AchievementRecord> achievements = new List<AchievementRecord>();
     }
 
     static ProgressData data;
@@ -135,6 +153,43 @@ public static class LocalDataManager
         foreach (var lp in Data.levels)
             if (lp.levelId == levelId) return lp;
         return null;
+    }
+
+    /// <summary>Every saved level entry of the active profile (read-only use).</summary>
+    public static IReadOnlyList<LevelProgress> Levels => Data.levels;
+
+    /// <summary>Unlocked career achievements of the active profile (read-only use).</summary>
+    public static IReadOnlyList<AchievementRecord> Achievements => Data.achievements;
+
+    public static bool HasAchievement(string id)
+    {
+        foreach (var a in Data.achievements) if (a != null && a.id == id) return true;
+        return false;
+    }
+
+    /// <summary>Saves an achievement. Returns false if it was already unlocked (never unlocked twice).</summary>
+    public static bool UnlockAchievement(string id)
+    {
+        if (string.IsNullOrEmpty(id) || HasAchievement(id)) return false;
+        Data.achievements.Add(new AchievementRecord { id = id, unlockedUtc = DateTime.UtcNow.Ticks });
+        MarkChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// Career result of a finished run (called by CareerSystem only). Keeps the best values: XP, correct
+    /// answers and "perfect" only ever improve, so replaying a case can't earn its XP twice.
+    /// </summary>
+    public static LevelProgress RecordCaseCareer(string levelId, int xp, int correct, int messageCount, bool perfect)
+    {
+        var lp = Get(levelId);
+        lp.bestXp = Mathf.Max(lp.bestXp, xp);
+        lp.messageCount = Mathf.Max(lp.messageCount, messageCount);
+        lp.bestCorrect = Mathf.Clamp(Mathf.Max(lp.bestCorrect, correct), 0, lp.messageCount);
+        lp.perfect |= perfect;
+        lp.changedUtc = DateTime.UtcNow.Ticks;
+        MarkChanged();
+        return lp;
     }
 
     public static bool IsUnlocked(string levelId)
@@ -257,6 +312,7 @@ public static class LocalDataManager
         try { remote = JsonUtility.FromJson<ProgressData>(json); }
         catch (Exception e) { Debug.LogWarning("LocalDataManager: cloud progress unreadable, keeping local. " + e.Message); return false; }
         if (remote?.levels == null) return false;
+        if (remote.achievements == null) remote.achievements = new List<AchievementRecord>();
 
         bool changed = MergeInto(Data, remote, adoptReset: true);   // same player: their newer reset applies here too
         if (changed) Save(notify: false);
@@ -284,7 +340,17 @@ public static class LocalDataManager
         if (adoptReset && source.resetUtc > target.resetUtc)
         {
             target.levels.RemoveAll(lp => lp == null || Stamp(lp) <= source.resetUtc);
+            target.achievements.RemoveAll(a => a == null || a.unlockedUtc <= source.resetUtc);
             target.resetUtc = source.resetUtc;
+            changed = true;
+        }
+
+        foreach (var a in source.achievements)
+        {
+            if (a == null || string.IsNullOrEmpty(a.id)) continue;
+            if (target.resetUtc > 0 && a.unlockedUtc <= target.resetUtc) continue;   // from before this save was reset
+            if (target.achievements.Exists(x => x != null && x.id == a.id)) continue;
+            target.achievements.Add(new AchievementRecord { id = a.id, unlockedUtc = a.unlockedUtc });
             changed = true;
         }
 
@@ -309,6 +375,10 @@ public static class LocalDataManager
             dst.bestStars = Mathf.Max(dst.bestStars, src.bestStars);
             dst.timesCompleted = Mathf.Max(dst.timesCompleted, src.timesCompleted);
             dst.changedUtc = Math.Max(dst.changedUtc, src.changedUtc);
+            dst.bestXp = Mathf.Max(dst.bestXp, src.bestXp);
+            dst.messageCount = Mathf.Max(dst.messageCount, src.messageCount);
+            dst.bestCorrect = Mathf.Clamp(Mathf.Max(dst.bestCorrect, src.bestCorrect), 0, Mathf.Max(dst.messageCount, src.bestCorrect));
+            dst.perfect |= src.perfect;
             if (src.lastPlayedUtc > dst.lastPlayedUtc)
             {
                 dst.lastScore = src.lastScore;
@@ -335,6 +405,7 @@ public static class LocalDataManager
         {
             var d = JsonUtility.FromJson<ProgressData>(json);
             if (d != null && d.levels == null) d.levels = new List<LevelProgress>();
+            if (d != null && d.achievements == null) d.achievements = new List<AchievementRecord>();
             return d;
         }
         catch (Exception e)
@@ -348,6 +419,7 @@ public static class LocalDataManager
     {
         data = Read(KeyFor(profileId)) ?? new ProgressData();
         if (data.levels == null) data.levels = new List<LevelProgress>();
+        if (data.achievements == null) data.achievements = new List<AchievementRecord>();
     }
 
     static void Save(bool notify)

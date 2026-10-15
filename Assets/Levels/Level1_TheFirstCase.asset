@@ -18,6 +18,7 @@ MonoBehaviour:
   sceneName: Game
   description: "Your first day on the case. Texts and emails arrive while you explore
     the house \u2014 decide which are scams."
+  previewImage: {fileID: 21300000, guid: 3c2461ec3d7cb3f4195d1800bbe3a169, type: 3}
   briefingTitle: CASE BRIEFING
   briefingText: Welcome to your first case. You will receive messages and emails
     throughout the day. Some are legitimate, while others may be attempts to deceive
@@ -164,6 +165,7 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+  caseFiles: []
   firstMessageDelay: 8
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 4

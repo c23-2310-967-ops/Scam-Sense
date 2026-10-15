@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cf9e6900d415cb4e844888f2e386a2e, type: 3}
+  m_Name: CareerConfig
+  m_EditorClassIdentifier: 
+  ranks:
+  - title: Cybersecurity Trainee
+    minXp: 0
+    summary: Learning the basics of spotting scam messages.
+    color: {r: 0.5803922, g: 0.6392157, b: 0.72156864, a: 1}
+  - title: Junior Scam Analyst
+    minXp: 150
+    summary: You can tell basic suspicious messages and links from genuine ones.
+    color: {r: 0.49019608, g: 0.827451, b: 0.9882353, a: 1}
+  - title: Scam Detection Specialist
+    minXp: 350
+    summary: You identify scams and legitimate messages consistently.
+    color: {r: 0.21960784, g: 0.7411765, b: 0.972549, a: 1}
+  - title: Cybersecurity Investigator
+    minXp: 650
+    summary: You solve harder cases by checking senders and context.
+    color: {r: 0.13333334, g: 0.827451, b: 0.93333334, a: 1}
+  - title: Senior Cybersecurity Investigator
+    minXp: 1000
+    summary: Strong investigation skills across several cases.
+    color: {r: 0.1764706, g: 0.83137256, b: 0.7490196, a: 1}
+  - title: Digital Forensics Analyst
+    minXp: 1400
+    summary: You analyse complex cases using multiple pieces of evidence.
+    color: {r: 0.20392157, g: 0.827451, b: 0.6, a: 1}
+  - title: Cybercrime Specialist
+    minXp: 1800
+    summary: Advanced, careful decisions under pressure.
+    color: {r: 0.6392157, g: 0.9019608, b: 0.20784314, a: 1}
+  - title: Elite Cybersecurity Agent
+    minXp: 2100
+    summary: A high-level rank for experienced, accurate investigators.
+    color: {r: 0.9843137, g: 0.7490196, b: 0.14117648, a: 1}
+  - title: Master Digital Investigator
+    minXp: 2300
+    summary: Exceptional performance across every case in the game.
+    color: {r: 0.9607843, g: 0.61960787, b: 0.043137256, a: 1}
+  difficultyStep: 0.25
+  completionXp: 60
+  solvedXp: 60
+  perCorrectDecisionXp: 25
+  responseQualityXp: 80
+  flawlessXp: 50
+  perEvidenceXp: 15
+  finalConclusionXp: 40
+  casesInGame: 4
+  consistentAccuracy: 0.8
+  consistentCases: 3
+  achievements:
+  - id: first_case
+    title: First Case Solved
+    description: Solve your first case.
+  - id: flawless
+    title: Flawless Analysis
+    description: Identify every message in a case correctly.
+  - id: rapid
+    title: Rapid Response
+    description: Answer every message in a case correctly and at full speed.
+  - id: evidence_expert
+    title: Evidence Expert
+    description: Inspect all the required evidence before closing a case.
+  - id: consistent
+    title: Consistent Analyst
+    description: Reach 80% accuracy in three different cases.
+  - id: promotion_day
+    title: Promotion Day
+    description: Earn a new career rank.
+  - id: forensics
+    title: Master of Digital Forensics
+    description: Solve a final multi-evidence case correctly.
+  - id: all_cases
+    title: Case Load Cleared
+    description: Solve every case in the game.
+  - id: elite
+    title: Elite Investigator
+    description: Reach the rank of Elite Cybersecurity Agent.
+  - id: master
+    title: Master Digital Investigator
+    description: Reach the highest career rank.

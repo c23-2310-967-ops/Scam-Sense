@@ -48,6 +48,8 @@ public class FinalCaseTerminal : MonoBehaviour, IMessagePresenter
     [Header("Prerequisites")]
     [Tooltip("Evidence record titles (as shown on the evidence stations) that must be inspected before the case can be submitted.")]
     [SerializeField] private string[] requiredEvidence = new string[0];
+    /// <summary>Evidence titles that must be opened before the final case unlocks (read by CareerSystem).</summary>
+    public System.Collections.Generic.IReadOnlyList<string> RequiredEvidence => requiredEvidence;
 
     [Header("Interaction")]
     [SerializeField] private string displayName = "Final case review";

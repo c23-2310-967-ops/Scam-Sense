@@ -18,6 +18,7 @@ MonoBehaviour:
   sceneName: Room2_InvestigationOffice
   description: Flagged messages arrive in the investigation office. Inspect the sender,
     context and requests before you decide.
+  previewImage: {fileID: 21300000, guid: 505a3627d9fec30428c0950dace725d0, type: 3}
   briefingTitle: 'LEVEL 2: THE INVESTIGATION'
   briefingText: Welcome to the investigation office. Several messages have been flagged
     for review. Some contain subtle warning signs, while others are legitimate communications.

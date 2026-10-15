@@ -18,6 +18,7 @@ MonoBehaviour:
   sceneName: Room3_DigitalTrap
   description: Convincing messages in a cybersecurity operations room. Compare each
     one with the evidence before you decide.
+  previewImage: {fileID: 21300000, guid: de67521957d88cb478527ddaa3a59230, type: 3}
   briefingTitle: "LEVEL 3 \u2014 THE DIGITAL TRAP"
   briefingText: Welcome to the next stage of your investigation. These messages are
     more convincing, and some contain only subtle warning signs. Examine the sender,

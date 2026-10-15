@@ -26,6 +26,8 @@ public class GameManager : MonoBehaviour
         public string performanceMessage;
         public string unlockMessage;
         public string[] lessons;
+        /// <summary>Career XP, rank and achievements for this run (CareerSystem).</summary>
+        public CareerSystem.CaseCareer career;
     }
 
     [Header("Level")]
@@ -148,6 +150,7 @@ public class GameManager : MonoBehaviour
         bool wasUnlocked = hasNext && LocalDataManager.IsUnlocked(level.nextLevelId);
 
         // 5) Completed (finished the level) is saved separately from 6) the next-room unlock.
+        var careerBefore = CareerSystem.TakeSnapshot(level.levelId);
         var progress = LocalDataManager.RecordResult(level.levelId, score, stars, met);
         if (met && hasNext) LocalDataManager.Unlock(level.nextLevelId);
 
@@ -172,6 +175,11 @@ public class GameManager : MonoBehaviour
             nextSceneAvailable = CanLoad(level.nextSceneName),
             lessons = level.lessons
         };
+        // 7) Career: the one place case XP is awarded (improvement over this case's best run only).
+        var finalTerminal = FindFirstObjectByType<FinalCaseTerminal>();
+        r.career = CareerSystem.RecordCase(level, careerBefore, scoring, met,
+                                           finalTerminal != null ? finalTerminal.RequiredEvidence : null,
+                                           FindFirstObjectByType<EvidenceTracker>());
         r.performanceMessage = PerformanceMessage(r.correct, level.MessageCount, level);
         r.unlockMessage = UnlockMessage(r, wasUnlocked);
         return r;

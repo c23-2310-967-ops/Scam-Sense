@@ -20,6 +20,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Room4_DigitalForensicsLab.unity
     guid: c737dd003c2e3b6469c990f63c45db33
+  - enabled: 1
+    path: Assets/Scenes/MenuBackdrop_Room1.unity
+    guid: b1ca52b2a6cc296449be902acf4abe52
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 75d8d6fca6ab7dc428200674df989204, type: 3}
   m_UseUCBPForAssetBundles: 0
