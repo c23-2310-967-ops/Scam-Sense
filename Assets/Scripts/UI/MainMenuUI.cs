@@ -213,6 +213,7 @@ public class MainMenuUI : MonoBehaviour
     void Update()
     {
         AnimateBackground();
+        DipBackdropForCuts();
 
         var kb = Keyboard.current;
         if (kb != null && kb.escapeKey.wasPressedThisFrame && !loading && !AccountUI.IsBlocking)
@@ -1139,11 +1140,27 @@ public class MainMenuUI : MonoBehaviour
             float k = Mathf.SmoothStep(0f, 1f, t / 1.4f);
             if (bgA != null) bgA.color = new Color(1, 1, 1, a0 * (1f - k));
             if (bgB != null) bgB.color = new Color(1, 1, 1, b0 * (1f - k));
-            if (tint != null) tint.color = new Color(tint.color.r, tint.color.g, tint.color.b, Mathf.Lerp(tint0, 0.34f, k));
+            if (tint != null) tint.color = new Color(tint.color.r, tint.color.g, tint.color.b, Mathf.Lerp(tint0, BackdropTintAlpha, k));
             yield return null;
         }
         if (bgA != null) bgA.gameObject.SetActive(false);
         if (bgB != null) bgB.gameObject.SetActive(false);
+        backdropTint = tint;   // from now on Update() dips it at each camera cut
+    }
+
+    const float BackdropTintAlpha = 0.34f;
+    Image backdropTint;
+
+    /// <summary>
+    /// Cuts between backdrop shots: the Tint layer (behind all menu UI) darkens briefly, so the camera can jump
+    /// to the next shot - even another room - without a visible jump. The UI itself never fades.
+    /// </summary>
+    void DipBackdropForCuts()
+    {
+        if (!backdropShown || backdropTint == null) return;
+        var c = backdropTint.color;
+        c.a = Mathf.Lerp(BackdropTintAlpha, 0.97f, MenuBackdrop.CutFade);
+        backdropTint.color = c;
     }
 
     // ---------- Animations ----------
