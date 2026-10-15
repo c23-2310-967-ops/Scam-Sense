@@ -1,7 +1,24 @@
 using System;
 using UnityEngine;
 
-public enum MessageChannel { SMS, Email }
+/// <summary>
+/// Where a message is investigated. New values are only ever appended (assets store the number).
+///   SMS     - the phone (pocket phone pop-up)
+///   Email   - a computer's Mail app
+///   Website - a captured web page, reviewed on a computer like an email
+///   Case    - a multi-evidence final case, submitted at a FinalCaseTerminal
+/// </summary>
+public enum MessageChannel { SMS, Email, Website, Case }
+
+public static class MessageChannels
+{
+    /// <summary>Read and answered on a ComputerTerminal (when the scene has one).</summary>
+    public static bool OnComputer(MessageChannel c) => c == MessageChannel.Email || c == MessageChannel.Website;
+
+    /// <summary>"email", "text message", "web page", "case" - for feedback sentences.</summary>
+    public static string Noun(MessageChannel c) =>
+        c == MessageChannel.SMS ? "text message" : c == MessageChannel.Website ? "web page" : c == MessageChannel.Case ? "case" : "email";
+}
 
 public enum MessageVerdict { Scam, Legitimate }
 

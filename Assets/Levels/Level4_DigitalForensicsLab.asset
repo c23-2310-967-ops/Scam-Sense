@@ -1,0 +1,351 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 147873241f4f7964690daffb230f2761, type: 3}
+  m_Name: Level4_DigitalForensicsLab
+  m_EditorClassIdentifier: 
+  levelId: level_4
+  levelNumber: 4
+  displayName: Digital Forensics Lab
+  sceneName: Room4_DigitalForensicsLab
+  description: Trace the evidence. Expose the scam. Compare emails, web pages and
+    records before you decide.
+  briefingTitle: 'LEVEL 4: DIGITAL FORENSICS LAB'
+  briefingText: Several suspicious communications have been reported to the cybersecurity
+    team. Examine the available evidence, identify fraudulent messages, and submit
+    your findings. Some communications are legitimate. Investigate before making
+    your decision.
+  caseNotes:
+  - You store files with NovaCloud. Your plan is paid until next month.
+  - You ordered headphones from Brightway Store (order BW-55120).
+  - You work with Vertexa Systems as a contractor.
+  - You do not have a BrightPay account.
+  objectives:
+  - Investigate the available case files.
+  - Classify the seven reported communications as SCAM or LEGITIMATE.
+  - 'Inspect the evidence wall: initial email, domain record, follow-up message.'
+  - Submit your findings at the final case review terminal.
+  messages:
+  - id: l4_account_verification
+    channel: 1
+    sender: NovaCloud Account Team
+    senderDetail: account-team@novacloud-verify.example
+    subject: 'Action needed: verify your account within 24 hours'
+    body: We could not confirm your account details. To avoid restrictions on your
+      storage, verify your information within 24 hours using the secure link below.
+    link: novacloud-verify.example/confirm
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The display name says NovaCloud, but the address uses novacloud-verify.example,
+      which is not NovaCloud's verified domain. It adds a 24-hour deadline and asks
+      you to verify through its own link instead of the service you already use.
+    trigger: 2
+    requestedAction: Verify your account information through the provided link within
+      24 hours.
+    linkNote: novacloud-verify.example/confirm (training placeholder, never opened).
+    clues:
+    - Claims to be NovaCloud.
+    - 'Deadline: 24 hours, or storage is restricted.'
+    - Compare the sender domain with Verified Domains on the network station.
+  - id: l4_security_notification
+    channel: 1
+    sender: NovaCloud Security
+    senderDetail: security@novacloud.example
+    subject: Sign-in attempt blocked
+    body: We blocked a sign-in attempt to your NovaCloud account at 09:12 from an
+      unrecognised device. No action is needed if this wasn't you - your account
+      is protected. To review your activity, open the NovaCloud app or go to novacloud.example
+      yourself. We will never ask for your password or payment by email.
+    link: 
+    correctVerdict: 1
+    scenarioContext: Fictional training example. The sender domain and the event
+      match the account records on the network station.
+    explanation: The sender uses NovaCloud's verified domain and the 09:12 blocked
+      attempt matches your account record. It asks for nothing and tells you to open
+      the service yourself. This is a fictional example, not a promise that any email
+      in this format is safe - still check important alerts in the official app.
+    trigger: 2
+    requestedAction: Nothing. Optionally review activity in the app or at the address
+      you already know.
+    linkNote: No link. It points you to the app or the known address.
+    clues:
+    - 'Describes a specific event: blocked sign-in at 09:12.'
+    - Asks for no password, code or payment.
+    - Compare with Account & Order Records on the network station.
+  - id: l4_payment_recovery
+    channel: 0
+    sender: BrightPay Support
+    senderDetail: +1 (555) 014-3392
+    subject: 
+    body: 'BrightPay: your account is frozen with $480 waiting. To release the funds,
+      pay a $25 recovery processing fee today at brightpay-release.example. Case
+      ref: unavailable.'
+    link: brightpay-release.example
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: You don't have a BrightPay account, the message comes from an ordinary
+      number, it gives no case reference you can check, and it asks for a fee to
+      release money. Unexpected fees to recover funds or access are a classic scam.
+    trigger: 1
+    requestedAction: Pay a $25 processing fee to release frozen funds.
+    linkNote: brightpay-release.example (training placeholder, never opened).
+    clues:
+    - Sent from an ordinary phone number.
+    - No verifiable case reference.
+    - Asks for a fee to get money back.
+  - id: l4_impersonated_announcement
+    channel: 1
+    sender: Vertexa Systems
+    senderDetail: news@vertexa-systems-update.example
+    subject: 'Required: install the new device security tool'
+    body: 'All Vertexa staff and contractors must install the new device security
+      tool by Friday. Download it from the update portal below and sign in with your
+      work password. Questions: call +1 (555) 019-2274.'
+    link: vertexa-systems-update.example/portal
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The display name is correct, but the real address is vertexa-systems-update.example,
+      not Vertexa's documented domain vertexa.example. The phone number doesn't match
+      the company profile either. Always read the full address and verify through
+      the company's known contacts.
+    trigger: 2
+    requestedAction: Download a tool from a portal and sign in with your work password.
+    linkNote: vertexa-systems-update.example/portal (training placeholder, never
+      opened).
+    clues:
+    - 'Display name: Vertexa Systems.'
+    - Asks for your work password on a download portal.
+    - Compare the domain and phone number with Verified Domains.
+  - id: l4_order_update
+    channel: 0
+    sender: Brightway Store
+    senderDetail: Saved contact
+    subject: 
+    body: 'Brightway: your order BW-55120 (wireless headphones) has shipped and should
+      arrive Thursday. Track it in the Brightway app or your account at brightway.example.'
+    link: 
+    correctVerdict: 1
+    scenarioContext: You ordered headphones from Brightway Store. The reference matches
+      the order record on the network station.
+    explanation: The order number, product and store all match your purchase record,
+      it comes from the saved contact, and it only points you to the app or the store's
+      known address. Context matters - but an unexpected request for payment or a
+      password would still need checking.
+    trigger: 1
+    requestedAction: Nothing; optionally track the order in the app you already use.
+    linkNote: No link to tap - it names the store's known address.
+    clues:
+    - Order BW-55120, wireless headphones.
+    - From a saved contact.
+    - Compare with Account & Order Records.
+  - id: l4_prize_claim
+    channel: 1
+    sender: Lumen Rewards
+    senderDetail: winners@lumen-rewards-prize.example
+    subject: Congratulations - you've won a tablet!
+    body: You were selected as this month's winner of a new tablet! To release your
+      prize, pay the $4.99 delivery fee and confirm your date of birth and card details
+      on the claim page within 48 hours.
+    link: lumen-rewards-prize.example/claim
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: You never entered a Lumen Rewards draw, the prize needs an upfront
+      fee, and it asks for your date of birth and card details. Unexpected prizes
+      that need payment or sensitive information are warning signs.
+    trigger: 2
+    requestedAction: Pay a delivery fee and give date of birth and card details within
+      48 hours.
+    linkNote: lumen-rewards-prize.example/claim (training placeholder, never opened).
+    clues:
+    - Prize from a competition you don't recall entering.
+    - Upfront fee plus sensitive personal details.
+    - 'Deadline: 48 hours.'
+  - id: l4_suspicious_website
+    channel: 2
+    sender: NovaCloud - Sign in
+    senderDetail: novacl0ud-login.example
+    subject: 'Captured page: NovaCloud sign-in'
+    body: 'NOVACLOUD
+
+      Sign in to keep your files safe.
+
+      Email address 
+      [__________]
+
+      Password  [__________]
+
+      Card number (identity check) 
+      [__________]
+
+      [ SIGN IN ]
+
+
+      Footer: (c) 2026 Nova Cloud Services
+      Ltd  -  Help: help@novacloud-assist.example  -  (padlock icon shown)'
+    link: https://novacl0ud-login.example/signin
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The page copies NovaCloud's look, but the domain novacl0ud-login.example
+      is not NovaCloud's, the company name in the footer differs, the help address
+      uses yet another domain, and it asks for a card number to sign in. A padlock
+      or https only means the connection is encrypted - not that the site is who
+      it claims to be.
+    trigger: 2
+    requestedAction: Enter your email, password and card number to sign in.
+    linkNote: novacl0ud-login.example (training placeholder, never opened). The padlock
+      only means the connection is encrypted.
+    clues:
+    - 'Address: novacl0ud-login.example.'
+    - 'Footer company: Nova Cloud Services Ltd; help: novacloud-assist.example.'
+    - Asks for a card number to sign in.
+  - id: l4_final_case
+    channel: 3
+    sender: Case Review
+    senderDetail: "CASE-04 \xB7 Billing Storm"
+    subject: "CASE-04  \xB7  Operation Billing Storm"
+    body: 'A wave of "payment failed" messages has reached staff who use NovaCloud.
+      Using the initial email, the domain record and the follow-up message, decide:
+      is this campaign a scam or legitimate billing contact from NovaCloud?'
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 'Several independent indicators agree: the email comes from novacloud-support.example,
+      which is not NovaCloud''s verified domain; that domain was registered 3 days
+      ago with a hidden owner and shares a server with the fake sign-in page; the
+      follow-up text from an unknown number repeats the same link and pressure; and
+      your account record shows the plan is paid. No single clue decides it - together
+      they do.'
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues:
+    - 'Email sender: billing@novacloud-support.example - NovaCloud''s verified domain
+      is novacloud.example.'
+    - Domain registered 3 days ago, owner hidden, same server as novacl0ud-login.example.
+    - Follow-up text from an unknown number with the same link and a 'final notice'.
+    - Your NovaCloud plan is paid until next month.
+  inboxExtras:
+  - id: l4_old_welcome
+    channel: 1
+    sender: Forensics Team Lead
+    senderDetail: lead@cyberlab.example
+    subject: Your first case in the lab
+    body: Welcome to the forensics lab. Reported messages arrive here and on your
+      phone. The evidence wall and the network analysis station hold the records
+      you need - compare before you classify. The final case review terminal unlocks
+      once the evidence is in.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  - id: l4_old_receipt
+    channel: 1
+    sender: Brightway Store
+    senderDetail: orders@brightway.example
+    subject: Receipt for order BW-55120
+    body: 'Thanks for your order: wireless headphones, paid by card. Track it in
+      the Brightway app or at brightway.example.'
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    requestedAction: 
+    linkNote: 
+    clues: []
+  caseFiles:
+  - title: Initial Email
+    body: '<b>From:</b> NovaCloud Billing  <billing@novacloud-support.example>
+
+      <b>Received:</b>
+      today 08:41
+
+      <b>Subject:</b> Payment failed - update your card within
+      12 hours
+
+
+      "Your storage plan payment failed. Update your card within
+      12 hours at novacloud-support.example/billing or your files will be deleted."
+
+
+      <b>Asks
+      for:</b> card details on a linked page
+
+      <b>Link:</b> novacloud-support.example/billing
+      (training placeholder)'
+  - title: Domain Record
+    body: '<b>Domain:</b> novacloud-support.example
+
+      <b>Registered:</b> 3 days
+      ago
+
+      <b>Owner:</b> hidden (privacy service)
+
+      <b>Server:</b> 203.0.113.48
+      - also hosts novacl0ud-login.example (the fake sign-in page)
+
+      <b>Listed
+      by NovaCloud:</b> no - NovaCloud lists only novacloud.example
+
+
+      This
+      is a fictional training record; it does not describe any real domain.'
+  - title: Follow-up Message
+    body: '<b>Text message from:</b> +1 (555) 017-8820 (not in contacts)
+
+      <b>Received:</b>
+      today 10:05
+
+
+      "NovaCloud FINAL NOTICE: billing failed. Update at novacloud-support.example/billing
+      or lose all files today."
+
+
+      <b>Same link as the email:</b> yes
+
+      <b>Pressure:</b>
+      ''final notice'', ''lose all files today'''
+  - title: Case Notes
+    body: "\u2022  Reports came from 14 staff between 08:40 and 10:10.\n\u2022  All
+      messages point to the same domain.\n\u2022  NovaCloud's billing page is inside
+      its app; it doesn't delete files over one failed payment.\n\u2022  Compare
+      the records on the network analysis station before submitting the final case."
+  firstMessageDelay: 10
+  delayBetweenMessages: {x: 10, y: 20}
+  minimumActivityDelay: 5
+  oneStarScore: 1
+  twoStarScore: 400
+  threeStarScore: 640
+  minScoreToUnlockNext: 400
+  nextLevelId: level_5
+  nextSceneName: 
+  lessons:
+  - A familiar display name proves nothing - read the full sender address and compare
+    it with verified records.
+  - 'Security alerts can be genuine: check whether the details match your records
+    and whether it asks for anything.'
+  - Fees to recover money, release funds or claim a prize are major warning signs.
+  - A professional page or a padlock doesn't prove a site is real - check the domain
+    and verify the organisation.
+  - Strong conclusions come from several independent clues pointing the same way.
+  learningSummary: You compared communications against verified domains and account
+    records, exposed impersonation, fee scams and a fake sign-in page, recognised
+    genuine notices, and tied several pieces of evidence together to close a campaign.
+  performanceHigh: Outstanding forensic work! Every conclusion was backed by the
+    evidence.
+  performanceModerate: Good investigation. Review the explanations - the records
+    hold the clues that separate real from fake.
+  performanceLow: Keep practising. Compare each sender, domain and request with the
+    records before you decide.

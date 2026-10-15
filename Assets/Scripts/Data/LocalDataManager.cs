@@ -14,6 +14,11 @@ using UnityEngine;
 /// Rules that always hold (locally, when merging with the cloud, and when merging profiles):
 /// unlocked / completed / passed never go back to false, best score and stars only go up,
 /// and the most recent score comes from whichever run was played last.
+///
+/// The one exception is RESET PROGRESS (ResetProgress). It stamps the save with the time of the reset,
+/// and progress older than that stamp is ignored in every merge, so neither Cloud Save nor another local
+/// profile can bring the reset progress back. A newer reset found in the player's own cloud save is
+/// applied locally as well.
 /// </summary>
 public static class LocalDataManager
 {
@@ -35,6 +40,8 @@ public static class LocalDataManager
         public bool passed;
         /// <summary>UTC ticks of the last finished run (decides which "last score" wins when merging).</summary>
         public long lastPlayedUtc;
+        /// <summary>UTC ticks of the last unlock or finished run (0 in saves made before resets existed).</summary>
+        public long changedUtc;
     }
 
     [Serializable]
@@ -44,12 +51,14 @@ public static class LocalDataManager
         /// <summary>Local changes not yet confirmed by Cloud Save.</summary>
         public bool pendingSync;
         public long updatedUtc;
+        /// <summary>UTC ticks of the last RESET PROGRESS (0 = never reset). Older progress is ignored when merging.</summary>
+        public long resetUtc;
     }
 
     static ProgressData data;
     static string profileId;
 
-    /// <summary>Raised after progress changes because of play (not after a cloud merge).</summary>
+    /// <summary>Raised after progress changes because of play or RESET PROGRESS (not after a cloud merge).</summary>
     public static event Action Changed;
 
     /// <summary>The Unity player ID whose save is active, or null for the default (offline) save.</summary>
@@ -87,7 +96,7 @@ public static class LocalDataManager
             var legacy = Read(BaseKey);
             if (legacy != null && legacy.levels.Count > 0)
             {
-                MergeInto(data, legacy);
+                MergeInto(data, legacy, adoptReset: false);
                 data.pendingSync = true;
                 Save(notify: false);
             }
@@ -102,7 +111,7 @@ public static class LocalDataManager
         if (otherProfileId == profileId) return false;
         var other = Read(KeyFor(otherProfileId));
         if (other == null || other.levels.Count == 0) return false;
-        bool changed = MergeInto(Data, other);
+        bool changed = MergeInto(Data, other, adoptReset: false);   // another player's reset never applies here
         if (changed) { data.pendingSync = true; Save(notify: false); }
         return changed;
     }
@@ -142,6 +151,7 @@ public static class LocalDataManager
         var lp = Get(levelId);
         if (lp.unlocked) return;
         lp.unlocked = true;
+        lp.changedUtc = DateTime.UtcNow.Ticks;
         MarkChanged();
     }
 
@@ -158,8 +168,69 @@ public static class LocalDataManager
         lp.bestStars = Mathf.Max(lp.bestStars, stars);
         lp.timesCompleted++;
         lp.lastPlayedUtc = DateTime.UtcNow.Ticks;
+        lp.changedUtc = lp.lastPlayedUtc;
         MarkChanged();
         return lp;
+    }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    /// <summary>Testing only: makes the next ResetProgress fail as if the save couldn't be written.</summary>
+    public static bool FailNextResetForTesting;
+#endif
+
+    /// <summary>
+    /// RESET PROGRESS: puts the active profile back to a new game (no completed rooms, scores, stars or
+    /// unlocks; the first room stays playable through LevelCatalog's own rule). Only this profile's progress
+    /// key is written. Settings, account data and other profiles' saves are not touched.
+    /// The reset is stamped (see the class notes) and marked for upload, so the player's cloud save receives
+    /// it on the next sync instead of restoring the old progress.
+    /// Nothing changes unless the new save was written and read back correctly; on failure the previous
+    /// save is kept and <paramref name="error"/> explains what happened.
+    /// </summary>
+    public static bool ResetProgress(out string error)
+    {
+        error = null;
+        string key = KeyFor(profileId);
+        bool hadSave = PlayerPrefs.HasKey(key);
+        string previous = hadSave ? PlayerPrefs.GetString(key) : null;
+
+        long now = DateTime.UtcNow.Ticks;
+        var fresh = new ProgressData
+        {
+            resetUtc = Math.Max(now, Data.resetUtc + 1),   // always newer than any earlier reset
+            pendingSync = true,
+            updatedUtc = now,
+        };
+        string json = JsonUtility.ToJson(fresh);
+
+        try
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (FailNextResetForTesting) { FailNextResetForTesting = false; throw new Exception("simulated save failure"); }
+#endif
+            PlayerPrefs.SetString(key, json);
+            PlayerPrefs.Save();
+            if (PlayerPrefs.GetString(key, "") != json) throw new Exception("the new save could not be verified");
+        }
+        catch (Exception e)
+        {
+            // Put the previous save back exactly as it was, so the game is never left half reset.
+            try
+            {
+                if (hadSave) PlayerPrefs.SetString(key, previous);
+                else PlayerPrefs.DeleteKey(key);
+                PlayerPrefs.Save();
+            }
+            catch (Exception restoreError) { Debug.LogError("LocalDataManager: couldn't restore the save after a failed reset. " + restoreError.Message); }
+            error = "Your progress couldn't be saved, so nothing was reset. Please try again.";
+            Debug.LogWarning("LocalDataManager: reset failed, previous progress kept. " + e.Message);
+            return false;
+        }
+
+        data = fresh;
+        Revision++;
+        Changed?.Invoke();   // refreshes listeners and starts a cloud sync when signed in
+        return true;
     }
 
     /// <summary>Wipes the active profile's room progress (settings are not touched). For testing.</summary>
@@ -187,7 +258,7 @@ public static class LocalDataManager
         catch (Exception e) { Debug.LogWarning("LocalDataManager: cloud progress unreadable, keeping local. " + e.Message); return false; }
         if (remote?.levels == null) return false;
 
-        bool changed = MergeInto(Data, remote);
+        bool changed = MergeInto(Data, remote, adoptReset: true);   // same player: their newer reset applies here too
         if (changed) Save(notify: false);
         return changed;
     }
@@ -202,12 +273,25 @@ public static class LocalDataManager
 
     // ---------- Internals ----------
 
-    static bool MergeInto(ProgressData target, ProgressData source)
+    /// <summary>When an entry last changed (older saves have no changedUtc; their last run is the best guess).</summary>
+    static long Stamp(LevelProgress lp) => Math.Max(lp.changedUtc, lp.lastPlayedUtc);
+
+    /// <param name="adoptReset">True only for the same player's own data (Cloud Save): a newer reset in
+    /// <paramref name="source"/> clears the older entries in <paramref name="target"/>.</param>
+    static bool MergeInto(ProgressData target, ProgressData source, bool adoptReset)
     {
         bool changed = false;
+        if (adoptReset && source.resetUtc > target.resetUtc)
+        {
+            target.levels.RemoveAll(lp => lp == null || Stamp(lp) <= source.resetUtc);
+            target.resetUtc = source.resetUtc;
+            changed = true;
+        }
+
         foreach (var src in source.levels)
         {
             if (src == null || string.IsNullOrEmpty(src.levelId)) continue;
+            if (target.resetUtc > 0 && Stamp(src) <= target.resetUtc) continue;   // from before this save was reset
             LevelProgress dst = null;
             foreach (var lp in target.levels) if (lp.levelId == src.levelId) { dst = lp; break; }
             if (dst == null)
@@ -224,6 +308,7 @@ public static class LocalDataManager
             dst.bestScore = Mathf.Max(dst.bestScore, src.bestScore);
             dst.bestStars = Mathf.Max(dst.bestStars, src.bestStars);
             dst.timesCompleted = Mathf.Max(dst.timesCompleted, src.timesCompleted);
+            dst.changedUtc = Math.Max(dst.changedUtc, src.changedUtc);
             if (src.lastPlayedUtc > dst.lastPlayedUtc)
             {
                 dst.lastScore = src.lastScore;

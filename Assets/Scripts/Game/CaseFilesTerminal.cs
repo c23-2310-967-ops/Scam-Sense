@@ -33,7 +33,9 @@ public class CaseFilesTerminal : MonoBehaviour
     [SerializeField] private Button exitButton;
 
     [Header("Content")]
-    [Tooltip("Used only if the level's LevelDefinition has no Case Files.")]
+    [Tooltip("Show this station's own pages (below) instead of the level's Case Files. Lets one scene have several different evidence stations.")]
+    [SerializeField] private bool useOwnPages;
+    [Tooltip("This station's pages when Use Own Pages is ticked; otherwise used only if the level has no Case Files.")]
     [SerializeField] private List<CaseFile> fallbackPages = new List<CaseFile>();
 
     [Header("Interaction")]
@@ -46,6 +48,8 @@ public class CaseFilesTerminal : MonoBehaviour
     [Header("References (auto-found if empty)")]
     [SerializeField] private GameManager gameManager;
     [SerializeField] private QuizManager quiz;
+    [Tooltip("Optional: records which pages the player has viewed (used by a FinalCaseTerminal).")]
+    [SerializeField] private EvidenceTracker evidence;
 
     public bool InUse { get; private set; }
 
@@ -66,6 +70,7 @@ public class CaseFilesTerminal : MonoBehaviour
     {
         if (gameManager == null) gameManager = FindFirstObjectByType<GameManager>();
         if (quiz == null) quiz = FindFirstObjectByType<QuizManager>();
+        if (evidence == null) evidence = FindFirstObjectByType<EvidenceTracker>();
         if (screenCanvas == null || viewPoint == null || pageBody == null)
         {
             Debug.LogError($"{name}: CaseFilesTerminal needs Screen Canvas, View Point and Page Body (rebuild with Tools > Scam Sense > Build Level 3 Room).", this);
@@ -99,7 +104,7 @@ public class CaseFilesTerminal : MonoBehaviour
         screenCanvas.worldCamera = cam;
 
         var level = gameManager != null ? gameManager.Level : null;
-        pages = level != null && level.caseFiles != null && level.caseFiles.Count > 0 ? level.caseFiles : fallbackPages;
+        pages = !useOwnPages && level != null && level.caseFiles != null && level.caseFiles.Count > 0 ? level.caseFiles : fallbackPages;
 
         // Label the scene's tab buttons from the data; hide extra ones.
         for (int i = 0; i < (tabButtons != null ? tabButtons.Length : 0); i++)
@@ -158,6 +163,7 @@ public class CaseFilesTerminal : MonoBehaviour
         currentPage = Mathf.Clamp(index, 0, pages.Count - 1);
         if (pageTitle != null) pageTitle.text = pages[currentPage].title;
         pageBody.text = pages[currentPage].body;
+        if (InUse && evidence != null) evidence.Record(pages[currentPage].title);   // only pages the player actually viewed
 
         // Selected tab: brighter label and a "›" marker (never colour alone).
         for (int i = 0; i < (tabButtons != null ? tabButtons.Length : 0); i++)
@@ -196,6 +202,7 @@ public class CaseFilesTerminal : MonoBehaviour
         if (hud != null) hud.SetVisible(false);
 
         if (raycaster != null) raycaster.enabled = true;
+        if (evidence != null && pages != null && currentPage < pages.Count) evidence.Record(pages[currentPage].title);
         RefreshStatus();
         if (camRoutine != null) StopCoroutine(camRoutine);
         camRoutine = StartCoroutine(MoveCamera(true));
