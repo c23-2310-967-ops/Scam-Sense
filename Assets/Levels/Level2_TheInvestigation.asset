@@ -29,8 +29,9 @@ MonoBehaviour:
     your customer account.
   - This morning you attended a project meeting led by Daniel Reed, the project coordinator.
   - You requested a password change for your Example Cloud Service account.
+  - This morning the company announced a scheduled password change, due by Friday.
   objectives:
-  - Review six messages.
+  - Review seven messages.
   - Classify each as SCAM or LEGITIMATE.
   - Investigate suspicious details before answering.
   - Earn a score based on accuracy and response speed.
@@ -59,6 +60,65 @@ MonoBehaviour:
     clues:
     - Refers to a recent office supply order.
     - Questions are directed to the billing team through the official website.
+    inspectables:
+    - id: address
+      field: 1
+      match: 
+      label: Sender address
+      finding: billing@northstar-supplies.example - the supplier you really ordered
+        from.
+      linkAddress: 
+      clueId: domain
+    - id: order
+      field: 3
+      match: your recent office supply order
+      label: Reference
+      finding: It refers to the office supply order you placed.
+      linkAddress: 
+      clueId: matches
+    - id: cost
+      field: 3
+      match: updated invoice reflecting the final shipping cost
+      label: Money
+      finding: It mentions an updated cost.
+      linkAddress: 
+      clueId: money
+    - id: account
+      field: 3
+      match: review the invoice in your existing customer account
+      label: Where to look
+      finding: It points you to your existing account - no attachment or unfamiliar
+        link.
+      linkAddress: 
+      clueId: account
+    - id: contact
+      field: 3
+      match: contact our billing team through the official website
+      label: Contact
+      finding: Questions go through the official website.
+      linkAddress: 
+      clueId: official
+    evidence:
+    - id: domain
+      title: Supplier's own address
+      whyItMatters: It comes from the supplier you actually use.
+      supportsVerdict: 1
+    - id: matches
+      title: Matches your real order
+      whyItMatters: You did place an office supply order.
+      supportsVerdict: 1
+    - id: account
+      title: Points to your existing account
+      whyItMatters: No attachment or link - you check it yourself.
+      supportsVerdict: 1
+    - id: official
+      title: Official website for questions
+      whyItMatters: Real companies direct you to their own channels.
+      supportsVerdict: 1
+    - id: money
+      title: Mentions money
+      whyItMatters: Invoices mention costs - on its own that isn't a warning sign.
+      supportsVerdict: 0
   - id: l2_account_suspension
     channel: 0
     sender: Unknown Number
@@ -81,6 +141,75 @@ MonoBehaviour:
     - The number is not saved in your contacts.
     - It does not say which account or provider it is about.
     - 'Deadline: 30 minutes.'
+    inspectables:
+    - id: number
+      field: 1
+      match: 
+      label: Phone number
+      finding: +1 (555) 019-4471 isn't in your contacts - an ordinary mobile number.
+      linkAddress: 
+      clueId: number
+    - id: which
+      field: 3
+      match: Your account
+      label: Which account?
+      finding: It never says which account or which provider.
+      linkAddress: 
+      clueId: vague
+    - id: deadline
+      field: 3
+      match: suspended in 30 minutes
+      label: Deadline
+      finding: Only 30 minutes - pressure to act without checking.
+      linkAddress: 
+      clueId: deadline
+    - id: unusual
+      field: 3
+      match: unusual activity
+      label: Reason given
+      finding: '''Unusual activity'' sounds technical.'
+      linkAddress: 
+      clueId: unusual
+    - id: identity
+      field: 3
+      match: Confirm your identity immediately
+      label: What it asks
+      finding: Asks you to confirm your identity on a website - a common way to steal
+        logins.
+      linkAddress: 
+      clueId: identity
+    - id: link
+      field: 4
+      match: 
+      label: Link
+      finding: secure-check.example.invalid doesn't name any provider at all.
+      linkAddress: https://secure-check.example.invalid/verify
+      clueId: link
+    evidence:
+    - id: number
+      title: Unknown number
+      whyItMatters: The text didn't come from any service you recognise.
+      supportsVerdict: 1
+    - id: vague
+      title: No account or provider named
+      whyItMatters: Real alerts say which account they mean.
+      supportsVerdict: 1
+    - id: deadline
+      title: 30-minute deadline
+      whyItMatters: Extreme urgency is a pressure tactic.
+      supportsVerdict: 1
+    - id: identity
+      title: Asks you to confirm your identity via a link
+      whyItMatters: This is how login details are stolen.
+      supportsVerdict: 1
+    - id: link
+      title: Link with no provider name
+      whyItMatters: A real provider's link names the provider.
+      supportsVerdict: 1
+    - id: unusual
+      title: '''Unusual activity'''
+      whyItMatters: Real alerts mention this too - on its own it isn't proof.
+      supportsVerdict: 0
   - id: l2_project_schedule
     channel: 1
     sender: "Daniel Reed \u2014 Project Coordinator"
@@ -104,6 +233,53 @@ MonoBehaviour:
     clues:
     - Sent from a company address.
     - Refers to a meeting that happened today.
+    inspectables:
+    - id: address
+      field: 1
+      match: 
+      label: Sender address
+      finding: daniel.reed@yourcompany.example - a company address from a colleague
+        you know.
+      linkAddress: 
+      clueId: company
+    - id: meeting
+      field: 3
+      match: following our meeting
+      label: Context
+      finding: It refers to the meeting you attended today.
+      linkAddress: 
+      clueId: meeting
+    - id: workspace
+      field: 3
+      match: the team's usual shared workspace
+      label: Where to look
+      finding: It uses the workspace your team already uses - no new link.
+      linkAddress: 
+      clueId: workspace
+    - id: dates
+      field: 3
+      match: let me know if any of the dates conflict
+      label: What it asks
+      finding: Only asks you to reply about dates - nothing sensitive.
+      linkAddress: 
+      clueId: noask
+    evidence:
+    - id: company
+      title: Company address of a known colleague
+      whyItMatters: Sent from your company's own domain.
+      supportsVerdict: 1
+    - id: meeting
+      title: Matches today's meeting
+      whyItMatters: The context fits what really happened.
+      supportsVerdict: 1
+    - id: workspace
+      title: Uses the usual shared workspace
+      whyItMatters: No unfamiliar link or attachment.
+      supportsVerdict: 1
+    - id: noask
+      title: Asks for nothing sensitive
+      whyItMatters: Only a reply about dates.
+      supportsVerdict: 1
   - id: l2_gift_card_request
     channel: 1
     sender: Office Director
@@ -125,6 +301,77 @@ MonoBehaviour:
     - The sender is a job title with no personal name.
     - Sent from an external email service, not the company domain.
     - Asks you to keep it confidential.
+    inspectables:
+    - id: title
+      field: 0
+      match: 
+      label: Sender name
+      finding: Just a job title - no personal name.
+      linkAddress: 
+      clueId: title
+    - id: address
+      field: 1
+      match: 
+      label: Sender address
+      finding: quickmail.example is an outside email service, not your company's
+        domain.
+      linkAddress: 
+      clueId: external
+    - id: busy
+      field: 3
+      match: I'm currently occupied
+      label: Excuse
+      finding: Says they're busy.
+      linkAddress: 
+      clueId: busy
+    - id: cards
+      field: 3
+      match: purchase six gift cards
+      label: The request
+      finding: Gift cards work like cash and can't be traced - a classic boss-impersonation
+        request.
+      linkAddress: 
+      clueId: cards
+    - id: codes
+      field: 3
+      match: Send me the redemption codes as soon as possible
+      label: Urgency
+      finding: Wants the codes as soon as possible.
+      linkAddress: 
+      clueId: urgency
+    - id: secret
+      field: 3
+      match: keep this confidential
+      label: Secrecy
+      finding: Asks you to keep it secret, so no one can warn you.
+      linkAddress: 
+      clueId: secret
+    evidence:
+    - id: title
+      title: Job title instead of a name
+      whyItMatters: Impersonators hide behind a title.
+      supportsVerdict: 1
+    - id: external
+      title: Outside email service, not the company domain
+      whyItMatters: A real director writes from the company address.
+      supportsVerdict: 1
+    - id: cards
+      title: Asks for gift cards
+      whyItMatters: Gift card codes are untraceable cash.
+      supportsVerdict: 1
+    - id: urgency
+      title: Wants the codes as soon as possible
+      whyItMatters: Urgency stops you from checking.
+      supportsVerdict: 1
+    - id: secret
+      title: Asks for secrecy
+      whyItMatters: Secrecy cuts you off from anyone who could warn you.
+      supportsVerdict: 1
+    - id: busy
+      title: '''I''m currently occupied'''
+      whyItMatters: Managers really are busy - on its own this isn't proof (though
+        it's a common excuse to avoid a call).
+      supportsVerdict: 0
   - id: l2_password_changed
     channel: 1
     sender: Example Cloud Service
@@ -147,6 +394,64 @@ MonoBehaviour:
     clues:
     - Refers to a password change.
     - Suggests opening the official application yourself.
+    inspectables:
+    - id: address
+      field: 1
+      match: 
+      label: Sender address
+      finding: no-reply@examplecloud.example - the cloud service's own domain.
+      linkAddress: 
+      clueId: domain
+    - id: subject
+      field: 2
+      match: Security Notification
+      label: Subject line
+      finding: '''Security Notification'' can sound alarming.'
+      linkAddress: 
+      clueId: alarm
+    - id: requested
+      field: 3
+      match: The password change you requested
+      label: What it refers to
+      finding: It refers to the password change you really made.
+      linkAddress: 
+      clueId: matches
+    - id: noaction
+      field: 3
+      match: no further action is needed
+      label: What it asks
+      finding: Nothing - no link, code or password.
+      linkAddress: 
+      clueId: noask
+    - id: official
+      field: 3
+      match: open the official application directly
+      label: Advice
+      finding: If it wasn't you, it tells you to open the official app yourself.
+      linkAddress: 
+      clueId: official
+    evidence:
+    - id: domain
+      title: The service's own domain
+      whyItMatters: Sent from examplecloud.example, the real service.
+      supportsVerdict: 1
+    - id: matches
+      title: Matches the change you made
+      whyItMatters: You did request a password change.
+      supportsVerdict: 1
+    - id: noask
+      title: Asks for nothing
+      whyItMatters: No link, code or password is requested.
+      supportsVerdict: 1
+    - id: official
+      title: Tells you to use the official app
+      whyItMatters: Genuine services send you to their own app.
+      supportsVerdict: 1
+    - id: alarm
+      title: '''Security Notification'' subject'
+      whyItMatters: It sounds alarming, but it's a plain notice with no threat or
+        deadline.
+      supportsVerdict: 0
   - id: l2_it_support
     channel: 0
     sender: IT Helpdesk
@@ -168,6 +473,163 @@ MonoBehaviour:
     clues:
     - Sent from an ordinary phone number.
     - 'Deadline: before the end of the day.'
+    inspectables:
+    - id: name
+      field: 0
+      match: 
+      label: Sender name
+      finding: Calls itself 'IT Helpdesk' - anyone can set a display name.
+      linkAddress: 
+      clueId: 
+    - id: number
+      field: 1
+      match: 
+      label: Phone number
+      finding: +1 (555) 016-2208 is an ordinary phone number, not your company's
+        IT system.
+      linkAddress: 
+      clueId: number
+    - id: records
+      field: 3
+      match: updating employee security records
+      label: Reason given
+      finding: Sounds official.
+      linkAddress: 
+      clueId: records
+    - id: password
+      field: 3
+      match: Reply with your account password and verification code
+      label: What it asks
+      finding: It asks for your password AND verification code by text. Real IT never
+        asks for these.
+      linkAddress: 
+      clueId: password
+    - id: deadline
+      field: 3
+      match: before the end of the day
+      label: Deadline
+      finding: Pressure to do it today.
+      linkAddress: 
+      clueId: deadline
+    evidence:
+    - id: password
+      title: Asks for your password and verification code
+      whyItMatters: No real IT team ever asks for these.
+      supportsVerdict: 1
+    - id: number
+      title: Ordinary phone number
+      whyItMatters: Company IT doesn't text from random numbers.
+      supportsVerdict: 1
+    - id: deadline
+      title: '''Before the end of the day'''
+      whyItMatters: A deadline to rush you.
+      supportsVerdict: 1
+    - id: records
+      title: Official-sounding reason
+      whyItMatters: Anyone can claim to be 'updating records' - on its own it isn't
+        evidence.
+      supportsVerdict: 0
+  - id: l2_it_chat
+    channel: 4
+    sender: "Priya Shah \u2014 IT Service Desk"
+    senderDetail: "@priya.shah \xB7 verified \xB7 company directory"
+    subject: 
+    body: 'Priya: Hi! Reminder from the IT Service Desk - the scheduled password
+      change from this morning''s company announcement is due by Friday.
+
+      Priya:
+      Please change it yourself in the IT portal from your bookmarks. Never share
+      your password with anyone, including IT.
+
+      You: Thanks, will do.
+
+      Priya:
+      If anything looks odd, call the service desk on extension 4100.'
+    link: 
+    correctVerdict: 1
+    scenarioContext: This morning the company announced a scheduled password change,
+      due by Friday.
+    explanation: LEGITIMATE. The chat comes from a verified account in your company
+      directory, matches this morning's announcement, asks you to change your password
+      yourself in the IT portal (no link), warns you never to share it and offers
+      a phone check. A deadline that matches an announced schedule isn't a scam sign
+      by itself.
+    trigger: 0
+    requestedAction: Change your password yourself in the IT portal from your bookmarks,
+      by Friday.
+    linkNote: No link. It tells you to use the IT portal from your own bookmarks.
+    clues:
+    - Sent from a verified account in the company directory.
+    - Refers to this morning's company announcement.
+    inspectables:
+    - id: account
+      field: 1
+      match: 
+      label: Account
+      finding: A verified account listed in your company directory.
+      linkAddress: 
+      clueId: verified
+    - id: announce
+      field: 3
+      match: the scheduled password change from this morning's company announcement
+      label: Context
+      finding: It matches this morning's real company announcement.
+      linkAddress: 
+      clueId: matches
+    - id: friday
+      field: 3
+      match: due by Friday
+      label: Deadline
+      finding: A deadline several days away.
+      linkAddress: 
+      clueId: friday
+    - id: portal
+      field: 3
+      match: change it yourself in the IT portal from your bookmarks
+      label: How to do it
+      finding: No link to click - you go to the portal yourself.
+      linkAddress: 
+      clueId: portal
+    - id: never
+      field: 3
+      match: Never share your password with anyone, including IT
+      label: Password advice
+      finding: It warns you never to share your password - the opposite of a phisher.
+      linkAddress: 
+      clueId: nopassword
+    - id: call
+      field: 3
+      match: call the service desk on extension 4100
+      label: Contact
+      finding: It offers a phone check.
+      linkAddress: 
+      clueId: phone
+    evidence:
+    - id: verified
+      title: Verified internal account
+      whyItMatters: The chat comes from a verified account in your directory.
+      supportsVerdict: 1
+    - id: matches
+      title: Matches the company announcement
+      whyItMatters: It repeats this morning's official notice.
+      supportsVerdict: 1
+    - id: portal
+      title: No link - go to the portal yourself
+      whyItMatters: Typing or bookmarking the official portal avoids fake links.
+      supportsVerdict: 1
+    - id: nopassword
+      title: Never asks for your password
+      whyItMatters: It tells you not to share it with anyone.
+      supportsVerdict: 1
+    - id: phone
+      title: Offers a phone check
+      whyItMatters: Inviting a call makes it easy to verify - scammers avoid this.
+      supportsVerdict: 1
+    - id: friday
+      title: '''Due by Friday'''
+      whyItMatters: A deadline days away that matches the announcement isn't pressure
+        - on its own it isn't a scam sign.
+      supportsVerdict: 0
   inboxExtras:
   - id: l2_old_order
     channel: 1
@@ -184,6 +646,8 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   - id: l2_old_meeting
     channel: 1
     sender: Calendar
@@ -199,6 +663,8 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   - id: l2_old_facilities
     channel: 1
     sender: Facilities Team
@@ -214,14 +680,16 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   caseFiles: []
   firstMessageDelay: 8
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 4
   oneStarScore: 1
-  twoStarScore: 300
-  threeStarScore: 480
-  minScoreToUnlockNext: 300
+  twoStarScore: 475
+  threeStarScore: 600
+  minScoreToUnlockNext: 475
   nextLevelId: level_3
   nextSceneName: Room3_DigitalTrap
   lessons:

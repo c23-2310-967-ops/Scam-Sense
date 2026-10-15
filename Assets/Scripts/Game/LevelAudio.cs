@@ -63,7 +63,7 @@ public class LevelAudio : MonoBehaviour
     }
 
     public void PlayNotification(MessageChannel channel) =>
-        Play(channel == MessageChannel.SMS ? smsNotification : emailNotification);
+        Play(MessageChannels.OnPhone(channel) ? smsNotification : emailNotification);
     public void PlayAnswer(bool correct) => Play(correct ? correctAnswer : wrongAnswer);
     public void PlayClick() => Play(uiClick);
     public void PlayStar() => Play(starReveal);

@@ -238,11 +238,11 @@ public static class Level4Content
         l.delayBetweenMessages = new UnityEngine.Vector2(10f, 20f);
         l.minimumActivityDelay = 5f;
 
-        // Existing scoring rules: up to 100 points per message, 8 messages = 800. Thresholds keep Level 2/3's proportions.
+        // Existing scoring rules: up to 100 points per message, 8 messages = 800. Passing 600 (75%): each room asks for a higher share than the last.
         l.oneStarScore = 1;
-        l.twoStarScore = 400;
-        l.threeStarScore = 640;
-        l.minScoreToUnlockNext = 400;
+        l.twoStarScore = 600;
+        l.threeStarScore = 680;
+        l.minScoreToUnlockNext = 600;
         l.nextLevelId = "level_5";
         l.nextSceneName = "";   // Level 5 doesn't exist: the results show NEXT ROOM: COMING SOON
 

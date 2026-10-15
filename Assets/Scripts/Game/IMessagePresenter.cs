@@ -25,3 +25,12 @@ public interface IPresenterTiming
 {
     bool TimerRunning { get; }
 }
+
+/// <summary>
+/// Optional: a screen area (pixels) where the investigation UI (findings card, Evidence Notebook) can sit
+/// without covering the message or the answer buttons. Without it the UI docks on the right of the screen.
+/// </summary>
+public interface IInvestigationDock
+{
+    bool TryGetDockArea(out UnityEngine.Rect screenArea);
+}

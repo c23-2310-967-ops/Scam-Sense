@@ -56,6 +56,8 @@ MonoBehaviour:
     - Claims to be NovaCloud.
     - 'Deadline: 24 hours, or storage is restricted.'
     - Compare the sender domain with Verified Domains on the network station.
+    inspectables: []
+    evidence: []
   - id: l4_security_notification
     channel: 1
     sender: NovaCloud Security
@@ -81,6 +83,8 @@ MonoBehaviour:
     - 'Describes a specific event: blocked sign-in at 09:12.'
     - Asks for no password, code or payment.
     - Compare with Account & Order Records on the network station.
+    inspectables: []
+    evidence: []
   - id: l4_payment_recovery
     channel: 0
     sender: BrightPay Support
@@ -102,6 +106,8 @@ MonoBehaviour:
     - Sent from an ordinary phone number.
     - No verifiable case reference.
     - Asks for a fee to get money back.
+    inspectables: []
+    evidence: []
   - id: l4_impersonated_announcement
     channel: 1
     sender: Vertexa Systems
@@ -125,6 +131,8 @@ MonoBehaviour:
     - 'Display name: Vertexa Systems.'
     - Asks for your work password on a download portal.
     - Compare the domain and phone number with Verified Domains.
+    inspectables: []
+    evidence: []
   - id: l4_order_update
     channel: 0
     sender: Brightway Store
@@ -147,6 +155,8 @@ MonoBehaviour:
     - Order BW-55120, wireless headphones.
     - From a saved contact.
     - Compare with Account & Order Records.
+    inspectables: []
+    evidence: []
   - id: l4_prize_claim
     channel: 1
     sender: Lumen Rewards
@@ -169,6 +179,8 @@ MonoBehaviour:
     - Prize from a competition you don't recall entering.
     - Upfront fee plus sensitive personal details.
     - 'Deadline: 48 hours.'
+    inspectables: []
+    evidence: []
   - id: l4_suspicious_website
     channel: 2
     sender: NovaCloud - Sign in
@@ -207,6 +219,8 @@ MonoBehaviour:
     - 'Address: novacl0ud-login.example.'
     - 'Footer company: Nova Cloud Services Ltd; help: novacloud-assist.example.'
     - Asks for a card number to sign in.
+    inspectables: []
+    evidence: []
   - id: l4_final_case
     channel: 3
     sender: Case Review
@@ -233,6 +247,8 @@ MonoBehaviour:
     - Domain registered 3 days ago, owner hidden, same server as novacl0ud-login.example.
     - Follow-up text from an unknown number with the same link and a 'final notice'.
     - Your NovaCloud plan is paid until next month.
+    inspectables: []
+    evidence: []
   inboxExtras:
   - id: l4_old_welcome
     channel: 1
@@ -251,6 +267,8 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   - id: l4_old_receipt
     channel: 1
     sender: Brightway Store
@@ -266,6 +284,8 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   caseFiles:
   - title: Initial Email
     body: '<b>From:</b> NovaCloud Billing  <billing@novacloud-support.example>
@@ -327,9 +347,9 @@ MonoBehaviour:
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 5
   oneStarScore: 1
-  twoStarScore: 400
-  threeStarScore: 640
-  minScoreToUnlockNext: 400
+  twoStarScore: 600
+  threeStarScore: 680
+  minScoreToUnlockNext: 600
   nextLevelId: level_5
   nextSceneName: 
   lessons:

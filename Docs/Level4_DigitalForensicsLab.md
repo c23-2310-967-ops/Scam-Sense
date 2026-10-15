@@ -74,8 +74,8 @@ All organisations, people and domains are fictional; every link uses `.example`.
 5. Feedback → **FINISH CASE** → the results screen.
 
 **Scoring** is the standard ScoringSystem: 100/80/60/40/20 points by speed, each message scored once. The maximum is 800.
-- Stars: 1 star for finishing, 2 stars at 400, 3 stars at 640.
-- **Unlocking the next room needs 400 points.** Stars are only a reward.
+- Stars: 1 star for finishing, 2 stars at 600, 3 stars at 680.
+- **Unlocking the next room needs 600 points (75%).** Stars are only a reward.
 - `nextLevelId` = `level_5` and `nextSceneName` is empty. The results screen shows **NEXT ROOM: COMING SOON**, and the unlock is still saved. Level Select doesn't add a fake Level 5 card; it shows a note on the Level 4 card.
 
 ## Editing

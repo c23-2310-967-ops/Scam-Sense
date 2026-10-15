@@ -17,7 +17,7 @@ using UnityEngine.UI;
 /// created automatically in front of the screen if left empty.
 /// </summary>
 [DefaultExecutionOrder(-90)]
-public class ComputerTerminal : MonoBehaviour, IMessagePresenter
+public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigationDock
 {
     [Header("Screen")]
     [Tooltip("The monitor model (with Screen Submesh set) or a thin object covering the display area.")]
@@ -46,6 +46,15 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
     public event Action ContinueClicked;
 
     public bool InUse { get; private set; }
+
+    RectTransform inboxColumn;
+
+    /// <summary>While a message is open, the investigation UI sits over the inbox column (not needed while reading).</summary>
+    public bool TryGetDockArea(out Rect area)
+    {
+        area = default;
+        return InUse && inboxColumn != null && inboxColumn.gameObject.activeInHierarchy && MessageInvestigation.ScreenRect(inboxColumn, out area);
+    }
 
     // Camera / player
     private Camera cam;
@@ -287,7 +296,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
             answerText.text = $"You chose {UIKit.VerdictWord(r.chosen)}. This {MessageChannels.Noun(r.message.channel)} is <color={hex}><b>{word}</b></color>.";
         }
         pointsText.text = $"<color={UIKit.HexAccent}><b>+{r.points} points</b></color>   ·   answered in {UIKit.FormatSeconds(r.seconds)}";
-        explanationText.text = r.message.explanation;
+        explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
         scoreText.text = $"Score {score} / {maxScore}   ·   Messages reviewed {reviewed}/{total}";
         UIKit.SetLabel(backButton, reviewed >= total ? "Finish case" : "Back to inbox");
         UIKit.SetInteractable(backButton, true);
@@ -491,18 +500,19 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
     {
         emptyPane.gameObject.SetActive(false);
         pane.gameObject.SetActive(true);
-        paneSubject.text = string.IsNullOrEmpty(m.subject) ? "(no subject)" : m.subject;
+        // Bind/Mark: inspectable details become clickable while the message is investigated (plain text otherwise).
+        MessageInvestigation.Bind(paneSubject, () => string.IsNullOrEmpty(m.subject) ? "(no subject)" : MessageInvestigation.Mark(m, InspectField.Subject, m.subject));
         bool site = m.channel == MessageChannel.Website;
         // <noparse> shows the angle brackets literally (TMP does not decode &lt; / &gt;).
-        paneFrom.text = site
-            ? $"Site: <b>{m.sender}</b>" + (string.IsNullOrEmpty(m.senderDetail) ? "" : $"  <color={UIKit.HexSecondary}><noparse>{m.senderDetail}</noparse></color>")
-            : $"From: <b>{m.sender}</b>" + (string.IsNullOrEmpty(m.senderDetail) ? "" : $"  <color={UIKit.HexSecondary}><noparse><{m.senderDetail}></noparse></color>");
+        MessageInvestigation.Bind(paneFrom, () => site
+            ? $"Site: <b>{MessageInvestigation.Mark(m, InspectField.Sender, m.sender)}</b>" + (string.IsNullOrEmpty(m.senderDetail) ? "" : $"  <color={UIKit.HexSecondary}>{MessageInvestigation.Mark(m, InspectField.SenderDetail, m.senderDetail)}</color>")
+            : $"From: <b>{MessageInvestigation.Mark(m, InspectField.Sender, m.sender)}</b>" + (string.IsNullOrEmpty(m.senderDetail) ? "" : $"  <color={UIKit.HexSecondary}><noparse><</noparse>{MessageInvestigation.Mark(m, InspectField.SenderDetail, m.senderDetail)}<noparse>></noparse></color>"));
         paneMeta.text = site ? "Captured page (training copy - nothing here is live)   ·   Today" : "To: me   ·   Today";
-        paneBody.text = m.body;
+        MessageInvestigation.Bind(paneBody, () => MessageInvestigation.Mark(m, InspectField.Body, m.body));
         question.text = $"Is this {MessageChannels.Noun(m.channel)} a scam or legitimate?";
         bool hasLink = !string.IsNullOrEmpty(m.link);
         paneLink.gameObject.SetActive(hasLink);
-        paneLink.text = hasLink ? (site ? $"Address bar: <u>{m.link}</u>" : $"Link in email: <u>{m.link}</u>") : "";
+        MessageInvestigation.Bind(paneLink, () => hasLink ? (site ? "Address bar: " : "Link in email: ") + $"<u>{MessageInvestigation.Mark(m, InspectField.Link, m.link)}</u>" : "");
 
         string details = UIKit.MessageDetailsText(m, quiz != null && quiz.Level != null ? quiz.Level.caseNotes : null);
         paneDetails.text = details;
@@ -696,6 +706,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter
 
         // Inbox column
         var listBg = UIKit.Rect("InboxColumn", win);
+        inboxColumn = listBg;
         listBg.anchorMin = new Vector2(0, 0); listBg.anchorMax = new Vector2(0, 1); listBg.pivot = new Vector2(0, 0.5f);
         listBg.offsetMin = new Vector2(12, 12); listBg.offsetMax = new Vector2(12 + 500, -60);
         inboxList = UIKit.Rect("List", listBg);

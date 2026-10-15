@@ -66,6 +66,7 @@ public class QuizManager : MonoBehaviour
 
     private int Total => level != null ? level.MessageCount : 0;
     private ScamMessage Current => level.messages[index];
+    private MessageInvestigation investigation;
 
     void Awake()
     {
@@ -73,6 +74,9 @@ public class QuizManager : MonoBehaviour
         if (popup == null) popup = GetComponent<MessagePopupUI>();
         if (hud == null) hud = GetComponent<LevelHUD>();
         if (levelAudio == null) levelAudio = GetComponent<LevelAudio>();
+        // Clickable details + Evidence Notebook for messages that have investigation data.
+        investigation = GetComponent<MessageInvestigation>();
+        if (investigation == null) investigation = gameObject.AddComponent<MessageInvestigation>();
     }
 
     void OnEnable()
@@ -142,7 +146,8 @@ public class QuizManager : MonoBehaviour
             case Phase.Reading:
                 // Scaled time: the pause menu (timeScale 0) also pauses the response timer.
                 // A presenter that is still opening (phone coming out of the pocket) holds the timer at 0.
-                if (!(current is IPresenterTiming timing) || timing.TimerRunning)
+                // Reading a newly inspected detail's finding is free for a few seconds (MessageInvestigation).
+                if ((!(current is IPresenterTiming timing) || timing.TimerRunning) && !MessageInvestigation.PausesTimer)
                     responseTime += Time.deltaTime;
                 // The timer shows tenths of a second: rebuild its text only when what it shows changes
                 // (not every frame - each update allocates strings and re-meshes the text).
@@ -264,6 +269,7 @@ public class QuizManager : MonoBehaviour
         if (hud != null) hud.HideNotification();
         InteractionPrompt.Clear(this);
         InteractionGate.Acquire(this);
+        if (investigation != null) investigation.Begin(Current, current as IInvestigationDock);   // before ShowMessage, so its details bind as clickable
         current.ShowMessage(Current);
         StateChanged?.Invoke();
         return true;
@@ -282,6 +288,7 @@ public class QuizManager : MonoBehaviour
             return;
         }
 
+        if (investigation != null) investigation.Submit(Current, chosen);   // evaluates the selected evidence once
         int max = scoring.MaxScoreFor(Total);
         if (levelAudio != null) levelAudio.PlayAnswer(result.isCorrect);
         current.ShowFeedback(result, scoring.TotalScore, max, index + 1, Total);
@@ -296,6 +303,7 @@ public class QuizManager : MonoBehaviour
         var finished = current;
         Unsubscribe();
         finished?.Hide();
+        if (investigation != null) investigation.End();
         InteractionGate.Release(this);
         index++;
 
@@ -359,7 +367,7 @@ public class QuizManager : MonoBehaviour
 
         if (phase == Phase.Notified && !NeedsStation(Current))
             InteractionPrompt.Set(this, InteractionPrompt.KeyName(interactKey),
-                Current.channel == MessageChannel.SMS ? "Read new text message" : "Read new email", priority: 3);
+                Current.channel == MessageChannel.Chat ? "Read new chat message" : Current.channel == MessageChannel.SMS ? "Read new text message" : "Read new email", priority: 3);
         else
             InteractionPrompt.Set(this, "", device.idleLabel, priority: 1);
     }

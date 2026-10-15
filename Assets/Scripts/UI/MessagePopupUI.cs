@@ -10,7 +10,7 @@ using UnityEngine.UI;
 /// and SCAM / LEGITIMATE buttons, which turns into the feedback card after answering.
 /// Builds itself at runtime. QuizManager drives it through IMessagePresenter.
 /// </summary>
-public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
+public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming, IInvestigationDock
 {
     [SerializeField] private int sortingOrder = 20;
     [Tooltip("Text messages are read on a first-person phone pulled out of the pocket (PocketPhone). " +
@@ -21,6 +21,17 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
     public event Action ContinueClicked;
 
     public bool IsOpen => root != null && root.gameObject.activeSelf;
+
+    /// <summary>Investigation UI goes in the gap between the phone (or mail window) and the decision card.</summary>
+    public bool TryGetDockArea(out Rect area)
+    {
+        area = default;
+        if (!IsOpen || decisionCard == null || !decisionCard.gameObject.activeInHierarchy) return false;
+        var left = phone != null && phone.gameObject.activeInHierarchy ? phone : emailWindow != null && emailWindow.gameObject.activeInHierarchy ? emailWindow : null;
+        if (left == null || !MessageInvestigation.ScreenRect(left, out var l) || !MessageInvestigation.ScreenRect(decisionCard, out var d)) return false;
+        area = Rect.MinMaxRect(l.xMax + 20f, d.yMin, d.xMin - 20f, d.yMax);
+        return area.width > 0f && area.height > 0f;
+    }
 
     private RectTransform root, content;
     private CanvasGroup group;
@@ -71,32 +82,33 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
 
     public void ShowMessage(ScamMessage msg)
     {
-        bool sms = msg.channel == MessageChannel.SMS;
+        bool sms = MessageChannels.OnPhone(msg.channel);   // text messages and chats use the phone layout
         phone.gameObject.SetActive(sms);
         emailWindow.gameObject.SetActive(!sms);
 
         bool hasLink = !string.IsNullOrEmpty(msg.link);
         if (sms)
         {
-            smsSender.text = msg.sender;
-            smsDetail.text = msg.senderDetail;
+            // Bind/Mark: inspectable details become clickable while the message is investigated (plain text otherwise).
+            MessageInvestigation.Bind(smsSender, () => MessageInvestigation.Mark(msg, InspectField.Sender, msg.sender));
+            MessageInvestigation.Bind(smsDetail, () => MessageInvestigation.Mark(msg, InspectField.SenderDetail, msg.senderDetail));
             smsDetail.gameObject.SetActive(!string.IsNullOrEmpty(msg.senderDetail));
             smsAvatar.text = string.IsNullOrEmpty(msg.sender) ? "?" : msg.sender.Substring(0, 1).ToUpperInvariant();
-            smsBody.text = msg.body;
-            smsLink.text = hasLink ? $"<u>{msg.link}</u>" : "";
+            MessageInvestigation.Bind(smsBody, () => MessageInvestigation.Mark(msg, InspectField.Body, msg.body));
+            MessageInvestigation.Bind(smsLink, () => hasLink ? $"<u>{MessageInvestigation.Mark(msg, InspectField.Link, msg.link)}</u>" : "");
             smsLink.gameObject.SetActive(hasLink);
         }
         else
         {
-            emailSubject.text = msg.subject;
-            emailFrom.text = $"From: <b>{msg.sender}</b>" +
-                             (string.IsNullOrEmpty(msg.senderDetail) ? "" : $"  <color=#64748B><noparse><{msg.senderDetail}></noparse></color>");
-            emailBody.text = msg.body;
-            emailLink.text = hasLink ? $"Link in email: <u>{msg.link}</u>" : "";
+            MessageInvestigation.Bind(emailSubject, () => MessageInvestigation.Mark(msg, InspectField.Subject, msg.subject));
+            MessageInvestigation.Bind(emailFrom, () => $"From: <b>{MessageInvestigation.Mark(msg, InspectField.Sender, msg.sender)}</b>" +
+                (string.IsNullOrEmpty(msg.senderDetail) ? "" : $"  <color=#64748B><noparse><</noparse>{MessageInvestigation.Mark(msg, InspectField.SenderDetail, msg.senderDetail)}<noparse>></noparse></color>"));
+            MessageInvestigation.Bind(emailBody, () => MessageInvestigation.Mark(msg, InspectField.Body, msg.body));
+            MessageInvestigation.Bind(emailLink, () => hasLink ? $"Link in email: <u>{MessageInvestigation.Mark(msg, InspectField.Link, msg.link)}</u>" : "");
             emailLink.gameObject.SetActive(hasLink);
         }
 
-        channelHeader.text = sms ? "Incoming text message" : "Incoming email";
+        channelHeader.text = msg.channel == MessageChannel.Chat ? "Incoming chat message" : sms ? "Incoming text message" : "Incoming email";
         decisionGroup.SetActive(true);
 
         // Details start collapsed for every new message.
@@ -219,7 +231,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         }
 
         pointsLine.text = $"<color={UIKit.HexAccent}><b>+{r.points} points</b></color>   ·   answered in {UIKit.FormatSeconds(r.seconds)}";
-        explanationText.text = r.message.explanation;
+        explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
         scoreLine.text = $"Score <b>{score}</b> / {maxScore}   ·   Messages reviewed <b>{reviewed}/{total}</b>";
         UIKit.SetLabel(continueButton, reviewed >= total ? "SEE RESULTS" : "CONTINUE");
         UIKit.SetInteractable(continueButton, true);
