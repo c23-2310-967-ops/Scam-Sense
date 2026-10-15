@@ -59,6 +59,8 @@ MonoBehaviour:
     - Reports a sign-in from a new device.
     - Does not ask for a password, code or payment.
     - Compare the sender's domain and the sign-in with the case files.
+    inspectables: []
+    evidence: []
   - id: l3_lookalike_bank
     channel: 1
     sender: Example Bank Security
@@ -79,6 +81,8 @@ MonoBehaviour:
     - The display name says Example Bank Security.
     - Warns of restrictions unless you act immediately.
     - Compare the full sender domain with the Trusted Contacts file.
+    inspectables: []
+    evidence: []
   - id: l3_it_password
     channel: 1
     sender: IT Support Desk
@@ -99,6 +103,8 @@ MonoBehaviour:
     - The address shows the company domain - addresses can be spoofed.
     - Warns that your access may be interrupted.
     - Check what the IT Security Policy says about passwords.
+    inspectables: []
+    evidence: []
   - id: l3_delivery_sms
     channel: 0
     sender: Example Delivery
@@ -121,6 +127,8 @@ MonoBehaviour:
     - Notification preview shows order reference ED-48213.
     - Sent from a saved contact.
     - Compare the reference with the Orders file.
+    inspectables: []
+    evidence: []
   - id: l3_exec_giftcards
     channel: 1
     sender: Operations Director
@@ -142,6 +150,8 @@ MonoBehaviour:
     - Signed with a job title only.
     - Asks you to keep it confidential and says a call isn't possible.
     - Compare the domain with your company's domain.
+    inspectables: []
+    evidence: []
   - id: l3_password_confirm
     channel: 1
     sender: Example Cloud Service
@@ -165,6 +175,8 @@ MonoBehaviour:
     - Confirms a password change.
     - Suggests opening the official application yourself.
     - Compare with the Account Activity file.
+    inspectables: []
+    evidence: []
   inboxExtras:
   - id: l3_old_welcome
     channel: 1
@@ -182,6 +194,8 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   - id: l3_old_statement
     channel: 1
     sender: Example Bank
@@ -197,6 +211,8 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   - id: l3_old_order
     channel: 1
     sender: Example Delivery
@@ -212,6 +228,8 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   caseFiles:
   - title: Trusted Contacts
     body: "Verified sender domains (from your onboarding pack):\n\u2022  Example
@@ -249,9 +267,9 @@ MonoBehaviour:
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 5
   oneStarScore: 1
-  twoStarScore: 300
-  threeStarScore: 480
-  minScoreToUnlockNext: 300
+  twoStarScore: 435
+  threeStarScore: 520
+  minScoreToUnlockNext: 435
   nextLevelId: level_4
   nextSceneName: Room4_DigitalForensicsLab
   lessons:

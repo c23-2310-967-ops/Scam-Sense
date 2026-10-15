@@ -20,7 +20,7 @@ Every closed case earns career XP. XP raises your rank from **Cybersecurity Trai
 | 8 | Elite Cybersecurity Agent | 2,100 | star |
 | 9 | Master Digital Investigator | 2,300 | star in a ring |
 
-The maximum possible is **2,412 XP** (375 / 500 / 600 / 937 for Cases 1–4).
+The maximum possible is **2,443 XP** (375 / 531 / 600 / 937 for Cases 1–4; Case 2 has seven messages).
 - **A good first playthrough** (most answers right, about 8 s each, all evidence) ends at about **1,855 XP, Cybercrime Specialist**.
 - **Elite** needs strong replays.
 - **Master** needs close to flawless, fast answers in every case.

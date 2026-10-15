@@ -49,7 +49,7 @@ Controls are unchanged: WASD (`InputManager`), mouse look (`MouseLook`), E (door
 
 ## Inspector configuration
 - **ScoringSystem** (on Level1): `Brackets` list (max seconds → points; default ≤5:100, ≤10:80, ≤15:60, ≤20:40), `Slowest Correct Points` (20), `Incorrect Points` (0). Max per message = highest bracket.
-- **Level1_TheFirstCase.asset**: star thresholds (200/300/400), `Min Score To Unlock Next` (300), `Next Level Id` (`level_2`), `Next Scene Name` (empty), message timing, messages, lessons.
+- **Level1_TheFirstCase.asset**: star thresholds (200/325/425), `Min Score To Unlock Next` (325, 65%), `Next Level Id` (`level_2`), `Next Scene Name` (empty), message timing, messages, lessons.
 - **QuizManager**: interact key, look distance, walk distance trigger, near-device radius, reminder interval.
 - **LevelAudio**: drop in your own clips; leave empty for generated sounds; toggle/volume room tone.
 - **GameManager**: `Main Menu Scene` (`Menu`), results delay.
@@ -71,7 +71,7 @@ If the next scene is missing or not in the build, Continue shows "NEXT CASE SOON
 5. Look at a monitor with no message → "Computer – no new emails". With a pending email → "Press [E] to read the new email".
 6. Stand near a door while a message is pending and press E → message opens, door doesn't move.
 7. Sit at the desk, get an email, press E → message opens (you stay seated); after Continue you're still seated and can stand with E.
-8. Finish → results. ≥300 → green "Room unlocked!"; <300 → red "Room locked. You scored X..." message.
+8. Finish → results. ≥325 → green "Room unlocked!"; <325 → red "Room locked. You scored X..." message.
 9. Replay → fresh briefing, score 0/500. Results "Best score" keeps the higher value.
 10. Main Menu → menu loads with a visible cursor.
 

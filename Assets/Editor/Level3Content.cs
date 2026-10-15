@@ -228,11 +228,11 @@ public static class Level3Content
         l.delayBetweenMessages = new UnityEngine.Vector2(10f, 20f);
         l.minimumActivityDelay = 5f;
 
-        // Same scoring rules and thresholds as Level 2 (6 messages, 100 points max each = 600).
+        // 6 messages, 100 points max each = 600. Passing 435 (about 73%): each room asks for a higher share than the last.
         l.oneStarScore = 1;
-        l.twoStarScore = 300;
-        l.threeStarScore = 480;
-        l.minScoreToUnlockNext = 300;
+        l.twoStarScore = 435;
+        l.threeStarScore = 520;
+        l.minScoreToUnlockNext = 435;
         l.nextLevelId = "level_4";
         l.nextSceneName = "";   // Level 4 isn't built yet: the results screen shows NEXT ROOM: COMING SOON
 

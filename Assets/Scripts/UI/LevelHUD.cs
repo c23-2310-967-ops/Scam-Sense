@@ -116,7 +116,7 @@ public class LevelHUD : MonoBehaviour
     public void ShowNotification(ScamMessage msg, string hint)
     {
         HideNotification();
-        bool sms = msg.channel == MessageChannel.SMS;
+        bool sms = MessageChannels.OnPhone(msg.channel);   // texts and chats arrive on the phone
         if (sms)
         {
             phoneSender.text = msg.sender;

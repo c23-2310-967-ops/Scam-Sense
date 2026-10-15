@@ -106,14 +106,14 @@ Environment
 - **Old inbox emails:** a welcome from the security team, a bank statement from the genuine bank domain, and the ED-48213 order confirmation.
 - **Timing:** first message after 10 s, then 10–20 s after each answer. The activity trigger can bring a message in early, after at least 5 s.
 - **Scoring:** the existing rules. Points per correct answer by speed are 100 / 80 / 60 / 40 / 20, wrong = 0, maximum 600.
-- **Stars:** 1 = 1+, 2 = 300+, 3 = 480+. They're shown and saved, and never unlock anything.
-- **Unlock:** `minScoreToUnlockNext` = 300 and `nextLevelId` = `level_4`. `nextSceneName` is empty, so the results show **NEXT ROOM: COMING SOON**. When Level 4 exists:
+- **Stars:** 1 = 1+, 2 = 435+, 3 = 520+. They're shown and saved, and never unlock anything.
+- **Unlock:** `minScoreToUnlockNext` = 435 (about 73%) and `nextLevelId` = `level_4`. `nextSceneName` is empty, so the results show **NEXT ROOM: COMING SOON**. When Level 4 exists:
   - set its scene name here;
   - add its LevelDefinition to the Level Catalog;
   - widen the Level Selection panel, or make the cards narrower, because it fits three cards side by side.
 
 ## Tested (Editor Play Mode, buttons driven by script through their real onClick)
-- **Briefing and HUD:** Room 3 starts with the briefing (title, your text, case notes, 4 objectives, controls, max 600, passing score 300). BEGIN INVESTIGATION starts the level. One EventSystem.
+- **Briefing and HUD:** Room 3 starts with the briefing (title, your text, case notes, 4 objectives, controls, max 600, passing score 435). BEGIN INVESTIGATION starts the level. One EventSystem.
 - **Case-files computer:**
   - the "E Open case files" prompt appears when looking at it;
   - the camera eases in and the cursor is freed;

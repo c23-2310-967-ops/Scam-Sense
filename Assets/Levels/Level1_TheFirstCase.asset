@@ -49,6 +49,79 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: Sender name
+      finding: Shown only as 'Unknown Number' - it isn't in your contacts and doesn't
+        name any delivery company.
+      linkAddress: 
+      clueId: unknown
+    - id: number
+      field: 1
+      match: 
+      label: Phone number
+      finding: +1 (555) 014-2290 is an ordinary mobile number. Real couriers normally
+        text from a named sender or short code.
+      linkAddress: 
+      clueId: number
+    - id: heading
+      field: 3
+      match: Delivery Alert
+      label: Heading
+      finding: '''Delivery Alert'' sounds official - but anyone can type a heading.'
+      linkAddress: 
+      clueId: heading
+    - id: hold
+      field: 3
+      match: Your package is on hold
+      label: The claim
+      finding: It never says which package, which company or which order.
+      linkAddress: 
+      clueId: vague
+    - id: details
+      field: 3
+      match: confirm your details
+      label: What it asks
+      finding: It wants you to 'confirm your details' through a text link. Couriers
+        don't need you to re-enter personal details this way.
+      linkAddress: 
+      clueId: details
+    - id: link
+      field: 4
+      match: 
+      label: Link
+      finding: parcel-redelivery.example is not a courier you use, and the link is
+        plain http (not secure).
+      linkAddress: http://parcel-redelivery.example/confirm
+      clueId: link
+    evidence:
+    - id: unknown
+      title: Unknown sender
+      whyItMatters: The text doesn't come from any company you recognise.
+      supportsVerdict: 1
+    - id: number
+      title: Ordinary mobile number
+      whyItMatters: Delivery companies don't usually text from random mobile numbers.
+      supportsVerdict: 1
+    - id: vague
+      title: No order or company named
+      whyItMatters: A real delivery update names the company and your parcel.
+      supportsVerdict: 1
+    - id: details
+      title: Asks you to confirm personal details
+      whyItMatters: Scam texts collect personal and payment details through links.
+      supportsVerdict: 1
+    - id: link
+      title: Unfamiliar, insecure link
+      whyItMatters: parcel-redelivery.example isn't a courier you use, and it's plain
+        http.
+      supportsVerdict: 1
+    - id: heading
+      title: Official-sounding heading
+      whyItMatters: Anyone can write 'Delivery Alert' - on its own it isn't evidence.
+      supportsVerdict: 0
   - id: l1_bank_verify
     channel: 1
     sender: "Security Team \u2014 Example Bank"
@@ -66,6 +139,73 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: Sender
+      finding: The display name claims to be Example Bank's security team, but no
+        address is shown to back it up - names are easy to fake.
+      linkAddress: 
+      clueId: 
+    - id: subject
+      field: 2
+      match: Immediate
+      label: Subject line
+      finding: '''Immediate'' action required: pressure to act before you think.'
+      linkAddress: 
+      clueId: urgent
+    - id: issue
+      field: 3
+      match: We detected an issue with your account
+      label: The problem
+      finding: It never says what the issue is or which account.
+      linkAddress: 
+      clueId: vague
+    - id: threat
+      field: 3
+      match: Your access may be restricted today
+      label: Threat
+      finding: Threatens to restrict your access today unless you act.
+      linkAddress: 
+      clueId: threat
+    - id: verify
+      field: 3
+      match: verify your information
+      label: What it asks
+      finding: Asks you to verify your information through a link. Banks tell you
+        to sign in through their app or official site yourself.
+      linkAddress: 
+      clueId: request
+    - id: link
+      field: 4
+      match: 
+      label: Link
+      finding: examplebank-verify.example is not Example Bank's own site - it's a
+        separate look-alike domain built to collect logins.
+      linkAddress: http://examplebank-verify.example/login
+      clueId: link
+    evidence:
+    - id: urgent
+      title: '''Immediate'' action required'
+      whyItMatters: Urgency stops you from checking first.
+      supportsVerdict: 1
+    - id: threat
+      title: Threat to restrict your account today
+      whyItMatters: Scammers use threats to rush you.
+      supportsVerdict: 1
+    - id: vague
+      title: Vague 'issue' with no details
+      whyItMatters: Real security emails say what happened.
+      supportsVerdict: 1
+    - id: request
+      title: Asks you to verify information via a link
+      whyItMatters: A bank won't ask you to verify details through an email link.
+      supportsVerdict: 1
+    - id: link
+      title: Look-alike bank domain
+      whyItMatters: examplebank-verify.example isn't the bank's real site.
+      supportsVerdict: 1
   - id: l1_order_confirmed
     channel: 0
     sender: Example Delivery
@@ -84,6 +224,56 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: Sender
+      finding: Example Delivery - the delivery service for the order you placed.
+        (Names can be faked, so check the rest too.)
+      linkAddress: 
+      clueId: known
+    - id: confirmed
+      field: 3
+      match: Your order has been confirmed
+      label: What it says
+      finding: It confirms the order you placed earlier - it matches something you
+        actually did.
+      linkAddress: 
+      clueId: matches
+    - id: date
+      field: 3
+      match: Your estimated delivery date is tomorrow
+      label: Delivery date
+      finding: 'Just information: no deadline, threat or payment.'
+      linkAddress: 
+      clueId: noask
+    - id: app
+      field: 3
+      match: view your order status in the official delivery app
+      label: Next step
+      finding: It sends you to the official app you already use - there's no link
+        to click.
+      linkAddress: 
+      clueId: app
+    evidence:
+    - id: matches
+      title: Matches your real order
+      whyItMatters: You did place an order, so this message is expected.
+      supportsVerdict: 1
+    - id: noask
+      title: Asks for nothing
+      whyItMatters: No payment, details, link or deadline.
+      supportsVerdict: 1
+    - id: app
+      title: Points to the official app
+      whyItMatters: Using the app yourself is the safe way to check.
+      supportsVerdict: 1
+    - id: known
+      title: From the delivery service you used
+      whyItMatters: Consistent with your order - supporting evidence, not proof on
+        its own.
+      supportsVerdict: 1
   - id: l1_prize
     channel: 1
     sender: Rewards Center
@@ -100,6 +290,75 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: Sender
+      finding: '''Rewards Center'' - not a company you know, and no address is shown.'
+      linkAddress: 
+      clueId: unknown
+    - id: subject
+      field: 2
+      match: You Won a Special Prize!
+      label: Subject line
+      finding: You 'won' a prize for a contest you never entered.
+      linkAddress: 
+      clueId: neverentered
+    - id: free
+      field: 3
+      match: free premium reward
+      label: The offer
+      finding: A free premium reward out of nowhere - too good to be true.
+      linkAddress: 
+      clueId: toogood
+    - id: now
+      field: 3
+      match: Claim your prize immediately
+      label: Urgency
+      finding: Pushes you to claim immediately.
+      linkAddress: 
+      clueId: urgency
+    - id: nopurchase
+      field: 3
+      match: No purchase is required!
+      label: Reassurance
+      finding: '''No purchase required'' is meant to lower your guard.'
+      linkAddress: 
+      clueId: nopurchase
+    - id: link
+      field: 4
+      match: 
+      label: Link
+      finding: rewards-claim.example isn't connected to anything you use. Prize links
+        like this lead to pages asking for personal or card details.
+      linkAddress: http://rewards-claim.example/prize
+      clueId: link
+    evidence:
+    - id: neverentered
+      title: A prize you never entered for
+      whyItMatters: You can't win a contest you didn't enter.
+      supportsVerdict: 1
+    - id: unknown
+      title: Unknown sender
+      whyItMatters: '''Rewards Center'' isn''t a company you deal with.'
+      supportsVerdict: 1
+    - id: toogood
+      title: Too good to be true
+      whyItMatters: Free premium rewards out of nowhere are classic bait.
+      supportsVerdict: 1
+    - id: urgency
+      title: '''Claim immediately'''
+      whyItMatters: Urgency stops you from thinking it through.
+      supportsVerdict: 1
+    - id: link
+      title: Unknown prize-claim link
+      whyItMatters: The link isn't connected to any company you use.
+      supportsVerdict: 1
+    - id: nopurchase
+      title: '''No purchase required'''
+      whyItMatters: Real promotions say this too - on its own it proves nothing.
+      supportsVerdict: 0
   - id: l1_password_done
     channel: 1
     sender: Example Cloud Service
@@ -119,6 +378,61 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: Sender
+      finding: Example Cloud Service - the service you changed your password on.
+      linkAddress: 
+      clueId: service
+    - id: subject
+      field: 2
+      match: 
+      label: Subject line
+      finding: A calm, factual subject - no urgency or threats.
+      linkAddress: 
+      clueId: 
+    - id: requested
+      field: 3
+      match: The password update you requested
+      label: What it refers to
+      finding: It refers to the password change you really made during setup.
+      linkAddress: 
+      clueId: matches
+    - id: noaction
+      field: 3
+      match: no further action is needed
+      label: What it asks
+      finding: Nothing - no link, code or password is requested.
+      linkAddress: 
+      clueId: noask
+    - id: official
+      field: 3
+      match: open the official application
+      label: Advice
+      finding: If it wasn't you, it tells you to open the official app yourself -
+        not to click a link.
+      linkAddress: 
+      clueId: official
+    evidence:
+    - id: matches
+      title: Matches the change you made
+      whyItMatters: You did request a password change, so this notice is expected.
+      supportsVerdict: 1
+    - id: noask
+      title: Asks for nothing
+      whyItMatters: No link, code or password is requested.
+      supportsVerdict: 1
+    - id: official
+      title: Tells you to use the official app
+      whyItMatters: Genuine services send you to their own app, not a link.
+      supportsVerdict: 1
+    - id: service
+      title: From the service you used
+      whyItMatters: Consistent with your change - supporting evidence, not proof
+        on its own.
+      supportsVerdict: 1
   inboxExtras:
   - id: old_library
     channel: 1
@@ -135,6 +449,8 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   - id: old_team
     channel: 1
     sender: Sam (Volunteer Team)
@@ -150,6 +466,8 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   - id: old_receipt
     channel: 1
     sender: Example Delivery
@@ -165,14 +483,16 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
+    inspectables: []
+    evidence: []
   caseFiles: []
   firstMessageDelay: 8
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 4
   oneStarScore: 200
-  twoStarScore: 300
-  threeStarScore: 400
-  minScoreToUnlockNext: 300
+  twoStarScore: 325
+  threeStarScore: 425
+  minScoreToUnlockNext: 325
   nextLevelId: level_2
   nextSceneName: Room2_InvestigationOffice
   lessons:

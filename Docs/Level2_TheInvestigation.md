@@ -1,6 +1,6 @@
 # Level 2 — The Investigation
 
-Room 2 is a cybersecurity investigation office. The player reviews six flagged messages: emails on the desk computer, texts on the phone. They classify each one as SCAM or LEGITIMATE and are scored on accuracy and speed. Room 3 unlocks **only** when the score reaches the passing score.
+Room 2 is a cybersecurity investigation office. The player reviews seven flagged messages: emails on the desk computer, texts and a work chat on the phone. They classify each one as SCAM or LEGITIMATE and are scored on accuracy and speed. Room 3 unlocks **only** when the score reaches the passing score.
 
 Level 2 reuses the existing systems: QuizManager, ScoringSystem, GameManager, LocalDataManager, ComputerTerminal, MessagePopupUI, BriefingUI, ResultsUI, PauseMenu and MainMenuUI. It adds **no** second scoring manager, save manager or EventSystem.
 
@@ -10,7 +10,7 @@ Level 2 reuses the existing systems: QuizManager, ScoringSystem, GameManager, Lo
 | Path | What it is |
 |---|---|
 | `Assets/Scenes/Room2_InvestigationOffice.unity` | The office scene. Its Player, EventSystem, `Level2` and `Phone` objects were copied from `Game.unity`; the environment was built new. |
-| `Assets/Levels/Level2_TheInvestigation.asset` | All Level 2 content: briefing, case notes, objectives, the six messages with investigation details, timing, star thresholds, passing score, lessons and result texts. |
+| `Assets/Levels/Level2_TheInvestigation.asset` | All Level 2 content: briefing, case notes, objectives, the seven messages with their investigation details (inspectable details and clues, see MessageInvestigation.md), timing, star thresholds, passing score, lessons and result texts. |
 | `Assets/Levels/Level3_AdvancedThreats.asset` | Placeholder card for Room 3. `sceneName` is empty, so the menu shows "Coming soon". |
 | `Assets/Materials/R2_*.mat` | Office materials: floor, walls, ceiling, cyan trim, cabinets, handles and red string. |
 
@@ -50,8 +50,8 @@ Level 2 reuses the existing systems: QuizManager, ScoringSystem, GameManager, Lo
 - **DeskChair › SittableChair**: Seat Point = `SeatPoint`, Exit Point = `ExitPoint`, Look Target = `Workstation/ScreenFocus`.
 - **Level2 › GameManager**: Level = `Level2_TheInvestigation`, Main Menu Scene = `Menu`.
 - **Level2_TheInvestigation.asset**:
-  - `minScoreToUnlockNext` = 300 (passing score);
-  - `oneStarScore` = 1, `twoStarScore` = 300, `threeStarScore` = 480;
+  - `minScoreToUnlockNext` = 475 (passing score, about 68%);
+  - `oneStarScore` = 1, `twoStarScore` = 475, `threeStarScore` = 600;
   - `delayBetweenMessages` = (10, 20);
   - `nextLevelId` = `level_3`;
   - `nextSceneName` = empty. Set it to Room 3's scene name once that scene exists and is in Build Settings.
@@ -60,12 +60,12 @@ Level 2 reuses the existing systems: QuizManager, ScoringSystem, GameManager, Lo
 - **Points per message** (ScoringSystem, unchanged):
   - correct within 5 s = 100, within 10 s = 80, within 15 s = 60, within 20 s = 40, slower = 20;
   - wrong = 0;
-  - maximum = 600.
+  - maximum = 700.
 - **Timer**:
   - starts when the message opens (`QuizManager.OpenPending`);
   - uses scaled time, so the pause menu (timeScale 0) pauses it;
   - each message id is scored once (`ScoringSystem.TryRecord`), and both answer buttons disable on the first click.
-- **Stars** (`LevelDefinition`): 3 = 480–600, 2 = 300–479, 1 = 1–299, 0 = 0. Stars are shown and saved, but **never** unlock anything.
+- **Stars** (`LevelDefinition`): 3 = 600–700, 2 = 475–599, 1 = 1–474, 0 = 0. Stars are shown and saved, but **never** unlock anything.
 - **Unlock**: `GameManager.EvaluateAndSave` unlocks `nextLevelId` only when `score >= minScoreToUnlockNext`.
 
 ## Save data (PlayerPrefs `scamsense_progress_v1`, JSON)
@@ -77,8 +77,8 @@ Note: Level 1 entries saved before this change show `passed: false` even if they
 
 ### Tested in Play Mode (by script driving the real buttons' onClick in the Editor)
 - Room 2 loads from the Level Selection card through the normal menu fade and SceneLoader. It has one EventSystem and its briefing reads "LEVEL 2: THE INVESTIGATION".
-- The briefing shows the case notes, the 4 objectives, max 600 and the passing score 300. BEGIN INVESTIGATION starts the level.
-- Messages arrive in order (1 → 6). Emails open on the desk computer and texts on the phone popup.
+- The briefing shows the case notes, the 4 objectives, max 700 (seven messages × 100) and the passing score 475. BEGIN INVESTIGATION starts the level.
+- Messages arrive in order (1 → 7). Emails open on the desk computer; texts and the IT chat message open on the phone popup.
 - DETAILS works on the computer and the phone. The phone's details scroll. Nothing reveals the verdict before answering.
 - Scoring brackets seen: 0 s → 100, 14.5 s → 60, 44–46 s → 20, wrong → 0.
 - Double-clicking an answer scores only once.
@@ -105,7 +105,7 @@ Note: Level 1 entries saved before this change show `passed: false` even if they
 | Emails say "read it at a computer" but E does nothing | Look straight at the monitor within 3 m. Check that `Workstation/Monitor` has its BoxCollider and that ComputerTerminal's Quiz field is set. |
 | Monitor UI is offset or the wrong size | Screen Submesh must be `1`. Enable Read/Write on `computerScreen.fbx` (it is enabled now). |
 | Details text is tiny on the monitor | The text auto-shrinks to fit (minimum 15). Shorter clues or fewer case notes make it larger. |
-| Room 3 never unlocks | This is intended below 300 points. Check `minScoreToUnlockNext` and `nextLevelId = level_3` on the Level 2 asset. |
+| Room 3 never unlocks | This is intended below 475 points. Check `minScoreToUnlockNext` and `nextLevelId = level_3` on the Level 2 asset. |
 | NEXT ROOM says COMING SOON | Level 3 has no scene yet. Set `nextSceneName` on Level 2 (and `sceneName` on Level 3) once the Room 3 scene is in Build Settings. |
 | Clicks don't register in the Game view | Use Free Aspect or a resolution that fits the Game view window. |
 | Reset progress for testing | There is no in-game reset button. Use Edit › Clear All PlayerPrefs, which also clears your audio settings, or call `LocalDataManager.ResetAll()`. |

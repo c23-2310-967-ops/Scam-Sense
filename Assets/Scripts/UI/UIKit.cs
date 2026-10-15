@@ -682,7 +682,7 @@ public static class UIKit
         if (m == null) return "";
         var sb = new System.Text.StringBuilder();
         string channel = m.channel == MessageChannel.SMS ? "Text message" : m.channel == MessageChannel.Website ? "Web page (captured)"
-                       : m.channel == MessageChannel.Case ? "Multi-evidence case" : "Email";
+                       : m.channel == MessageChannel.Case ? "Multi-evidence case" : m.channel == MessageChannel.Chat ? "Work chat" : "Email";
         sb.Append($"<color={HexAccent}><b>SENDER</b></color>  {m.sender}");
         if (!string.IsNullOrEmpty(m.senderDetail)) sb.Append($"  <color={HexSecondary}>({m.senderDetail})</color>");
         sb.Append($"\n<color={HexAccent}><b>CHANNEL</b></color>  {channel}");
