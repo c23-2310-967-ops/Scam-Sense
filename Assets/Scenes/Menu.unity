@@ -48760,6 +48760,11 @@ MonoBehaviour:
   qualityValue: {fileID: 296664070}
   pendingText: {fileID: 917759808}
   applyButton: {fileID: 360020199}
+  resetConfirmButton: {fileID: 0}
+  resetCancelButton: {fileID: 0}
+  resetScopeText: {fileID: 0}
+  resetResultTitle: {fileID: 0}
+  resetResultBody: {fileID: 0}
   levelRow: {fileID: 1970194401}
   feedSender: {fileID: 2139534441}
   feedBody: {fileID: 1447147681}

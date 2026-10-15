@@ -26,6 +26,8 @@ public class LevelDefinition : ScriptableObject
     public string sceneName = "Game";
     [Tooltip("One or two sentences for the Level Selection card.")]
     [TextArea(2, 4)] public string description = "";
+    [Tooltip("Still of the room for the menu's room previews (Tools > Scam Sense > Menu > Capture Level Previews). Optional.")]
+    public Sprite previewImage;
 
     [Header("Briefing")]
     public string briefingTitle = "CASE BRIEFING";
