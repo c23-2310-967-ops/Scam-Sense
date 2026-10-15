@@ -127,6 +127,30 @@ public static class CareerSystem
 
     public static CareerConfig.Achievement AchievementDef(string id) => Config.achievements.Find(a => a.id == id);
 
+    /// <summary>
+    /// Progress towards a countable achievement, from the saved career (e.g. 1 / 3 cases at 80%).
+    /// Returns false for achievements that are earned in a single case and have no running count.
+    /// </summary>
+    public static bool AchievementProgress(string id, out int current, out int target)
+    {
+        current = target = 0;
+        var cfg = Config;
+        switch (id)
+        {
+            case AchConsistent:
+                target = cfg.consistentCases;
+                foreach (var lp in LocalDataManager.Levels)
+                    if (lp.messageCount > 0 && (float)lp.bestCorrect / lp.messageCount >= cfg.consistentAccuracy) current++;
+                break;
+            case AchAllCases: target = cfg.casesInGame; current = CasesSolved; break;
+            case AchElite: target = RankAt(cfg.ranks.Count - 2).minXp; current = TotalXp; break;
+            case AchMaster: target = RankAt(cfg.ranks.Count - 1).minXp; current = TotalXp; break;
+            default: return false;
+        }
+        current = Mathf.Min(current, target);
+        return target > 0;
+    }
+
     // ---------- The one place XP is awarded ----------
 
     /// <summary>The career before a run is saved (the run's score changes what "completed" means for the estimate).</summary>
@@ -197,10 +221,7 @@ public static class CareerSystem
             if (fullSpeed) Grant(AchRapid);
         }
         if (closed && evidenceNeeded > 0 && evidenceSeen >= evidenceNeeded) Grant(AchEvidence);
-        int consistent = 0;
-        foreach (var lp in LocalDataManager.Levels)
-            if (lp.messageCount > 0 && (float)lp.bestCorrect / lp.messageCount >= cfg.consistentAccuracy) consistent++;
-        if (consistent >= cfg.consistentCases) Grant(AchConsistent);
+        if (AchievementProgress(AchConsistent, out int consistent, out int needed) && consistent >= needed) Grant(AchConsistent);
         if (res.Promoted) Grant(AchPromotion);
         if (closed && solved && finalCorrect) Grant(AchForensics);
         if (CasesSolved >= cfg.casesInGame) Grant(AchAllCases);

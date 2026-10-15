@@ -68,7 +68,11 @@ XP is awarded only when a case is closed. Entering a room, exiting or quitting e
   - an animated XP bar with "x / y XP to *next rank*";
   - new achievements.
 - **Promotion card:** only when a new rank is reached. It shows the insignia with a soft glow, says what earned the rank, lists every rank passed if several were crossed in one case, and names the next rank.
-- **Main menu:** a *CAREER PROFILE* card at the top right shows insignia, rank, XP bar, XP, cases solved, accuracy and achievement count. The Level 1 backdrop and room previews are unchanged. Clicking the card opens the **career dashboard**: rank and statistics, best XP per case, the full ladder, and every achievement.
+- **Main menu:** a *CAREER PROFILE* card at the top right shows insignia, rank, XP bar, XP, cases solved, accuracy and achievement count. The Level 1 backdrop and room previews are unchanged. Clicking the card opens the **career dashboard**, which has two tabs:
+  - **OVERVIEW:** rank header with insignia and a large XP bar, five stat tiles, the career path through all nine ranks (✓ EARNED / YOU ARE HERE / XP needed), and best XP per case.
+  - **ACHIEVEMENTS:** two columns of cards. **Unlocked** shows a gold star and "✓ UNLOCKED". **In progress** shows a padlock, "IN PROGRESS", a bar and a real count, such as 2 / 3 cases or 1,219 / 2,100 XP. **Locked** shows a padlock and "LOCKED". The list scrolls with the wheel or by dragging if it grows past the panel.
+
+  Text uses the menu's own type scale: rank 42, values 36, achievement titles 24, descriptions 20, labels 17–19. The panel narrows itself on screens narrower than 16:9.
 
 **Effects and sound:** at the lowest graphics quality setting, the career section and promotion card appear without animation. The promotion card uses the existing room-unlocked sound and the bar uses the star sound, through `LevelAudio`.
 
