@@ -6,13 +6,18 @@ using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 
 /// <summary>
-/// The 3D main-menu background. Lives in MenuBackdrop_Room1, a copy of Level 1's house with all gameplay
-/// removed (built by Tools > Scam Sense > Menu > Build Menu Backdrop). MainMenuUI loads that scene additively
+/// The 3D main-menu background. Lives in MenuBackdrop_Room1: copies of the game's rooms (Level 1's house and
+/// Rooms 2-4) with all gameplay removed, one room switched on at a time (built by Tools > Scam Sense > Menu >
+/// Build Menu Backdrop). MainMenuUI loads that scene additively
 /// behind the menu; if it is missing, the menu keeps its still background shots.
 ///
-/// While enabled it is the only camera that renders: a slow cinematic drift through the Level 1 computer room
-/// with a gentle sway and a little mouse parallax. It applies Level 1's own lighting settings, blinks the
-/// server-rack LEDs and types a "threat monitor" feed on the workstation screen.
+/// While enabled it is the only camera that renders. It plays a loop of cinematic shots across the rooms
+/// (establishing shot, workstation close-up, investigation office, operations room, evidence wall, lab): each shot is
+/// a slow dolly from one pose to another; between shots the background dips briefly towards dark
+/// (<see cref="CutFade"/>, applied by MainMenuUI to the menu's Tint layer behind the UI), so the camera never
+/// travels through furniture and the loop has no visible jump. Gentle sway and mouse parallax on top.
+/// At each cut it switches on the shot's room and applies that room's own lighting settings; only that room
+/// renders. It also blinks the Level 1 server-rack LEDs and types a "threat monitor" feed on its workstation.
 /// Everything it changes outside its own scene (other cameras and lights, RenderSettings) is put back when it
 /// is disabled, so the menu scene and the levels are never affected.
 /// </summary>
@@ -21,25 +26,50 @@ public class MenuBackdrop : MonoBehaviour
     /// <summary>The backdrop currently on screen (null when the menu shows its still shots).</summary>
     public static MenuBackdrop Active { get; private set; }
 
-    [Header("Camera path (world space of the Level 1 house)")]
-    [SerializeField] private Camera cam;
-    [SerializeField] private Vector3[] positions = new Vector3[0];
-    [SerializeField] private Vector3[] lookTargets = new Vector3[0];
-    [Tooltip("Seconds to glide from one viewpoint to the next.")]
-    [SerializeField] private float legSeconds = 24f;
-    [SerializeField] private float swayAmount = 0.02f;
-    [SerializeField] private float parallaxDegrees = 1.2f;
+    /// <summary>One room copy and the lighting settings of the scene it came from (captured by the builder).</summary>
+    [System.Serializable]
+    public class Room
+    {
+        public string name = "Room";
+        public GameObject root;
+        public AmbientMode ambientMode = AmbientMode.Trilight;
+        public Color ambientSky = Color.gray, ambientEquator = Color.gray, ambientGround = Color.gray;
+        public float ambientIntensity = 1f;
+        public Material skybox;
+        public float reflectionIntensity = 1f;
+        public bool fog;
+        public FogMode fogMode = FogMode.ExponentialSquared;
+        public Color fogColor = Color.gray;
+        public float fogDensity = 0.01f, fogStart = 0f, fogEnd = 300f;
+    }
 
-    [Header("Level 1 lighting (captured by the builder)")]
-    [SerializeField] private AmbientMode ambientMode = AmbientMode.Trilight;
-    [SerializeField] private Color ambientSky = Color.gray, ambientEquator = Color.gray, ambientGround = Color.gray;
-    [SerializeField] private float ambientIntensity = 1f;
-    [SerializeField] private Material skybox;
-    [SerializeField] private float reflectionIntensity = 1f;
-    [SerializeField] private bool fog;
-    [SerializeField] private FogMode fogMode = FogMode.ExponentialSquared;
-    [SerializeField] private Color fogColor = Color.gray;
-    [SerializeField] private float fogDensity = 0.01f, fogStart = 0f, fogEnd = 300f;
+    /// <summary>One camera shot: a slow move from one pose to another, in one room (that room's world space).</summary>
+    [System.Serializable]
+    public class Shot
+    {
+        public string name = "Shot";
+        [Tooltip("Index into Rooms.")]
+        public int room;
+        public Vector3 fromPosition, toPosition;
+        [Tooltip("Point the camera looks at, at the start and at the end of the shot.")]
+        public Vector3 fromLookAt, toLookAt;
+        [Range(20f, 90f)] public float fieldOfView = 55f;
+        [Min(2f)] public float duration = 10f;
+    }
+
+    /// <summary>0 normally, rising to 1 at a cut between shots. MainMenuUI darkens the background with it.</summary>
+    public static float CutFade => Active != null ? Active.cutFade : 0f;
+
+    [Header("Shots (played in order, looping)")]
+    [SerializeField] private Camera cam;
+    [SerializeField] private Shot[] shots = new Shot[0];
+    [Tooltip("Seconds the background takes to dip out at the end of a shot (and back in at the start of the next).")]
+    [SerializeField, Min(0.1f)] private float cutSeconds = 0.9f;
+    [SerializeField] private float swayAmount = 0.015f;
+    [SerializeField] private float parallaxDegrees = 1.0f;
+
+    [Header("Rooms (one is on at a time)")]
+    [SerializeField] private Room[] rooms = new Room[0];
 
     [Header("Ambient animation")]
     [SerializeField] private Renderer[] blinkingLeds = new Renderer[0];
@@ -69,7 +99,8 @@ public class MenuBackdrop : MonoBehaviour
     AmbientMode oldAmbientMode; Color oldSky, oldEquator, oldGround; float oldAmbientIntensity, oldReflection;
     Material oldSkybox; bool oldFog; FogMode oldFogMode; Color oldFogColor; float oldFogDensity, oldFogStart, oldFogEnd;
 
-    float t0;
+    float t0, cutFade;
+    int shotIndex, activeRoom = -1;
     Vector2 parallax;
     float[] ledNext;
     readonly List<string> shown = new List<string>();
@@ -80,9 +111,9 @@ public class MenuBackdrop : MonoBehaviour
     void OnEnable()
     {
         if (cam == null) cam = GetComponentInChildren<Camera>(true);
-        if (cam == null || positions.Length == 0 || positions.Length != lookTargets.Length)
+        if (cam == null || shots == null || shots.Length == 0 || rooms == null || rooms.Length == 0)
         {
-            Debug.LogWarning("MenuBackdrop: camera path missing - rebuild with Tools > Scam Sense > Menu > Build Menu Backdrop.", this);
+            Debug.LogWarning("MenuBackdrop: no camera shots - rebuild with Tools > Scam Sense > Menu > Build Menu Backdrop.", this);
             enabled = false;
             return;
         }
@@ -98,12 +129,14 @@ public class MenuBackdrop : MonoBehaviour
         oldGround = RenderSettings.ambientGroundColor; oldAmbientIntensity = RenderSettings.ambientIntensity; oldReflection = RenderSettings.reflectionIntensity;
         oldSkybox = RenderSettings.skybox; oldFog = RenderSettings.fog; oldFogMode = RenderSettings.fogMode; oldFogColor = RenderSettings.fogColor;
         oldFogDensity = RenderSettings.fogDensity; oldFogStart = RenderSettings.fogStartDistance; oldFogEnd = RenderSettings.fogEndDistance;
-        ApplyLighting(ambientMode, ambientSky, ambientEquator, ambientGround, ambientIntensity, reflectionIntensity, skybox,
-                      fog, fogMode, fogColor, fogDensity, fogStart, fogEnd);
+        activeRoom = -1;
+        ShowRoom(shots[0].room);
 
         t0 = Time.unscaledTime;
         ledNext = new float[blinkingLeds.Length];
         for (int i = 0; i < ledNext.Length; i++) ledNext[i] = t0 + Random.Range(0.2f, 2f);
+        shotIndex = 0;
+        cutFade = 1f;   // the first shot fades in
         PlaceCamera(0f, Vector2.zero);
         Active = this;
     }
@@ -116,6 +149,20 @@ public class MenuBackdrop : MonoBehaviour
         if (ledNext != null)
             ApplyLighting(oldAmbientMode, oldSky, oldEquator, oldGround, oldAmbientIntensity, oldReflection, oldSkybox,
                           oldFog, oldFogMode, oldFogColor, oldFogDensity, oldFogStart, oldFogEnd);
+    }
+
+    /// <summary>Switches on one room (the others off) and applies its lighting. Called at a cut, while the background is dark.</summary>
+    void ShowRoom(int index)
+    {
+        index = Mathf.Clamp(index, 0, rooms.Length - 1);
+        if (index == activeRoom) return;
+        activeRoom = index;
+        for (int i = 0; i < rooms.Length; i++)
+            if (rooms[i] != null && rooms[i].root != null) rooms[i].root.SetActive(i == index);
+        var r = rooms[index];
+        ApplyLighting(r.ambientMode, r.ambientSky, r.ambientEquator, r.ambientGround, r.ambientIntensity, r.reflectionIntensity, r.skybox,
+                      r.fog, r.fogMode, r.fogColor, r.fogDensity, r.fogStart, r.fogEnd);
+        cam.clearFlags = r.skybox != null ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
     }
 
     static void ApplyLighting(AmbientMode mode, Color sky, Color equator, Color ground, float intensity, float reflection, Material box,
@@ -150,7 +197,15 @@ public class MenuBackdrop : MonoBehaviour
             target = Vector2.ClampMagnitude(target, 1.4f);
         }
         parallax = Vector2.Lerp(parallax, target, 1f - Mathf.Exp(-Time.unscaledDeltaTime * 2f));
-        PlaceCamera(now - t0, parallax);
+        float t = now - t0;
+        if (t >= shots[shotIndex].duration)   // next shot (loops)
+        {
+            t0 += shots[shotIndex].duration;
+            t = now - t0;
+            shotIndex = (shotIndex + 1) % shots.Length;
+            ShowRoom(shots[shotIndex].room);   // the background is fully dipped here
+        }
+        PlaceCamera(t, parallax);
 
         // Server-rack LEDs: mostly on, with short random blinks.
         for (int i = 0; i < blinkingLeds.Length; i++)
@@ -170,27 +225,27 @@ public class MenuBackdrop : MonoBehaviour
         }
     }
 
-    /// <summary>Glides back and forth along the viewpoints with an ease at each end, plus sway and parallax.</summary>
+    /// <summary>
+    /// Current shot at time <paramref name="t"/>: eased dolly from its start pose to its end pose, plus sway and
+    /// parallax. The cut fade is 1 at the very start and end of each shot and 0 in between.
+    /// </summary>
     void PlaceCamera(float t, Vector2 look)
     {
-        int n = positions.Length;
-        Vector3 pos; Vector3 at;
-        if (n == 1) { pos = positions[0]; at = lookTargets[0]; }
-        else
-        {
-            int legs = n - 1;
-            float cycle = legs * 2f * legSeconds;               // there and back
-            float u = Mathf.Repeat(t, cycle) / legSeconds;      // 0 .. 2*legs
-            if (u > legs) u = 2f * legs - u;                    // ping-pong
-            int i = Mathf.Min(Mathf.FloorToInt(u), legs - 1);
-            float k = Mathf.SmoothStep(0f, 1f, u - i);
-            pos = Vector3.Lerp(positions[i], positions[i + 1], k);
-            at = Vector3.Lerp(lookTargets[i], lookTargets[i + 1], k);
-        }
-        pos += new Vector3(Mathf.PerlinNoise(t * 0.11f, 0.3f) - 0.5f, Mathf.PerlinNoise(0.7f, t * 0.09f) - 0.5f, 0f) * (swayAmount * 2f);
+        var shot = shots[shotIndex];
+        float d = Mathf.Max(0.01f, shot.duration);
+        float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / d));
+        Vector3 pos = Vector3.Lerp(shot.fromPosition, shot.toPosition, k);
+        Vector3 at = Vector3.Lerp(shot.fromLookAt, shot.toLookAt, k);
+        float c = Mathf.Min(cutSeconds, d * 0.3f);
+        cutFade = shots.Length > 1 ? Mathf.Max(1f - Mathf.Clamp01(t / c), Mathf.Clamp01((t - (d - c)) / c)) : 1f - Mathf.Clamp01(t / c);
+        cutFade = cutFade * cutFade * (3f - 2f * cutFade);   // smooth in/out
+
+        float n = Time.unscaledTime;
+        pos += new Vector3(Mathf.PerlinNoise(n * 0.11f, 0.3f) - 0.5f, Mathf.PerlinNoise(0.7f, n * 0.09f) - 0.5f, 0f) * (swayAmount * 2f);
         var rot = Quaternion.LookRotation(at - pos, Vector3.up);
         rot = rot * Quaternion.Euler(-look.y * parallaxDegrees, look.x * parallaxDegrees, 0f);
         cam.transform.SetPositionAndRotation(pos, rot);
+        cam.fieldOfView = shot.fieldOfView;
     }
 
     void TypeFeed(float dt)
