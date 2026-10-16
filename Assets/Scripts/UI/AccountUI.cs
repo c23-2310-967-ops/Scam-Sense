@@ -160,7 +160,12 @@ public class AccountUI : MonoBehaviour
         Show(Screen.CreateAccount);
     }
 
-    public void OpenAccountPanel() => Show(Screen.Account);
+    public void OpenAccountPanel()
+    {
+        // No mode chosen yet: the chip offers the same choices as PLAY (guest, sign in, create account, offline).
+        if (svc.CurrentMode == CloudAccountService.Mode.None) RequestAccount(null);
+        else Show(Screen.Account);
+    }
 
     /// <summary>BACK on any panel: returns to the panel it came from (progress is never touched).</summary>
     public void Back()
@@ -386,9 +391,11 @@ public class AccountUI : MonoBehaviour
     void RefreshChip()
     {
         if (accountChip == null || svc == null) return;
-        bool show = screen == Screen.None && svc.CurrentMode != CloudAccountService.Mode.None;
+        bool show = screen == Screen.None;
         accountChip.gameObject.SetActive(show);
-        if (show) chipText.text = $"{svc.DisplayName}  <color={UIKit.HexSecondary}>·</color>  <color={StatusHex()}>{svc.StatusText}</color>";
+        if (show && svc.CurrentMode == CloudAccountService.Mode.None)
+            chipText.text = $"SIGN IN  <color={UIKit.HexSecondary}>/</color>  CREATE ACCOUNT";
+        else if (show) chipText.text =$"{svc.DisplayName}  <color={UIKit.HexSecondary}>·</color>  <color={StatusHex()}>{svc.StatusText}</color>";
     }
 
     string StatusHex()
