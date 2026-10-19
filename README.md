@@ -110,7 +110,7 @@ Key gameplay scripts:
 | Polly Jireh Mane | Developer, Designer, Project Manager |
 | Andrew Tenorio | Documentary |
 | Prince Moses Jimenez | Documentary, Designer |
-| Chester Guille Castillo | Developer |
+| Chester Guille Castillo |Documentary |
 
 ## 🔮 Future Improvements
 
