@@ -151,6 +151,9 @@ public class GameManager : MonoBehaviour
 
         // 5) Completed (finished the level) is saved separately from 6) the next-room unlock.
         var careerBefore = CareerSystem.TakeSnapshot(level.levelId);
+        // Run history for the cloud (queued first: saving the result below starts the sync that uploads it).
+        GameResultLog.Add(level.levelId, score, scoring.MaxScoreFor(level.MessageCount), stars,
+                          scoring.CorrectCount, level.MessageCount, met, scoring.TotalAnswerTime);
         var progress = LocalDataManager.RecordResult(level.levelId, score, stars, met);
         if (met && hasNext) LocalDataManager.Unlock(level.nextLevelId);
 

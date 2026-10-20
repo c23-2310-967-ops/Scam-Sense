@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor.Events;
@@ -36,12 +37,15 @@ public class AccountUI : MonoBehaviour
     [SerializeField] private TMP_Text authStatusText;
 
     [Header("Player sign-in panel")]
-    [SerializeField] private TMP_InputField signInUsername;
+    [FormerlySerializedAs("signInUsername")]
+    [SerializeField] private TMP_InputField signInEmail;
     [SerializeField] private TMP_InputField signInPassword;
     [SerializeField] private TMP_Text signInSubtitle, signInError;
 
     [Header("Create account panel")]
-    [SerializeField] private TMP_InputField createUsername;
+    [SerializeField] private TMP_InputField createDisplayName;
+    [FormerlySerializedAs("createUsername")]
+    [SerializeField] private TMP_InputField createEmail;
     [SerializeField] private TMP_InputField createPassword, createConfirmPassword;
     [SerializeField] private TMP_Text createSubtitle, createError;
 
@@ -77,6 +81,7 @@ public class AccountUI : MonoBehaviour
         menu = owner;
         svc = CloudAccountService.Instance;
         if (!builtInScene || authenticationPanel == null) Build(menu.PanelHost, menu.Root, menu);   // fallback
+        UpgradeToEmailForms();   // panels built for the old username sign-in get the email form
         HideAll();
         svc.StateChanged += OnServiceState;
         _ = RestoreSilentlyAsync();
@@ -107,7 +112,7 @@ public class AccountUI : MonoBehaviour
         pendingAction = thenContinue;
         Show(Screen.Authentication);
         SetMessage(authStatusText, svc.ServicesReady ? "" :
-            "Online services aren't reachable right now. You can still play offline - progress is saved on this PC.", false);
+            "Online accounts aren't set up in this build. You can still play offline - progress is saved on this PC.", false);
     }
 
     void Update()
@@ -176,8 +181,8 @@ public class AccountUI : MonoBehaviour
 
     public async void SubmitSignIn()
     {
-        string u = signInUsername.text, p = signInPassword.text;
-        string problem = CloudAccountService.ValidateUsername(u) ?? (string.IsNullOrEmpty(p) ? "Enter your password." : null);
+        string u = signInEmail.text, p = signInPassword.text;
+        string problem = CloudAccountService.ValidateEmail(u) ?? (string.IsNullOrEmpty(p) ? "Enter your password." : null);
         if (problem != null) { SetMessage(signInError, problem, true); return; }
 
         Show(Screen.Busy, "SIGNING IN");
@@ -190,16 +195,30 @@ public class AccountUI : MonoBehaviour
 
     public async void SubmitCreateAccount()
     {
-        string u = createUsername.text, p = createPassword.text, c = createConfirmPassword.text;
-        string problem = CloudAccountService.ValidateUsername(u) ?? CloudAccountService.ValidatePassword(p) ??
-                         (p != c ? "The passwords don't match." : null);
+        string n = createDisplayName.text, u = createEmail.text, p = createPassword.text, c = createConfirmPassword.text;
+        string problem = CloudAccountService.ValidateDisplayName(n) ?? CloudAccountService.ValidateEmail(u) ??
+                         CloudAccountService.ValidatePassword(p) ?? (p != c ? "The passwords don't match." : null);
         if (problem != null) { SetMessage(createError, problem, true); return; }
 
         Show(Screen.Busy, "CREATING ACCOUNT");
-        bool ok = await svc.CreateAccountAsync(u, p);
+        bool ok = await svc.CreateAccountAsync(u, p, n);
         if (this == null) return;
         createPassword.text = createConfirmPassword.text = "";
-        if (ok) Finish();
+        if (ok && svc.LastNotice != null)
+        {
+            // Guest -> account waiting for email confirmation: say so instead of closing silently.
+            Show(Screen.Account);
+            SetAccountNote(svc.LastNotice, false);
+            RefreshAccountPanel();
+        }
+        else if (ok) Finish();
+        else if (svc.LastNotice != null)
+        {
+            // Account created, confirmation email sent: sign in once it's confirmed.
+            signInEmail.text = u.Trim();
+            Show(Screen.SignIn, keepFields: true);
+            SetMessage(signInError, svc.LastNotice, false);
+        }
         else { Show(Screen.CreateAccount, keepFields: true); SetMessage(createError, svc.LastError, true); }
     }
 
@@ -301,14 +320,14 @@ public class AccountUI : MonoBehaviour
         {
             signInSubtitle.text = guest ? "Signing in to an existing account moves this guest's progress into it." : "Welcome back, investigator.";
             if (!keepFields) { signInPassword.text = ""; SetMessage(signInError, "", false); }
-            signInUsername.ActivateInputField();
+            signInEmail.ActivateInputField();
         }
         if (s == Screen.CreateAccount)
         {
             createSubtitle.text = guest ? "Your guest progress stays with your new account - same player, same saves."
-                                        : "Create a username and password to keep your progress safe on any device.";
+                                        : "Create an account with your email to keep your progress safe on any device.";
             if (!keepFields) { createPassword.text = createConfirmPassword.text = ""; SetMessage(createError, "", false); }
-            createUsername.ActivateInputField();
+            createDisplayName.ActivateInputField();
         }
         if (s == Screen.Account)
         {
@@ -325,10 +344,11 @@ public class AccountUI : MonoBehaviour
 
     void FocusNextField()
     {
-        if (screen == Screen.SignIn) (signInUsername.isFocused ? signInPassword : signInUsername).ActivateInputField();
-        else if (createUsername.isFocused) createPassword.ActivateInputField();
+        if (screen == Screen.SignIn) (signInEmail.isFocused ? signInPassword : signInEmail).ActivateInputField();
+        else if (createDisplayName.isFocused) createEmail.ActivateInputField();
+        else if (createEmail.isFocused) createPassword.ActivateInputField();
         else if (createPassword.isFocused) createConfirmPassword.ActivateInputField();
-        else createUsername.ActivateInputField();
+        else createDisplayName.ActivateInputField();
     }
 
     void RefreshAccountPanel()
@@ -337,7 +357,7 @@ public class AccountUI : MonoBehaviour
         accountInfo.text = $"<b>{svc.DisplayName}</b>   <color={StatusHex()}>{svc.StatusText}</color>";
         accountDetail.text =
             mode == CloudAccountService.Mode.Guest
-                ? "You're playing as a guest. Progress is saved to the cloud, but it's tied to this PC: if Unity's saved login is cleared or you switch devices, it can be lost. Create an account to keep it - your progress stays exactly as it is."
+                ? "You're playing as a guest. Progress is saved to the cloud, but the guest login is tied to this PC: if the game's saved data is cleared or you switch devices, it can be lost. Create an account to keep it - your progress stays exactly as it is."
             : mode == CloudAccountService.Mode.Player
                 ? "Your progress is saved to your account and syncs automatically after every level."
                 : "You're offline. Results are saved on this PC and upload automatically when you're back online.";
@@ -443,7 +463,7 @@ public class AccountUI : MonoBehaviour
         Hud(authenticationPanel, "PlayOfflineButton", "PLAY OFFLINE", PlayOffline, UIKit.HudVariant.Secondary, 56, 22, owner);
         Hud(authenticationPanel, "BackButton", "BACK", Back, UIKit.HudVariant.Secondary, 56, 22, owner);
         var note = UIKit.Text(authenticationPanel, "GuestNote",
-            "Guest progress is tied to this PC. If Unity's saved login is cleared or you change devices, it can be lost unless you create an account.",
+            GuestNoteText,
             19, new Color(1, 1, 1, 0.55f));
         note.lineSpacing = 4f;
         authStatusText = UIKit.Text(authenticationPanel, "StatusText", "", 21, UIKit.Danger);
@@ -451,8 +471,8 @@ public class AccountUI : MonoBehaviour
         // ----- PlayerSignInPanel -----
         playerSignInPanel = Panel(panelHost, "PlayerSignInPanel", "PLAYER SIGN IN", 760);
         signInSubtitle = UIKit.Text(playerSignInPanel, "PanelSubtitle", "", 23, UIKit.TextSecondary);
-        UIKit.Header(playerSignInPanel, "Username");
-        signInUsername = Field(playerSignInPanel, "UsernameInput", "3-20 characters", false);
+        UIKit.Header(playerSignInPanel, "Email");
+        signInEmail = Field(playerSignInPanel, "EmailInput", EmailPlaceholder, false);
         UIKit.Header(playerSignInPanel, "Password");
         signInPassword = Field(playerSignInPanel, "PasswordInput", "Password", true);
         signInError = UIKit.Text(playerSignInPanel, "ErrorMessageText", "", 21, UIKit.Danger);
@@ -465,14 +485,16 @@ public class AccountUI : MonoBehaviour
         // ----- CreateAccountPanel -----
         createAccountPanel = Panel(panelHost, "CreateAccountPanel", "CREATE ACCOUNT", 760);
         createSubtitle = UIKit.Text(createAccountPanel, "PanelSubtitle", "", 23, UIKit.TextSecondary);
-        UIKit.Header(createAccountPanel, "Username");
-        createUsername = Field(createAccountPanel, "UsernameInput", "3-20 characters", false);
+        UIKit.Header(createAccountPanel, "Display name");
+        createDisplayName = Field(createAccountPanel, "DisplayNameInput", DisplayNamePlaceholder, false);
+        UIKit.Header(createAccountPanel, "Email");
+        createEmail = Field(createAccountPanel, "EmailInput", EmailPlaceholder, false);
         UIKit.Header(createAccountPanel, "Password");
         createPassword = Field(createAccountPanel, "PasswordInput", "Password", true);
         UIKit.Header(createAccountPanel, "Confirm password");
         createConfirmPassword = Field(createAccountPanel, "ConfirmPasswordInput", "Type the password again", true);
         var rules = UIKit.Text(createAccountPanel, "Rules",
-            "Username: 3-20 characters - letters, numbers and . - @ _\nPassword: 8-30 characters with an upper-case letter, a lower-case letter, a number and a symbol.",
+            RulesText,
             19, new Color(1, 1, 1, 0.6f));
         rules.lineSpacing = 4f;
         createError = UIKit.Text(createAccountPanel, "ErrorMessageText", "", 21, UIKit.Danger);
@@ -520,6 +542,73 @@ public class AccountUI : MonoBehaviour
                                              accountPanel.gameObject, busyPanel.gameObject, accountChip.gameObject, authDim })
             g.SetActive(false);
         foreach (var t in new[] { authStatusText, signInError, createError }) t.gameObject.SetActive(false);
+        ConfigureEmailFields();
+    }
+
+    // ---------- Email sign-in (Supabase) ----------
+
+    const string EmailPlaceholder = "you@example.com";
+    const string DisplayNamePlaceholder = "Shown in the game (2-20 characters)";
+    const string GuestNoteText = "Guest progress is tied to this PC. If the game's saved data is cleared or you change devices, it can be lost unless you create an account.";
+    const string RulesText = "Display name: 2-20 characters.\nPassword: 8-72 characters with an upper-case letter, a lower-case letter, a number and a symbol.";
+
+    /// <summary>
+    /// Panels built for the old username sign-in become the email form: headers and placeholders change and a
+    /// Display name field is added at the top of CREATE ACCOUNT. Safe to call repeatedly (nothing is duplicated).
+    /// </summary>
+    public bool UpgradeToEmailForms()
+    {
+        if (createAccountPanel == null || playerSignInPanel == null || createEmail == null || signInEmail == null) return false;
+        bool changed = false;
+        foreach (var panel in new[] { playerSignInPanel, createAccountPanel })
+            foreach (var t in panel.GetComponentsInChildren<TMP_Text>(true))
+                if (t.text == "USERNAME") { t.text = "EMAIL"; t.name = "Header_Email"; changed = true; }
+        foreach (var f in new[] { signInEmail, createEmail })
+            if (f.name == "UsernameInput") { f.name = "EmailInput"; changed = true; }
+
+        if (createDisplayName == null)
+        {
+            var emailHeader = FindChildText(createAccountPanel, "EMAIL");
+            int index = emailHeader != null ? emailHeader.transform.GetSiblingIndex() : createEmail.transform.GetSiblingIndex();
+            var header = UIKit.Header(createAccountPanel, "Display name");
+            createDisplayName = Field(createAccountPanel, "DisplayNameInput", DisplayNamePlaceholder, false);
+            header.transform.SetSiblingIndex(index);
+            createDisplayName.transform.SetSiblingIndex(index + 1);
+            changed = true;
+        }
+        var rules = FindChild(createAccountPanel, "Rules");
+        if (rules != null && rules.text != RulesText) { rules.text = RulesText; changed = true; }
+        var note = FindChild(authenticationPanel, "GuestNote");
+        if (note != null && note.text != GuestNoteText) { note.text = GuestNoteText; changed = true; }
+        ConfigureEmailFields();
+        return changed;
+    }
+
+    void ConfigureEmailFields()
+    {
+        foreach (var f in new[] { signInEmail, createEmail })
+        {
+            if (f == null) continue;
+            f.contentType = TMP_InputField.ContentType.EmailAddress;
+            f.characterLimit = 254;
+            if (f.placeholder is TMP_Text ph) ph.text = EmailPlaceholder;
+        }
+        foreach (var f in new[] { signInPassword, createPassword, createConfirmPassword })
+            if (f != null) f.characterLimit = 72;
+        if (createDisplayName != null) createDisplayName.characterLimit = 20;
+    }
+
+    static TMP_Text FindChildText(RectTransform root, string text)
+    {
+        foreach (var t in root.GetComponentsInChildren<TMP_Text>(true)) if (t.text == text) return t;
+        return null;
+    }
+
+    static TMP_Text FindChild(RectTransform root, string objectName)
+    {
+        if (root == null) return null;
+        foreach (var t in root.GetComponentsInChildren<TMP_Text>(true)) if (t.name == objectName) return t;
+        return null;
     }
 
     /// <summary>The account panel's feedback line (hidden while empty).</summary>

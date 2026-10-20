@@ -42,3 +42,7 @@ crashlytics-build.properties
 # Local AI-assistant / editor-tool configuration (not part of the game)
 /.claude/
 /GeneratedAssets/
+
+# Supabase connection settings (project URL + publishable key) - stay on this PC, never committed
+/Assets/Resources/SupabaseSettings.json
+/Assets/Resources/SupabaseSettings.json.meta

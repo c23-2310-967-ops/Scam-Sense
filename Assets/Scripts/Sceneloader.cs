@@ -368,7 +368,7 @@ public class SceneLoader : MonoBehaviour
         Place(tipHeader.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -34), new Vector2(400, 40));
 
         tipText = MakeText("TipText", card, "", 36, inkColor, TextAlignmentOptions.TopLeft);
-        tipText.enableWordWrapping = true;
+        tipText.textWrappingMode = TextWrappingModes.Normal;
         Place(tipText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -80), new Vector2(900, 130));
 
         // Loading text
@@ -437,7 +437,7 @@ public class SceneLoader : MonoBehaviour
         t.color = color;
         t.alignment = align;
         t.raycastTarget = false;
-        t.enableWordWrapping = false;
+        t.textWrappingMode = TextWrappingModes.NoWrap;
         allTexts.Add(t);
         return t;
     }
