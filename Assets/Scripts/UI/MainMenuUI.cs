@@ -281,13 +281,17 @@ public class MainMenuUI : MonoBehaviour
         else SceneManager.LoadScene(sceneName);
     }
 
+    bool quitting;
+
+    /// <summary>YES, QUIT: closes the built game; in the Unity Editor it stops Play Mode (Application.Quit is ignored there).</summary>
     public void QuitGame()
     {
+        if (quitting) return;   // repeated clicks while closing do nothing
+        quitting = true;
+        Debug.Log("Exit Game button pressed.");
         GameAudioSettings.Save();
 #if UNITY_EDITOR
-        // Application.Quit() is ignored in the Editor; don't force-stop Play Mode from game code.
-        ShowStatus("Quit closes the built game. In the Unity Editor, press the Play button to stop.");
-        ClosePanel();
+        UnityEditor.EditorApplication.isPlaying = false;
 #else
         Application.Quit();
 #endif
