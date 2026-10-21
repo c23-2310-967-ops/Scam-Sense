@@ -159,6 +159,9 @@ public class SittableChair : MonoBehaviour
         {
             var chair = hit.collider.GetComponentInParent<SittableChair>();
             if (chair != null && chair.enabled && hit.distance <= chair.interactDistance) focused = chair;
+            // Aiming at a readable object (a document on the desk beside the chair): E reads it instead of sitting.
+            var item = chair == null ? hit.collider.GetComponentInParent<InspectableObject>() : null;
+            if (item != null && item.isActiveAndEnabled && hit.distance <= item.interactDistance) return;
         }
         if (focused != null) return;
 
