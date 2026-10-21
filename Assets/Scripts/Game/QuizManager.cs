@@ -209,7 +209,7 @@ public class QuizManager : MonoBehaviour
     {
         phase = Phase.Notified;
         reminderTimer = 0f;
-        if (hud != null) hud.ShowNotification(Current, NeedsComputer(Current) ? "Read it at a computer"
+        if (hud != null) hud.ShowNotification(Current, NeedsComputer(Current) ? (string.IsNullOrEmpty(Current.stationId) ? "Read it at a computer" : $"Flagged on workstation {Current.stationId}")
                                                      : NeedsCaseTerminal(Current) ? "Submit at the final case terminal"
                                                      : $"Press [{interactKey}] to read");
         if (levelAudio != null) levelAudio.PlayNotification(Current.channel);
@@ -244,7 +244,9 @@ public class QuizManager : MonoBehaviour
             if (NeedsComputer(Current))
             {
                 // Looking at a monitor? Let the ComputerTerminal handle this press.
-                if (!LookingAtComputer() && hud != null)
+                if (!LookingAtComputer() && hud != null && !string.IsNullOrEmpty(Current.stationId))
+                    hud.ShowToast($"This message is flagged on workstation {Current.stationId} - find it, look at the screen and press E.");
+                else if (!LookingAtComputer() && hud != null)
                     hud.ShowToast(Current.channel == MessageChannel.Website
                         ? "Web pages are reviewed on a computer - look at a monitor and press E."
                         : "Emails are read on a computer - look at a monitor and press E.");

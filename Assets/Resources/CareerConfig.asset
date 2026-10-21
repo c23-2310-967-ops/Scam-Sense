@@ -57,7 +57,7 @@ MonoBehaviour:
   flawlessXp: 50
   perEvidenceXp: 15
   finalConclusionXp: 40
-  casesInGame: 4
+  casesInGame: 5
   consistentAccuracy: 0.8
   consistentCases: 3
   achievements:

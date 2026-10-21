@@ -35,6 +35,8 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
 
     [Header("Interaction")]
     [SerializeField] private string displayName = "Use computer";
+    [Tooltip("Optional workstation id (e.g. MAC-07). Messages with this Station Id open only here; messages without one open at any computer.")]
+    [SerializeField] private string stationId = "";
     [SerializeField] private float interactDistance = 3f;
     [SerializeField] private Key useKey = Key.E;
     [SerializeField] private float cameraMoveTime = 0.45f;
@@ -46,6 +48,10 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
     public event Action ContinueClicked;
 
     public bool InUse { get; private set; }
+    public string StationId => stationId;
+
+    /// <summary>True if this computer shows the message: unassigned messages go to every computer, assigned ones only to their station.</summary>
+    public bool Serves(ScamMessage m) => m != null && (string.IsNullOrEmpty(m.stationId) || m.stationId == stationId);
 
     RectTransform inboxColumn, paneRoot;
 
@@ -149,7 +155,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
             return;
         }
 
-        bool newMail = quiz != null && quiz.PendingMessage != null && MessageChannels.OnComputer(quiz.PendingMessage.channel);
+        bool newMail = quiz != null && quiz.PendingMessage != null && MessageChannels.OnComputer(quiz.PendingMessage.channel) && Serves(quiz.PendingMessage);
         string secondary = SittableChair.PlayerSeated ? "Space: stand up" : null;
         InteractionPrompt.Set(this, InteractionPrompt.KeyName(useKey), newMail ? (quiz.PendingMessage.channel == MessageChannel.Website ? "Review web page" : "Read new email") : displayName, priority: 4, secondary: secondary);
 
@@ -355,12 +361,13 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
 
         // Newest first: the waiting/open email, then answered ones (latest first), then older inbox mail.
         var list = new List<ScamMessage>();
-        if (open != null && MessageChannels.OnComputer(open.channel)) list.Add(open);
-        if (pending != null && MessageChannels.OnComputer(pending.channel)) { list.Add(pending); unread++; }
+        // Only this station's mail (or unassigned mail): a message flagged on another workstation never shows here.
+        if (open != null && MessageChannels.OnComputer(open.channel) && Serves(open)) list.Add(open);
+        if (pending != null && MessageChannels.OnComputer(pending.channel) && Serves(pending)) { list.Add(pending); unread++; }
         for (int i = level.messages.Count - 1; i >= 0; i--)
         {
             var m = level.messages[i];
-            if (MessageChannels.OnComputer(m.channel) && quiz.Scoring.HasAnswered(m.id) && m != open) list.Add(m);
+            if (MessageChannels.OnComputer(m.channel) && Serves(m) && quiz.Scoring.HasAnswered(m.id) && m != open) list.Add(m);
         }
         // Rows are reused: only a row whose state changed (new -> open -> answered) is rebuilt. Rebuilding the
         // whole inbox on every message event created dozens of UI objects and text buffers at once (a hitch).
@@ -476,7 +483,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
     void Select(ScamMessage m)
     {
         if (answering) return;                                   // the open email must be answered first
-        if (quiz != null && quiz.PendingMessage == m)
+        if (quiz != null && quiz.PendingMessage == m && Serves(m))
         {
             quiz.OpenPending(this);                              // QuizManager calls ShowMessage and starts the timer
             return;

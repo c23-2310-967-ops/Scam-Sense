@@ -31,6 +31,8 @@ public static class LevelPreviewTools
         { "level_2", new View(new Vector3(3.0f, 1.75f, -3.0f), new Vector3(-0.9f, 1.05f, 2.8f), 64f) },
         { "level_3", new View(new Vector3(4.6f, 1.85f, -3.4f), new Vector3(-0.8f, 1.15f, 2.6f), 64f) },
         { "level_4", new View(new Vector3(4.6f, 1.85f, -3.5f), new Vector3(-1.0f, 1.0f, 2.4f), 64f) },
+        // MacLab: from the back corner by the windows towards the display and instructor counter (like the reference photo)
+        { "level_5", new View(new Vector3(7.6f, 1.8f, -5.9f), new Vector3(-2.0f, 1.0f, 3.6f), 64f) },
     };
 
     [MenuItem("Tools/Scam Sense/Menu/Capture Level Previews")]
@@ -46,16 +48,36 @@ public static class LevelPreviewTools
             string scenePath = FindScenePath(level.sceneName);
             if (scenePath == null) { Debug.LogWarning($"LevelPreviewTools: scene '{level.sceneName}' not found - {level.levelId} keeps its current preview."); continue; }
 
-            string png = $"{Folder}/{level.levelId}_preview.png";
-            View? view = Views.TryGetValue(level.levelId, out var v) ? v : (View?)null;
-            if (!Render(scenePath, view, Width, Height, png)) continue;
-            ImportAsSprite(png);
-            level.previewImage = AssetDatabase.LoadAssetAtPath<Sprite>(png);
-            EditorUtility.SetDirty(level);
-            done++;
+            if (Capture(level, scenePath)) done++;
         }
         AssetDatabase.SaveAssets();
         Debug.Log($"LevelPreviewTools: captured {done} level preview(s) into {Folder}.");
+    }
+
+    /// <summary>
+    /// Renders one level's preview from its real scene and assigns it to the level (used by the room builders after a
+    /// rebuild, so the main menu's sneak peek always shows the playable room). Returns false if nothing was captured.
+    /// </summary>
+    public static bool CaptureLevel(LevelDefinition level)
+    {
+        if (level == null || string.IsNullOrEmpty(level.sceneName)) return false;
+        string scenePath = FindScenePath(level.sceneName);
+        if (scenePath == null) return false;
+        Directory.CreateDirectory(Folder);
+        bool ok = Capture(level, scenePath);
+        if (ok) AssetDatabase.SaveAssets();
+        return ok;
+    }
+
+    static bool Capture(LevelDefinition level, string scenePath)
+    {
+        string png = $"{Folder}/{level.levelId}_preview.png";
+        View? view = Views.TryGetValue(level.levelId, out var v) ? v : (View?)null;
+        if (!Render(scenePath, view, Width, Height, png)) return false;
+        ImportAsSprite(png);
+        level.previewImage = AssetDatabase.LoadAssetAtPath<Sprite>(png);
+        EditorUtility.SetDirty(level);
+        return true;
     }
 
     public static string FindScenePath(string sceneName)

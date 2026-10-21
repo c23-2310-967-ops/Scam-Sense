@@ -49,6 +49,8 @@ MonoBehaviour:
       which is not NovaCloud's verified domain. It adds a 24-hour deadline and asks
       you to verify through its own link instead of the service you already use.
     trigger: 2
+    readingSeconds: 0
+    stationId: 
     requestedAction: Verify your account information through the provided link within
       24 hours.
     linkNote: novacloud-verify.example/confirm (training placeholder, never opened).
@@ -58,6 +60,13 @@ MonoBehaviour:
     - Compare the sender domain with Verified Domains on the network station.
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   - id: l4_security_notification
     channel: 1
     sender: NovaCloud Security
@@ -76,6 +85,8 @@ MonoBehaviour:
       the service yourself. This is a fictional example, not a promise that any email
       in this format is safe - still check important alerts in the official app.
     trigger: 2
+    readingSeconds: 0
+    stationId: 
     requestedAction: Nothing. Optionally review activity in the app or at the address
       you already know.
     linkNote: No link. It points you to the app or the known address.
@@ -85,6 +96,13 @@ MonoBehaviour:
     - Compare with Account & Order Records on the network station.
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   - id: l4_payment_recovery
     channel: 0
     sender: BrightPay Support
@@ -100,6 +118,8 @@ MonoBehaviour:
       number, it gives no case reference you can check, and it asks for a fee to
       release money. Unexpected fees to recover funds or access are a classic scam.
     trigger: 1
+    readingSeconds: 0
+    stationId: 
     requestedAction: Pay a $25 processing fee to release frozen funds.
     linkNote: brightpay-release.example (training placeholder, never opened).
     clues:
@@ -108,6 +128,13 @@ MonoBehaviour:
     - Asks for a fee to get money back.
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   - id: l4_impersonated_announcement
     channel: 1
     sender: Vertexa Systems
@@ -124,6 +151,8 @@ MonoBehaviour:
       the company profile either. Always read the full address and verify through
       the company's known contacts.
     trigger: 2
+    readingSeconds: 0
+    stationId: 
     requestedAction: Download a tool from a portal and sign in with your work password.
     linkNote: vertexa-systems-update.example/portal (training placeholder, never
       opened).
@@ -133,6 +162,13 @@ MonoBehaviour:
     - Compare the domain and phone number with Verified Domains.
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   - id: l4_order_update
     channel: 0
     sender: Brightway Store
@@ -149,6 +185,8 @@ MonoBehaviour:
       known address. Context matters - but an unexpected request for payment or a
       password would still need checking.
     trigger: 1
+    readingSeconds: 0
+    stationId: 
     requestedAction: Nothing; optionally track the order in the app you already use.
     linkNote: No link to tap - it names the store's known address.
     clues:
@@ -157,6 +195,13 @@ MonoBehaviour:
     - Compare with Account & Order Records.
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   - id: l4_prize_claim
     channel: 1
     sender: Lumen Rewards
@@ -172,6 +217,8 @@ MonoBehaviour:
       fee, and it asks for your date of birth and card details. Unexpected prizes
       that need payment or sensitive information are warning signs.
     trigger: 2
+    readingSeconds: 0
+    stationId: 
     requestedAction: Pay a delivery fee and give date of birth and card details within
       48 hours.
     linkNote: lumen-rewards-prize.example/claim (training placeholder, never opened).
@@ -181,6 +228,13 @@ MonoBehaviour:
     - 'Deadline: 48 hours.'
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   - id: l4_suspicious_website
     channel: 2
     sender: NovaCloud - Sign in
@@ -212,6 +266,8 @@ MonoBehaviour:
       or https only means the connection is encrypted - not that the site is who
       it claims to be.
     trigger: 2
+    readingSeconds: 0
+    stationId: 
     requestedAction: Enter your email, password and card number to sign in.
     linkNote: novacl0ud-login.example (training placeholder, never opened). The padlock
       only means the connection is encrypted.
@@ -221,6 +277,13 @@ MonoBehaviour:
     - Asks for a card number to sign in.
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   - id: l4_final_case
     channel: 3
     sender: Case Review
@@ -239,6 +302,8 @@ MonoBehaviour:
       your account record shows the plan is paid. No single clue decides it - together
       they do.'
     trigger: 0
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues:
@@ -249,6 +314,13 @@ MonoBehaviour:
     - Your NovaCloud plan is paid until next month.
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   inboxExtras:
   - id: l4_old_welcome
     channel: 1
@@ -264,11 +336,20 @@ MonoBehaviour:
     scenarioContext: 
     explanation: 
     trigger: 0
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues: []
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   - id: l4_old_receipt
     channel: 1
     sender: Brightway Store
@@ -281,11 +362,20 @@ MonoBehaviour:
     scenarioContext: 
     explanation: 
     trigger: 0
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues: []
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
   caseFiles:
   - title: Initial Email
     body: '<b>From:</b> NovaCloud Billing  <billing@novacloud-support.example>
@@ -346,10 +436,6 @@ MonoBehaviour:
   firstMessageDelay: 10
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 5
-  oneStarScore: 1
-  twoStarScore: 1500
-  threeStarScore: 1700
-  minScoreToUnlockNext: 1500
   scoring:
     basePoints: 250
     speedBonus: 25
@@ -366,8 +452,12 @@ MonoBehaviour:
     overtimePenaltyPerStep: 10
     maxTimePenalty: 60
     minCorrectPoints: 190
+  oneStarScore: 1
+  twoStarScore: 1500
+  threeStarScore: 1700
+  minScoreToUnlockNext: 1500
   nextLevelId: level_5
-  nextSceneName: 
+  nextSceneName: Room5_MacLab
   lessons:
   - A familiar display name proves nothing - read the full sender address and compare
     it with verified records.

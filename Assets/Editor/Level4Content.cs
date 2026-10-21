@@ -238,13 +238,14 @@ public static class Level4Content
         l.delayBetweenMessages = new UnityEngine.Vector2(10f, 20f);
         l.minimumActivityDelay = 5f;
 
-        // Existing scoring rules: up to 100 points per message, 8 messages = 800. Passing 600 (75%): each room asks for a higher share than the last.
+        // Level scoring (LevelDefinition.scoring): 250 points per message, 8 messages = 2000 base. Passing 1500 (75%):
+        // each room asks for a higher share than the last.
         l.oneStarScore = 1;
-        l.twoStarScore = 600;
-        l.threeStarScore = 680;
-        l.minScoreToUnlockNext = 600;
+        l.twoStarScore = 1500;
+        l.threeStarScore = 1700;
+        l.minScoreToUnlockNext = 1500;
         l.nextLevelId = "level_5";
-        l.nextSceneName = "";   // Level 5 doesn't exist: the results show NEXT ROOM: COMING SOON
+        l.nextSceneName = "Room5_MacLab";
 
         l.lessons = new[]
         {

@@ -1,0 +1,687 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 147873241f4f7964690daffb230f2761, type: 3}
+  m_Name: Level5_MacLab
+  m_EditorClassIdentifier: 
+  levelId: level_5
+  levelNumber: 5
+  displayName: The Compromised Campus Network
+  sceneName: Room5_MacLab
+  description: Suspicious messages have been reported in the university MacLab. Investigate
+    the flagged workstations and decide what's real.
+  previewImage: {fileID: 21300000, guid: ec2bc026c46543c4788ea2715af04007, type: 3}
+  briefingTitle: 'LEVEL 5: THE COMPROMISED CAMPUS NETWORK'
+  briefingText: "A series of suspicious emails and messages has been reported in
+    MacLab 3 at UPHSL Bi\xF1an. Five workstations have been flagged. Go to each one,
+    investigate the message on screen, and decide whether it is a scam or legitimate.
+    The instructor's computer holds the university's official contacts and policies
+    - compare before you decide."
+  caseNotes:
+  - "You are a UPHSL Bi\xF1an student helping the campus security team in MacLab
+    3."
+  - Your campus account is active - you passed the account check last month.
+  - You did not apply for any scholarship or grant this term.
+  - Your tuition for this term is fully paid (receipt on file).
+  objectives:
+  - Investigate the five flagged workstations in the MacLab.
+  - Classify every reported message as SCAM or LEGITIMATE.
+  - Check the official records on the instructor's computer at the front.
+  messages:
+  - id: l5_account_verification
+    channel: 1
+    sender: UPHSL IT Services
+    senderDetail: it-services@uphsl-binan-accounts.example
+    subject: 'Final notice: your campus account will be suspended'
+    body: Our system shows your UPHSL Campus Account failed the annual security verification.
+      Your email, LMS and campus Wi-Fi access will be suspended in 12 hours. Verify
+      your username and password now to keep your access.
+    link: uphsl-binan-accounts.example/verify
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The address uses uphsl-binan-accounts.example, not the university's
+      own uphsl-binan.example. There was no earlier notice, a 12-hour suspension
+      threat adds pressure, and it asks for your password through its own link. UPHSL
+      IT never asks for passwords by email - check your account by opening the student
+      portal yourself.
+    trigger: 2
+    readingSeconds: 0
+    stationId: MAC-31
+    requestedAction: Enter your username and password on a linked page within 12
+      hours.
+    linkNote: uphsl-binan-accounts.example/verify (training placeholder, never opened).
+    clues:
+    - Claims to be UPHSL IT Services.
+    - 'Deadline: 12 hours.'
+    - Compare the domain with Official Contacts on the instructor's computer.
+    inspectables:
+    - id: name
+      field: 0
+      match: 
+      label: Display name
+      finding: It says 'UPHSL IT Services' - but anyone can type any display name.
+      linkAddress: 
+      clueId: displayname
+    - id: address
+      field: 1
+      match: 
+      label: Sender address
+      finding: uphsl-binan-accounts.example is not the university's domain. Official
+        mail comes only from uphsl-binan.example (Official Contacts on the instructor's
+        computer).
+      linkAddress: 
+      clueId: domain
+    - id: subject
+      field: 2
+      match: Final notice
+      label: Subject
+      finding: '''Final notice'' - but there was no first notice. Pressure in the
+        subject line is a common trick.'
+      linkAddress: 
+      clueId: pressure
+    - id: deadline
+      field: 3
+      match: suspended in 12 hours
+      label: Deadline
+      finding: A 12-hour suspension threat is there to make you act before you check.
+      linkAddress: 
+      clueId: deadline
+    - id: creds
+      field: 3
+      match: Verify your username and password
+      label: What it asks
+      finding: It wants your username and password. The Campus IT Security Notice
+        says IT never asks for passwords by email.
+      linkAddress: 
+      clueId: credentials
+    - id: link
+      field: 4
+      match: 
+      label: Link
+      finding: The link really goes to uphsl-binan-accounts.example/verify - a look-alike
+        sign-in page, not the student portal.
+      linkAddress: https://uphsl-binan-accounts.example/verify
+      clueId: link
+    evidence:
+    - id: domain
+      title: Look-alike sender domain
+      whyItMatters: uphsl-binan-accounts.example is not uphsl-binan.example.
+      supportsVerdict: 1
+    - id: pressure
+      title: '''Final notice'' with no first notice'
+      whyItMatters: Invented urgency stops people from checking.
+      supportsVerdict: 1
+    - id: deadline
+      title: 12-hour suspension threat
+      whyItMatters: Threats and short deadlines are pressure tactics.
+      supportsVerdict: 1
+    - id: credentials
+      title: Asks for your password
+      whyItMatters: Real IT teams never ask for passwords by email.
+      supportsVerdict: 1
+    - id: link
+      title: Link to a look-alike page
+      whyItMatters: Sign in only through the portal you already know.
+      supportsVerdict: 1
+    - id: displayname
+      title: Official-sounding name
+      whyItMatters: A display name is just text - on its own it proves nothing.
+      supportsVerdict: 0
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+  - id: l5_lab_reminder
+    channel: 0
+    sender: UPHSL Campus Alerts
+    senderDetail: Saved contact
+    subject: 
+    body: 'UPHSL Alerts: MacLab 3 is reserved today 1:00-4:00 PM for the CCS cybersecurity
+      workshop. Bring your student ID. No reply needed.'
+    link: 
+    correctVerdict: 1
+    scenarioContext: Fictional training example. The workshop is on this week's campus
+      schedule.
+    explanation: It comes from the saved UPHSL Campus Alerts contact, matches the
+      workshop listed in This Week on Campus, has no link and asks for nothing. This
+      is a fictional example - an unexpected request for a code, a password or a
+      payment would still need checking.
+    trigger: 1
+    readingSeconds: 0
+    stationId: 
+    requestedAction: Nothing - it's a reminder.
+    linkNote: No link.
+    clues:
+    - From the saved contact UPHSL Campus Alerts.
+    - No link, no reply needed.
+    - Compare with This Week on Campus.
+    inspectables: []
+    evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+  - id: l5_scholarship
+    channel: 1
+    sender: UPHSL Scholarship & Grants Office
+    senderDetail: grants@uphsl-scholarship-awards.example
+    subject: Congratulations! You've been pre-selected for a $2,000 grant
+    body: You have been pre-selected for the 2026 Excellence Grant. To release your
+      funds, complete the claim form with your student number, date of birth, bank
+      account details and a photo of your ID within 48 hours. A $15 processing fee
+      applies.
+    link: uphsl-scholarship-awards.example/claim
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: You never applied for a grant, the address is uphsl-scholarship-awards.example
+      instead of the university's domain, it asks for your bank details and an ID
+      photo on an unverified site, gives a 48-hour deadline and charges a fee to
+      receive money. The real Scholarships office uses the student portal and never
+      charges fees.
+    trigger: 2
+    readingSeconds: 0
+    stationId: MAC-15
+    requestedAction: Send student number, date of birth, bank details and an ID photo,
+      and pay a $15 fee, within 48 hours.
+    linkNote: uphsl-scholarship-awards.example/claim (training placeholder, never
+      opened).
+    clues:
+    - A grant you never applied for.
+    - Fee plus sensitive personal details.
+    - Compare with Scholarships & Payments.
+    inspectables:
+    - id: name
+      field: 0
+      match: 
+      label: Display name
+      finding: '''UPHSL Scholarship & Grants Office'' sounds official - the name
+        alone proves nothing.'
+      linkAddress: 
+      clueId: official
+    - id: address
+      field: 1
+      match: 
+      label: Sender address
+      finding: uphsl-scholarship-awards.example isn't the university. The real office
+        is scholarships@uphsl-binan.example.
+      linkAddress: 
+      clueId: domain
+    - id: offer
+      field: 2
+      match: pre-selected
+      label: The offer
+      finding: '''Pre-selected'' for a grant you never applied for (your case notes).'
+      linkAddress: 
+      clueId: notapplied
+    - id: data
+      field: 3
+      match: student number, date of birth, bank account details and a photo of your
+        ID
+      label: What it asks
+      finding: That's enough to steal your identity and your money. Real scholarship
+        offices never ask for this by email.
+      linkAddress: 
+      clueId: data
+    - id: deadline
+      field: 3
+      match: within 48 hours
+      label: Deadline
+      finding: A short deadline leaves no time to check.
+      linkAddress: 
+      clueId: deadline
+    - id: fee
+      field: 3
+      match: A $15 processing fee applies
+      label: Fee
+      finding: A genuine grant never costs money to receive.
+      linkAddress: 
+      clueId: fee
+    - id: link
+      field: 4
+      match: 
+      label: Link
+      finding: uphsl-scholarship-awards.example/claim is an unverified website, not
+        the student portal.
+      linkAddress: https://uphsl-scholarship-awards.example/claim
+      clueId: link
+    evidence:
+    - id: notapplied
+      title: A grant you never applied for
+      whyItMatters: Unexpected money is the bait.
+      supportsVerdict: 1
+    - id: domain
+      title: Unofficial domain
+      whyItMatters: uphsl-scholarship-awards.example is not uphsl-binan.example.
+      supportsVerdict: 1
+    - id: data
+      title: Asks for ID photo and bank details
+      whyItMatters: Identity and banking details are what scammers want.
+      supportsVerdict: 1
+    - id: fee
+      title: Fee to receive money
+      whyItMatters: Real scholarships never charge to pay you.
+      supportsVerdict: 1
+    - id: deadline
+      title: 48-hour deadline
+      whyItMatters: Pressure to act before verifying.
+      supportsVerdict: 1
+    - id: link
+      title: Unverified claim website
+      whyItMatters: Apply and claim only through the student portal.
+      supportsVerdict: 1
+    - id: official
+      title: Official-sounding office name
+      whyItMatters: Names are easy to copy - check the address.
+      supportsVerdict: 0
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+  - id: l5_campus_announcement
+    channel: 1
+    sender: UPHSL Office of Student Affairs
+    senderDetail: studentaffairs@uphsl-binan.example
+    subject: Campus Wi-Fi maintenance this Saturday
+    body: The campus Wi-Fi will be unavailable on Saturday from 6:00 to 9:00 AM for
+      scheduled maintenance. No action is needed from you. The schedule is also posted
+      on the student portal and on the display in the MacLab.
+    link: 
+    correctVerdict: 1
+    scenarioContext: Fictional training example. The sender domain and the schedule
+      match the university's official records.
+    explanation: It comes from studentaffairs@uphsl-binan.example - the university's
+      official domain - it describes an ordinary maintenance window that matches
+      This Week on Campus and the notice on the MacLab display, and it asks for nothing.
+      A fictional example, not a promise that every email in this style is safe.
+    trigger: 2
+    readingSeconds: 0
+    stationId: MAC-20
+    requestedAction: Nothing - plan around the outage.
+    linkNote: No link. It points you to the portal and the MacLab display.
+    clues:
+    - 'Specific time: Saturday 6:00-9:00 AM.'
+    - Asks for nothing.
+    - Compare with the MacLab display and This Week on Campus.
+    inspectables:
+    - id: address
+      field: 1
+      match: 
+      label: Sender address
+      finding: studentaffairs@uphsl-binan.example uses the university's only official
+        domain (Official Contacts).
+      linkAddress: 
+      clueId: domain
+    - id: when
+      field: 3
+      match: Saturday from 6:00 to 9:00 AM
+      label: Details
+      finding: A specific, ordinary maintenance window - nothing to do but plan around
+        it.
+      linkAddress: 
+      clueId: specific
+    - id: noaction
+      field: 3
+      match: No action is needed from you
+      label: What it asks
+      finding: 'It asks for nothing: no link, no password, no payment.'
+      linkAddress: 
+      clueId: noask
+    - id: posted
+      field: 3
+      match: on the display in the MacLab
+      label: Where to check
+      finding: You can confirm it yourself - the same notice is on the display at
+        the front of the lab.
+      linkAddress: 
+      clueId: matches
+    - id: subject
+      field: 2
+      match: 
+      label: Subject
+      finding: Plain and calm. It doesn't prove anything on its own, but there's
+        no pressure.
+      linkAddress: 
+      clueId: 
+    evidence:
+    - id: domain
+      title: Official university domain
+      whyItMatters: uphsl-binan.example is listed in Official Contacts.
+      supportsVerdict: 1
+    - id: specific
+      title: Specific, ordinary details
+      whyItMatters: A real maintenance notice names the date and time.
+      supportsVerdict: 1
+    - id: noask
+      title: Asks for nothing risky
+      whyItMatters: No link, password, code or payment is requested.
+      supportsVerdict: 1
+    - id: matches
+      title: Matches the lab display and records
+      whyItMatters: You can verify it independently.
+      supportsVerdict: 1
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+  - id: l5_malicious_attachment
+    channel: 1
+    sender: Office of the Registrar
+    senderDetail: registrar@upshl-binan.example
+    subject: Revised enrolment requirements - open the attachment today
+    body: 'Please review the attached revised enrolment requirements before your
+      classes are affected. When the file opens, click Enable Content so the form
+      displays correctly.
+
+      Attachment: Enrolment_Requirements_2026.pdf.exe
+      (48 KB)'
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The address is upshl-binan.example - two letters swapped compared
+      with the real uphsl-binan.example. The 'PDF' actually ends in .exe, so it's
+      a program, and 'Enable Content' would let hidden code run. The Registrar posts
+      requirements on the student portal and never sends them as attachments.
+    trigger: 2
+    readingSeconds: 0
+    stationId: MAC-11
+    requestedAction: Open an attached file and click Enable Content.
+    linkNote: No link - the danger is the attachment (simulated, never opened).
+    clues:
+    - Unexpected attachment from 'the Registrar'.
+    - Asks you to Enable Content.
+    - Compare the domain spelling with Official Contacts.
+    inspectables:
+    - id: name
+      field: 0
+      match: 
+      label: Display name
+      finding: '''Office of the Registrar'' is a real office''s name - copying it
+        is easy.'
+      linkAddress: 
+      clueId: official
+    - id: address
+      field: 1
+      match: 
+      label: Sender address
+      finding: 'Look closely: upshl-binan.example - ''upshl'' instead of ''uphsl''.
+        The real domain is uphsl-binan.example.'
+      linkAddress: 
+      clueId: lookalike
+    - id: subject
+      field: 2
+      match: open the attachment today
+      label: Subject
+      finding: An unexpected attachment plus 'today'. Requirements are posted on
+        the student portal (This Week on Campus).
+      linkAddress: 
+      clueId: urgent
+    - id: enable
+      field: 3
+      match: click Enable Content
+      label: Instruction
+      finding: '''Enable Content'' switches on macros - a common way documents run
+        hidden code.'
+      linkAddress: 
+      clueId: macros
+    - id: file
+      field: 3
+      match: Enrolment_Requirements_2026.pdf.exe
+      label: Attachment
+      finding: 'It ends in .exe: a program pretending to be a PDF. Opening it could
+        install malware. (Simulated - nothing is opened.)'
+      linkAddress: 
+      clueId: doubleext
+    evidence:
+    - id: lookalike
+      title: Misspelled university domain
+      whyItMatters: upshl-binan.example imitates uphsl-binan.example.
+      supportsVerdict: 1
+    - id: doubleext
+      title: '''.pdf.exe'' attachment'
+      whyItMatters: A double extension hides a program inside a fake document name.
+      supportsVerdict: 1
+    - id: macros
+      title: Asks you to Enable Content
+      whyItMatters: Macros in unexpected files can run malicious code.
+      supportsVerdict: 1
+    - id: urgent
+      title: Unexpected attachment with urgency
+      whyItMatters: Real offices post requirements on the portal.
+      supportsVerdict: 1
+    - id: official
+      title: Real office name
+      whyItMatters: A copied name proves nothing.
+      supportsVerdict: 0
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+  - id: l5_impersonation
+    channel: 1
+    sender: UPHSL Accounting Office
+    senderDetail: uphsl.accountingoffice@quickmail.example
+    subject: 'URGENT: tuition balance - pay today to avoid being dropped'
+    body: Due to an internal audit, tuition payments must now be sent to our new
+      bank account (Account 0042-7781-9930). Settle your remaining balance today
+      or you will be dropped from your classes. Do not call the office - our lines
+      are busy. Reply with your payment receipt.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: A university office wouldn't use a free quickmail.example address,
+      your tuition is already paid, payment details never change by email, and 'don't
+      call the office' stops you from checking with the real Accounting Office on
+      +1 (555) 010-2200. Threats plus changed bank details are classic impersonation.
+    trigger: 2
+    readingSeconds: 0
+    stationId: MAC-06
+    requestedAction: Send a tuition payment to a new bank account today.
+    linkNote: No link - it wants a bank transfer.
+    clues:
+    - Claims to be the Accounting Office.
+    - New bank account and a same-day threat.
+    - Compare with Scholarships & Payments and your case notes.
+    inspectables:
+    - id: name
+      field: 0
+      match: 
+      label: Display name
+      finding: '''UPHSL Accounting Office'' - a name anyone can type.'
+      linkAddress: 
+      clueId: official
+    - id: address
+      field: 1
+      match: 
+      label: Sender address
+      finding: quickmail.example is a free email service. University offices use
+        uphsl-binan.example.
+      linkAddress: 
+      clueId: freemail
+    - id: bank
+      field: 3
+      match: new bank account
+      label: Payment change
+      finding: A sudden change of bank details is a classic payment-redirection scam.
+        Payment details never change by email.
+      linkAddress: 
+      clueId: newbank
+    - id: balance
+      field: 3
+      match: Settle your remaining balance today
+      label: The claim
+      finding: Your case notes say your tuition is already fully paid.
+      linkAddress: 
+      clueId: paid
+    - id: threat
+      field: 3
+      match: you will be dropped from your classes
+      label: Threat
+      finding: A threat to drop you pushes you to pay before checking.
+      linkAddress: 
+      clueId: threat
+    - id: nocall
+      field: 3
+      match: Do not call the office
+      label: No calls
+      finding: Stopping you from calling is how impostors avoid being caught. Call
+        the number in Official Contacts.
+      linkAddress: 
+      clueId: nocall
+    evidence:
+    - id: freemail
+      title: Free email address
+      whyItMatters: Offices use the university domain, not free mail.
+      supportsVerdict: 1
+    - id: newbank
+      title: Changed bank details
+      whyItMatters: Payment details never change by email.
+      supportsVerdict: 1
+    - id: paid
+      title: Your tuition is already paid
+      whyItMatters: The claim contradicts your own records.
+      supportsVerdict: 1
+    - id: threat
+      title: Threat to drop you from classes
+      whyItMatters: Fear is used to rush payment.
+      supportsVerdict: 1
+    - id: nocall
+      title: '''Do not call the office'''
+      whyItMatters: Impostors block the one check that would expose them.
+      supportsVerdict: 1
+    - id: official
+      title: Office name in the sender
+      whyItMatters: Copied names prove nothing.
+      supportsVerdict: 0
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+  inboxExtras:
+  - id: l5_old_welcome
+    channel: 1
+    sender: MacLab Coordinator
+    senderDetail: labs@uphsl-binan.example
+    subject: Welcome to MacLab 3
+    body: Welcome to MacLab 3. Please log out when you finish and report anything
+      suspicious to security@uphsl-binan.example. Official notices are always posted
+      on the student portal.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables: []
+    evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+  caseFiles:
+  - title: Campus IT Security Notice
+    body: "<b>UPHSL Bi\xF1an IT Services</b>\n\n\u2022  We will <b>never</b> ask
+      for your password, verification codes or personal details by email, text or
+      chat.\n\u2022  Account checks happen only when <b>you</b> sign in to the student
+      portal (bookmark: portal.uphsl-binan.example).\n\u2022  Never open unexpected
+      attachments, and never click <b>Enable Content</b> on a document you didn't
+      expect.\n\u2022  Report suspicious messages to security@uphsl-binan.example."
+  - title: Official Contacts & Domains
+    body: "The university's only email domain is <b>uphsl-binan.example</b>.\n\n\u2022 
+      IT Services - it@uphsl-binan.example\n\u2022  Student Affairs - studentaffairs@uphsl-binan.example\n\u2022 
+      Registrar - registrar@uphsl-binan.example\n\u2022  Scholarships - scholarships@uphsl-binan.example\n\u2022 
+      Accounting - accounting@uphsl-binan.example \xB7 +1 (555) 010-2200\n\u2022 
+      Campus Alerts - texts from the saved contact \"UPHSL Campus Alerts\"\n\nNot
+      official: uphsl-binan-accounts, uphsl-scholarship-awards, upshl-binan (note
+      the spelling), and any free email service."
+  - title: Scholarships & Payments
+    body: '<b>Scholarships:</b> students apply through the student portal. The office
+      never charges a fee and never asks for bank details or ID photos by email.
+
+
+      <b>Tuition:</b>
+      paid only through the student portal or at the campus cashier. Payment details
+      never change by email - if in doubt, call Accounting on +1 (555) 010-2200.'
+  - title: This Week on Campus
+    body: "\u2022  <b>Today 1:00-4:00 PM</b> - MacLab 3 reserved for the CCS cybersecurity
+      workshop.\n\u2022  <b>Saturday 6:00-9:00 AM</b> - scheduled campus Wi-Fi maintenance
+      (no action needed).\n\u2022  Enrolment requirements for next term are posted
+      on the student portal - not sent as attachments."
+  firstMessageDelay: 8
+  delayBetweenMessages: {x: 8, y: 14}
+  minimumActivityDelay: 4
+  scoring:
+    basePoints: 300
+    speedBonus: 30
+    fastWindow: 0.35
+    wrongPenalty: 60
+    recoveryPoints: 70
+    baseReadingSeconds: 20
+    secondsPerWord: 0.5
+    secondsPerDetail: 3
+    minReadingSeconds: 40
+    maxReadingSeconds: 120
+    caseExtraSeconds: 75
+    overtimeStepSeconds: 10
+    overtimePenaltyPerStep: 10
+    maxTimePenalty: 70
+    minCorrectPoints: 230
+  oneStarScore: 1
+  twoStarScore: 1380
+  threeStarScore: 1560
+  minScoreToUnlockNext: 1380
+  nextLevelId: 
+  nextSceneName: 
+  lessons:
+  - Universities send mail from one official domain - look-alike domains and free
+    email accounts are red flags.
+  - No real IT team asks for your password or a verification code by email or text.
+  - Grants you never applied for, fees to receive money and requests for ID photos
+    or bank details are scams.
+  - A file ending in .exe isn't a document, and 'Enable Content' on an unexpected
+    file is a trap.
+  - Changed bank details, threats and 'don't call us' are signs of impersonation
+    - verify with the office's known number.
+  - Genuine notices match official records and ask for nothing risky.
+  learningSummary: 'You investigated a campus-wide phishing wave: look-alike and
+    free-mail senders, a credential trap, a fake grant, a disguised executable and
+    a payment-redirection scam - and you recognised the genuine notices by checking
+    them against official records.'
+  performanceHigh: Outstanding! The campus network is secure - every flagged message
+    was correctly identified.
+  performanceModerate: Good investigation. Review the clues you missed - the official
+    records separate the real notices from the fakes.
+  performanceLow: Keep practising. Compare every sender, attachment and request with
+    the university's official records.

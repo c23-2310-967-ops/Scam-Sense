@@ -897,7 +897,8 @@ public class MainMenuUI : MonoBehaviour
         var rooms = (RectTransform)roomStrip.Find("Rooms");
         foreach (Transform c in rooms) { c.gameObject.SetActive(false); Destroy(c.gameObject); }   // hidden now, destroyed at frame end
         int current = CurrentRoomIndex();
-        int count = Mathf.Min(catalog.Count, 4);
+        int count = Mathf.Min(catalog.Count, 6);
+        float cellW = Mathf.Min(200f, (860f - 14f * (count - 1)) / Mathf.Max(1, count));   // every room fits the 860-wide strip
         for (int i = 0; i < count; i++)
         {
             var lvl = catalog.levels[i];
@@ -906,8 +907,8 @@ public class MainMenuUI : MonoBehaviour
             bool unlocked = catalog.IsUnlocked(i);
             var cell = UIKit.Rect("Room_" + lvl.levelNumber, rooms);
             UIKit.Vertical(cell, 0, 6).childForceExpandHeight = false;
-            UIKit.Size(cell, 200, 152);
-            var thumb = RoomThumbnail(cell, lvl.levelNumber, lvl.previewImage, unlocked, () => OpenRoomPreview(idx, null), new Vector2(200, 112), false);
+            UIKit.Size(cell, cellW, 152);
+            var thumb = RoomThumbnail(cell, lvl.levelNumber, lvl.previewImage, unlocked, () => OpenRoomPreview(idx, null), new Vector2(cellW, Mathf.Round(cellW * 0.56f)), false);
             if (i == current)
             {
                 var o = thumb.GetComponent<Outline>();
@@ -925,7 +926,7 @@ public class MainMenuUI : MonoBehaviour
                                  16, unlocked ? UIKit.TextPrimary : UIKit.TextSecondary, TextAlignmentOptions.TopLeft);
             cap.textWrappingMode = TextWrappingModes.NoWrap;
             cap.overflowMode = TextOverflowModes.Ellipsis;
-            UIKit.Size(cap, 200, 30);
+            UIKit.Size(cap, cellW, 30);
         }
     }
 

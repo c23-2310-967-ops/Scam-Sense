@@ -67,7 +67,7 @@ public class CareerConfig : ScriptableObject
 
     [Header("Achievements")]
     [Tooltip("How many cases the game has (for 'solve every case').")]
-    public int casesInGame = 4;
+    public int casesInGame = 5;
     [Tooltip("Best-run accuracy that counts as consistent, and how many cases need it.")]
     [Range(0f, 1f)] public float consistentAccuracy = 0.8f;
     public int consistentCases = 3;

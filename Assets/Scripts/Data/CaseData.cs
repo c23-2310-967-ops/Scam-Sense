@@ -92,6 +92,8 @@ public class ScamMessage
     public MessageTrigger trigger = MessageTrigger.TimeOnly;
     [Tooltip("Reading allowance in seconds for this message. 0 = worked out from its length and details (Level Definition > Scoring).")]
     public float readingSeconds = 0f;
+    [Tooltip("Emails / web pages only: the workstation (ComputerTerminal Station Id) where this message is flagged. Empty = any computer.")]
+    public string stationId = "";
 
     [Header("Investigation (shown under Details before answering)")]
     [Tooltip("What the message asks you to do, in plain words.")]
