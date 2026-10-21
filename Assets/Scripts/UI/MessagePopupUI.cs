@@ -10,7 +10,7 @@ using UnityEngine.UI;
 /// and SCAM / LEGITIMATE buttons, which turns into the feedback card after answering.
 /// Builds itself at runtime. QuizManager drives it through IMessagePresenter.
 /// </summary>
-public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming, IInvestigationDock
+public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming, IInvestigationDock, IRecheckPresenter, IWarningTarget
 {
     [SerializeField] private int sortingOrder = 20;
     [Tooltip("Text messages are read on a first-person phone pulled out of the pocket (PocketPhone). " +
@@ -230,11 +230,23 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
             answerLine.text = $"You chose {UIKit.VerdictWord(r.chosen)}, but this message is <color={hex}><b>{word}</b></color>. Here is what to look for:";
         }
 
-        pointsLine.text = $"<color={UIKit.HexAccent}><b>+{r.points} points</b></color>   ·   answered in {UIKit.FormatSeconds(r.seconds)}";
+        pointsLine.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {UIKit.FormatSeconds(r.seconds)}";
         explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
         scoreLine.text = $"Score <b>{score}</b> / {maxScore}   ·   Messages reviewed <b>{reviewed}/{total}</b>";
         UIKit.SetLabel(continueButton, reviewed >= total ? "SEE RESULTS" : "CONTINUE");
         UIKit.SetInteractable(continueButton, true);
+    }
+
+    /// <summary>The decision card flashes red after a wrong answer.</summary>
+    public RectTransform WarningTarget => IsOpen && decisionCard != null && decisionCard.gameObject.activeInHierarchy ? decisionCard : null;
+
+    /// <summary>Follow-up re-check: the verdict buttons wait for the checklist; the status replaces the timer.</summary>
+    public void SetRecheck(bool answersEnabled, string status)
+    {
+        UIKit.SetInteractable(scamButton, answersEnabled);
+        UIKit.SetInteractable(legitButton, answersEnabled);
+        timerText.text = answersEnabled ? "READY" : "RE-CHECK";
+        worthText.text = status;
     }
 
     public void Hide()

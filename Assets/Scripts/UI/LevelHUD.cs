@@ -36,7 +36,7 @@ public class LevelHUD : MonoBehaviour
     private Coroutine tasksRoutine;
 
     private RectTransform root;
-    private TMP_Text levelTitle, objectivesText, notesText, reviewedText, scoreText, toastText;
+    private TMP_Text levelTitle, objectivesText, notesText, reviewedText, scoreText, caseStatusText, toastText;
     private RectTransform phoneBanner, emailToast;
     private TMP_Text phoneSender, phonePreview, phoneHint, emailSender, emailSubject, emailHint;
     private CanvasGroup phoneGroup, emailGroup, toastGroup;
@@ -111,6 +111,14 @@ public class LevelHUD : MonoBehaviour
     }
 
     public void SetVisible(bool visible) => root.gameObject.SetActive(visible);
+
+    /// <summary>Case status line under the score (e.g. "Security risk missed"); empty hides it.</summary>
+    public void SetCaseStatus(string richText)
+    {
+        if (caseStatusText == null) return;
+        caseStatusText.text = richText ?? "";
+        caseStatusText.gameObject.SetActive(!string.IsNullOrEmpty(richText));
+    }
 
     /// <summary>Shows the incoming-message notification. <paramref name="hint"/> says how to open it.</summary>
     public void ShowNotification(ScamMessage msg, string hint)
@@ -274,6 +282,8 @@ public class LevelHUD : MonoBehaviour
         UIKit.Divider(card);
         reviewedText = UIKit.Text(card, "Reviewed", "", 25, UIKit.TextPrimary);
         scoreText = UIKit.Text(card, "Score", "", 25, UIKit.TextPrimary);
+        caseStatusText = UIKit.Text(card, "CaseStatus", "", 21, UIKit.TextSecondary);
+        caseStatusText.gameObject.SetActive(false);
         UIKit.Text(card, "ToggleHint", "TAB  —  HIDE TASKS", 18, UIKit.TextSecondary, bold: true).characterSpacing = 2f;
 
         tasksCard = card;

@@ -29,6 +29,9 @@ public class MessageInvestigation : MonoBehaviour
 
     InvestigationSession session;
     IInvestigationDock dock;
+
+    /// <summary>The open message's investigation (null when nothing is investigated). Read by the follow-up checklist.</summary>
+    public InvestigationSession Session => session;
     float pauseUntil;
     readonly List<(TMP_Text text, Func<string> build)> binds = new List<(TMP_Text, Func<string>)>();
 

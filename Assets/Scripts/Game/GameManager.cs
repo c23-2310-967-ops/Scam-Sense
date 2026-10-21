@@ -26,6 +26,10 @@ public class GameManager : MonoBehaviour
         public string performanceMessage;
         public string unlockMessage;
         public string[] lessons;
+        /// <summary>Case evaluation: grade A-F, first-answer accuracy, mistakes recovered, hints, key clues found, penalties.</summary>
+        public string caseGrade;
+        public float accuracy;
+        public int recovered, hintsUsed, evidenceFound, penaltyPoints, recoveryPoints, missedRisks, falseAlarms;
         /// <summary>Career XP, rank and achievements for this run (CareerSystem).</summary>
         public CareerSystem.CaseCareer career;
     }
@@ -176,13 +180,22 @@ public class GameManager : MonoBehaviour
             hasNextRoom = hasNext,
             nextRoomUnlocked = hasNext && LocalDataManager.IsUnlocked(level.nextLevelId),
             nextSceneAvailable = CanLoad(level.nextSceneName),
-            lessons = level.lessons
+            lessons = level.lessons,
+            caseGrade = scoring.CaseGrade(scoring.MaxScoreFor(level.MessageCount)),
+            accuracy = scoring.Accuracy,
+            recovered = scoring.RecoveredCount,
+            hintsUsed = scoring.HintsUsed,
+            penaltyPoints = scoring.PenaltyPoints,
+            recoveryPoints = scoring.RecoveryPointsEarned,
+            missedRisks = scoring.MissedRisks,
+            falseAlarms = scoring.FalseAlarms
         };
         // 7) Career: the one place case XP is awarded (improvement over this case's best run only).
         var finalTerminal = FindFirstObjectByType<FinalCaseTerminal>();
+        var evidenceTracker = FindFirstObjectByType<EvidenceTracker>();
         r.career = CareerSystem.RecordCase(level, careerBefore, scoring, met,
-                                           finalTerminal != null ? finalTerminal.RequiredEvidence : null,
-                                           FindFirstObjectByType<EvidenceTracker>());
+                                           finalTerminal != null ? finalTerminal.RequiredEvidence : null, evidenceTracker);
+        r.evidenceFound = scoring.EvidenceFound + (evidenceTracker != null ? evidenceTracker.Count : 0);   // key clues + records opened
         r.performanceMessage = PerformanceMessage(r.correct, level.MessageCount, level);
         r.unlockMessage = UnlockMessage(r, wasUnlocked);
         return r;

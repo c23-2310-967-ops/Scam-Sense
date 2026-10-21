@@ -17,7 +17,7 @@ using UnityEngine.UI;
 /// created automatically in front of the screen if left empty.
 /// </summary>
 [DefaultExecutionOrder(-90)]
-public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigationDock
+public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigationDock, IRecheckPresenter, IWarningTarget
 {
     [Header("Screen")]
     [Tooltip("The monitor model (with Screen Submesh set) or a thin object covering the display area.")]
@@ -47,7 +47,10 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
 
     public bool InUse { get; private set; }
 
-    RectTransform inboxColumn;
+    RectTransform inboxColumn, paneRoot;
+
+    /// <summary>The reading pane flashes red after a wrong answer.</summary>
+    public RectTransform WarningTarget => InUse ? paneRoot : null;
 
     /// <summary>While a message is open, the investigation UI sits over the inbox column (not needed while reading).</summary>
     public bool TryGetDockArea(out Rect area)
@@ -295,7 +298,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
             verdictText.text = $"<color={UIKit.HexWarning}>×  NOT QUITE</color>";
             answerText.text = $"You chose {UIKit.VerdictWord(r.chosen)}. This {MessageChannels.Noun(r.message.channel)} is <color={hex}><b>{word}</b></color>.";
         }
-        pointsText.text = $"<color={UIKit.HexAccent}><b>+{r.points} points</b></color>   ·   answered in {UIKit.FormatSeconds(r.seconds)}";
+        pointsText.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {UIKit.FormatSeconds(r.seconds)}";
         explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
         scoreText.text = $"Score {score} / {maxScore}   ·   Messages reviewed {reviewed}/{total}";
         UIKit.SetLabel(backButton, reviewed >= total ? "Finish case" : "Back to inbox");
@@ -308,6 +311,17 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         shown = null;
         ShowEmptyPane();
         Refresh();
+    }
+
+    /// <summary>Follow-up re-check: the verdict buttons wait for the checklist; the status replaces the timer.</summary>
+    public void SetRecheck(bool answersEnabled, string status)
+    {
+        UIKit.SetInteractable(scamButton, answersEnabled);
+        UIKit.SetInteractable(legitButton, answersEnabled);
+        string noun = shown != null ? MessageChannels.Noun(shown.channel) : "email";
+        question.text = answersEnabled ? $"Checks done - is this {noun} a scam or legitimate?" : "Follow-up: re-check the evidence first";
+        timerText.text = status;
+        worthText.text = "";
     }
 
     void Choose(MessageVerdict v)
@@ -440,7 +454,9 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
             tagBg = scam ? UIKit.DangerButton : UIKit.SafeButton;
             tagFg = Color.white;
             bool right = FindResult(m).isCorrect;
+            bool recovered = !right && quiz != null && quiz.Scoring.WasRecovered(m.id);
             var you = UIKit.Text(row, "YourAnswer", right ? $"<color={UIKit.HexSafe}>✓ you were right</color>"
+                                                  : recovered ? $"<color={UIKit.HexAccent}>✓ corrected later</color>"
                                                           : $"<color={UIKit.HexWarning}>× you missed it</color>",
                                  17, UIKit.TextSecondary, TextAlignmentOptions.TopRight, bold: true);
             you.textWrappingMode = TextWrappingModes.NoWrap;
@@ -716,7 +732,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         listBg.gameObject.AddComponent<RectMask2D>();
 
         // Reading pane
-        var paneRoot = UIKit.Rect("PaneRoot", win);
+        paneRoot = UIKit.Rect("PaneRoot", win);
         paneRoot.anchorMin = new Vector2(0, 0); paneRoot.anchorMax = new Vector2(1, 1);
         paneRoot.offsetMin = new Vector2(528, 12); paneRoot.offsetMax = new Vector2(-12, -60);
         UIKit.AddImage(paneRoot, UIKit.PanelRaised, rounded: true);

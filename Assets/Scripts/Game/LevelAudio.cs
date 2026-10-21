@@ -22,6 +22,8 @@ public class LevelAudio : MonoBehaviour
     [SerializeField] private AudioClip starReveal;
     [SerializeField] private AudioClip levelComplete;
     [SerializeField] private AudioClip roomUnlocked;
+    [Tooltip("Short, soft alert under a wrong answer's investigation warning.")]
+    [SerializeField] private AudioClip investigationWarning;
 
     [Header("Background (Music group)")]
     [Tooltip("Optional background music or room-tone loop. If empty and Generate Ambience is on, a soft hum is generated.")]
@@ -48,6 +50,7 @@ public class LevelAudio : MonoBehaviour
         if (starReveal == null) starReveal = Chime("Star", new[] { 1567.9f }, 0.12f);
         if (levelComplete == null) levelComplete = Chime("Complete", new[] { 523.3f, 659.3f, 784f }, 0.12f);           // calm C major arpeggio
         if (roomUnlocked == null) roomUnlocked = Chime("Unlocked", new[] { 784f, 987.8f, 1174.7f, 1568f }, 0.09f);   // brighter, rising
+        if (investigationWarning == null) investigationWarning = Chime("Warning", new[] { 622.3f, 466.2f, 622.3f, 466.2f }, 0.07f);   // quiet two-tone alert
 
         if (ambienceLoop == null && generateAmbience) ambienceLoop = RoomTone();
         if (ambienceLoop != null)
@@ -69,10 +72,11 @@ public class LevelAudio : MonoBehaviour
     public void PlayStar() => Play(starReveal);
     public void PlayLevelComplete() => Play(levelComplete);
     public void PlayRoomUnlocked() => Play(roomUnlocked);
+    public void PlayWarning() => Play(investigationWarning, 0.6f);
 
-    void Play(AudioClip clip)
+    void Play(AudioClip clip, float volumeScale = 1f)
     {
-        if (sfx != null && clip != null) sfx.PlayOneShot(clip, sfxVolume);
+        if (sfx != null && clip != null) sfx.PlayOneShot(clip, sfxVolume * volumeScale);
     }
 
     // ---------- Generated sounds ----------

@@ -360,7 +360,7 @@ public class FinalCaseTerminal : MonoBehaviour, IMessagePresenter
             ? $"<color={UIKit.HexSafe}>✓  CORRECT</color>   <size=70%>The campaign is <color={hex}><b>{word}</b></color>.</size>"
             : $"<color={UIKit.HexWarning}>×  INCORRECT</color>   <size=70%>You submitted {UIKit.VerdictWord(r.chosen)}. The campaign is <color={hex}><b>{word}</b></color>.</size>";
         explanationText.text = r.message.explanation;
-        scoreText.text = $"<color={UIKit.HexAccent}><b>+{r.points} points</b></color>   ·   answered in {UIKit.FormatSeconds(r.seconds)}   ·   " +
+        scoreText.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {UIKit.FormatSeconds(r.seconds)}   ·   " +
                          $"Total score {score} / {maxScore}   ·   Messages reviewed {reviewed}/{total}";
         UIKit.SetInteractable(finishButton, true);
         UIKit.SetInteractable(exitButton, true);

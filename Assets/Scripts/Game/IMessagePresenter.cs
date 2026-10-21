@@ -27,6 +27,22 @@ public interface IPresenterTiming
 }
 
 /// <summary>
+/// Optional: a presenter that supports the follow-up re-check after a wrong answer (WrongAnswerConsequences).
+/// The message is shown again with ShowMessage; the verdict buttons stay locked until the re-check tasks are done,
+/// and <paramref name="status"/> replaces the response timer (re-checks are not timed).
+/// </summary>
+public interface IRecheckPresenter
+{
+    void SetRecheck(bool answersEnabled, string status);
+}
+
+/// <summary>Optional: the part of a presenter that briefly flashes red after a wrong answer.</summary>
+public interface IWarningTarget
+{
+    UnityEngine.RectTransform WarningTarget { get; }
+}
+
+/// <summary>
 /// Optional: a screen area (pixels) where the investigation UI (findings card, Evidence Notebook) can sit
 /// without covering the message or the answer buttons. Without it the UI docks on the right of the screen.
 /// </summary>

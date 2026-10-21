@@ -36,6 +36,35 @@ public enum MessageTrigger
     NearPhone       // arrives early when the player is near the phone
 }
 
+/// <summary>
+/// The reaction to a wrong answer (WrongAnswerConsequences). Auto picks it from the verdicts:
+///   trusted a scam            -> SecurityIncident (simulated security alert, "security risk missed")
+///   flagged a genuine message -> AccuracyWarning (which details support legitimacy, verify first)
+///   wrong final case          -> MissedClue (the evidence that was overlooked)
+/// FeedbackOnly = the educational explanation without a simulated alert. New values are only appended.
+/// </summary>
+public enum ConsequenceKind { Auto, SecurityIncident, AccuracyWarning, MissedClue, FeedbackOnly }
+
+/// <summary>Auto = a follow-up re-check when the message has investigation data; None = never.</summary>
+public enum FollowUpMode { Auto, None }
+
+/// <summary>Optional per-message settings for the wrong-answer reaction. Empty texts are generated from the message.</summary>
+[Serializable]
+public class WrongAnswerConsequence
+{
+    public ConsequenceKind kind = ConsequenceKind.Auto;
+    [Tooltip("Headline of the simulated alert. Empty = generated from the message. Fictional content only.")]
+    public string alertTitle = "";
+    [Tooltip("Body of the simulated alert. Empty = generated from the message.")]
+    [TextArea(2, 5)] public string alertBody = "";
+    [Tooltip("The clue the player most likely overlooked. Empty = taken from the investigation data or the Details clues.")]
+    [TextArea(2, 4)] public string overlookedClue = "";
+    [Tooltip("Follow-up investigation: re-check the key details, then answer again for recovery points.")]
+    public FollowUpMode followUp = FollowUpMode.Auto;
+    [Tooltip("Inspectable ids to re-check in the follow-up. Empty = up to three details that reveal key clues (links and senders first).")]
+    public string[] recheckDetails;
+}
+
 /// <summary>One incoming text message or email that the player must classify.</summary>
 [Serializable]
 public class ScamMessage
@@ -75,6 +104,9 @@ public class ScamMessage
     public System.Collections.Generic.List<MessageInspectable> inspectables = new System.Collections.Generic.List<MessageInspectable>();
     [Tooltip("Clues the inspectables can reveal; supportsVerdict marks the expected evidence.")]
     public System.Collections.Generic.List<MessageEvidence> evidence = new System.Collections.Generic.List<MessageEvidence>();
+
+    [Header("Wrong answer (optional): what a mistake on this message sets off")]
+    public WrongAnswerConsequence consequence = new WrongAnswerConsequence();
 
     /// <summary>True if the message has details to inspect.</summary>
     public bool HasInvestigation => inspectables != null && inspectables.Count > 0;

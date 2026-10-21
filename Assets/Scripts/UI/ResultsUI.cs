@@ -50,9 +50,10 @@ public class ResultsUI : MonoBehaviour
         statsText.text =
             $"<color={UIKit.HexSafe}>✓</color> Correct <b>{r.correct} / {total}</b>     " +
             $"<color={UIKit.HexWarning}>×</color> Incorrect <b>{r.incorrect} / {total}</b>     " +
-            $"Stars <b>{r.stars} / 3</b>     Best score <b>{r.bestScore}</b>\n" +
-            $"Response time <b>{UIKit.FormatSeconds(r.totalAnswerTime)}</b> total  ·  <b>{UIKit.FormatSeconds(r.averageAnswerTime)}</b> average per message     " +
-            $"Passing score <b>{r.requiredScore}</b>";
+            $"Stars <b>{r.stars} / 3</b>     Best score <b>{r.bestScore}</b>     Passing score <b>{r.requiredScore}</b>\n" +
+            $"Case grade <color={UIKit.HexAccent}><b>{r.caseGrade}</b></color>   ·   Accuracy <b>{Mathf.RoundToInt(r.accuracy * 100f)}%</b>   ·   " +
+            $"Evidence found <b>{r.evidenceFound}</b>   ·   Corrected <b>{r.recovered}/{r.incorrect}</b>   ·   Hints <b>{r.hintsUsed}</b>   ·   " +
+            $"Avg response <b>{UIKit.FormatSeconds(r.averageAnswerTime)}</b>";
         performanceText.text = r.performanceMessage;
 
         string icon = r.nextRoomUnlocked ? $"<color={UIKit.HexSafe}>✓</color>  " : $"<color={UIKit.HexDanger}>×</color>  ";

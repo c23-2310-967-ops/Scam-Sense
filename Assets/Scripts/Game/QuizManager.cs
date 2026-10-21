@@ -6,6 +6,9 @@ using UnityEngine.InputSystem;
 /// Runs the message sequence for one level:
 ///   wait (time or player activity) -> notification -> player opens it -> response timer runs while reading
 ///   -> answer is scored once -> feedback -> next message.
+/// A wrong answer also gets its consequence (WrongAnswerConsequences: investigation error, simulated incident or
+/// accuracy warning) and, for investigated messages, an optional follow-up re-check: the message opens again
+/// (Recheck phase), and one more verdict is scored as a recovery - the first answer's score is never changed.
 /// Text messages open on the phone pop-up (E anywhere). Emails are read on a computer (ComputerTerminal)
 /// when the scene has one; otherwise they also use the pop-up. Scoring is always done here, once.
 /// Runs early in the frame so that when E opens a message, doors and chairs ignore that press.
@@ -13,7 +16,7 @@ using UnityEngine.InputSystem;
 [DefaultExecutionOrder(-100)]
 public class QuizManager : MonoBehaviour
 {
-    private enum Phase { Idle, Waiting, Notified, Reading, Feedback, Complete }
+    private enum Phase { Idle, Waiting, Notified, Reading, Feedback, Recheck, Complete }
 
     [Header("References (auto-found on this object if empty)")]
     [SerializeField] private ScoringSystem scoring;
@@ -45,11 +48,11 @@ public class QuizManager : MonoBehaviour
     public event Action StateChanged;
 
     public bool IsComplete => phase == Phase.Complete;
-    public bool IsAnswering => phase == Phase.Reading;
+    public bool IsAnswering => phase == Phase.Reading || phase == Phase.Recheck;
     /// <summary>The message waiting to be opened, or null.</summary>
     public ScamMessage PendingMessage => phase == Phase.Notified ? Current : null;
     /// <summary>The message currently open (reading or feedback), or null.</summary>
-    public ScamMessage OpenMessage => (phase == Phase.Reading || phase == Phase.Feedback) ? Current : null;
+    public ScamMessage OpenMessage => (phase == Phase.Reading || phase == Phase.Feedback || phase == Phase.Recheck) ? Current : null;
     public IMessagePresenter OpenPresenter => current;
     public ScoringSystem Scoring => scoring;
     public LevelDefinition Level => level;
@@ -67,6 +70,8 @@ public class QuizManager : MonoBehaviour
     private int Total => level != null ? level.MessageCount : 0;
     private ScamMessage Current => level.messages[index];
     private MessageInvestigation investigation;
+    private WrongAnswerConsequences consequences;
+    private float recheckTime;
 
     void Awake()
     {
@@ -77,6 +82,9 @@ public class QuizManager : MonoBehaviour
         // Clickable details + Evidence Notebook for messages that have investigation data.
         investigation = GetComponent<MessageInvestigation>();
         if (investigation == null) investigation = gameObject.AddComponent<MessageInvestigation>();
+        // Wrong-answer consequences and the follow-up re-check (needs the scoring system on this object).
+        consequences = GetComponent<WrongAnswerConsequences>();
+        if (consequences == null && scoring != null) consequences = gameObject.AddComponent<WrongAnswerConsequences>();
     }
 
     void OnEnable()
@@ -102,6 +110,7 @@ public class QuizManager : MonoBehaviour
         if (scoring != null) scoring.ResetRun();
         if (popup != null) popup.Hide();
         if (hud != null) hud.HideNotification();
+        if (consequences != null) consequences.Close();
 
         if (player == null)
         {
@@ -159,6 +168,10 @@ public class QuizManager : MonoBehaviour
                     shownPoints = points;
                     current?.SetTimer(responseTime, points);
                 }
+                break;
+
+            case Phase.Recheck:
+                recheckTime += Time.deltaTime;   // not timed for points; only recorded with the recovery answer
                 break;
         }
     }
@@ -277,6 +290,7 @@ public class QuizManager : MonoBehaviour
 
     void OnAnswer(MessageVerdict chosen)
     {
+        if (phase == Phase.Recheck) { OnRecheckAnswer(chosen); return; }
         if (phase != Phase.Reading) return;   // ignores late or repeated clicks
         phase = Phase.Feedback;
 
@@ -289,16 +303,83 @@ public class QuizManager : MonoBehaviour
         }
 
         if (investigation != null) investigation.Submit(Current, chosen);   // evaluates the selected evidence once
+        RecordEvidence();
         int max = scoring.MaxScoreFor(Total);
         if (levelAudio != null) levelAudio.PlayAnswer(result.isCorrect);
         current.ShowFeedback(result, scoring.TotalScore, max, index + 1, Total);
         if (hud != null) hud.SetProgress(index + 1, Total, scoring.TotalScore, max);
+        if (consequences != null)
+        {
+            if (result.isCorrect) consequences.UpdateHudStatus();   // a correct answer never triggers a failure reaction
+            else consequences.ShowMistake(result, current, Evaluation(),
+                                          WrongAnswerConsequences.OffersFollowUp(Current) && scoring.CanRecover(Current.id),
+                                          BeginRecheck, OnContinue);
+        }
         StateChanged?.Invoke();
+    }
+
+    InvestigationSession.Result Evaluation() =>
+        investigation != null && investigation.Session != null && investigation.Session.Message == Current ? investigation.Session.Evaluation : null;
+
+    /// <summary>Key clues found in this message, for the case evaluation (best count per message, never doubled).</summary>
+    void RecordEvidence()
+    {
+        var r = Evaluation();
+        if (r != null) scoring.RecordEvidence(Current.id, r.selectedCorrectly.Count + r.foundNotSelected.Count);
+    }
+
+    // ---------- Follow-up re-check (after a wrong answer) ----------
+
+    /// <summary>REVIEW EVIDENCE: the same message opens again with a fresh investigation; the verdict waits for the checklist.</summary>
+    void BeginRecheck()
+    {
+        if (phase != Phase.Feedback || current == null || !scoring.CanRecover(Current.id)) { OnContinue(); return; }
+        phase = Phase.Recheck;
+        recheckTime = 0f;
+        if (investigation != null) investigation.Begin(Current, current as IInvestigationDock);   // before ShowMessage (clickable details)
+        current.ShowMessage(Current);
+        if (consequences != null) consequences.BeginRecheck(Current, current, investigation, SkipRecheck);
+        StateChanged?.Invoke();
+    }
+
+    void OnRecheckAnswer(MessageVerdict chosen)
+    {
+        if (consequences != null && !consequences.RecheckReady)
+        {
+            // Buttons are locked until the checklist is done; if a click still gets through, keep them locked.
+            (current as IRecheckPresenter)?.SetRecheck(false, "Finish the follow-up checklist first");
+            return;
+        }
+        phase = Phase.Feedback;
+        bool hint = scoring.HintUsedFor(Current.id);
+        if (!scoring.TryRecordRecovery(Current, chosen, recheckTime, hint, out var result))
+        {
+            OnContinue();   // no recovery attempt left (cannot normally happen)
+            return;
+        }
+        if (investigation != null) investigation.Submit(Current, chosen);
+        RecordEvidence();
+        int max = scoring.MaxScoreFor(Total);
+        if (levelAudio != null) levelAudio.PlayAnswer(result.isCorrect);
+        current.ShowFeedback(result, scoring.TotalScore, max, index + 1, Total);
+        if (hud != null) hud.SetProgress(index + 1, Total, scoring.TotalScore, max);
+        if (consequences != null) consequences.ShowRecheckResult(result, Evaluation(), current, OnContinue);
+        StateChanged?.Invoke();
+    }
+
+    /// <summary>SKIP: the recovery attempt is used up and the investigation moves on.</summary>
+    void SkipRecheck()
+    {
+        if (phase != Phase.Recheck) return;
+        scoring.ForfeitRecovery(Current.id);
+        phase = Phase.Feedback;
+        OnContinue();
     }
 
     void OnContinue()
     {
         if (phase != Phase.Feedback) return;
+        if (consequences != null) consequences.Close();
 
         var finished = current;
         Unsubscribe();
