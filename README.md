@@ -1,4 +1,4 @@
-# Scam Sense: Think Before You Click
+   # Scam Sense: Think Before You Click
 
 > A first-person 3D educational game, made in Unity, that teaches players to recognize scam messages before they click. *(BSIT Capstone Project)*
 
@@ -299,10 +299,10 @@ There are no automated tests yet. The Unity Test Framework package is installed 
 
 | Name | Role |
 |------|------|
-| Polly Jireh Mane | Developer, Designer, Project Manager |
-| Andrew Tenorio | Documentary |
+| Polly Jireh Mane | Project Manger, Game Designer, Game Developer |
+| Andrew Tenorio | Documentary, QA Tester | 
 | Prince Moses Jimenez | Documentary, Designer |
-| Chester Guille Castillo |Documentary |
+| Chester Guille Castillo |Documentary, QA Tester |
 
 ## License and Credits
 
