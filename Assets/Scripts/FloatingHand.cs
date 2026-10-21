@@ -217,15 +217,47 @@ public class FloatingHand : MonoBehaviour
 
             h.rig.localPosition = h.smoothPos + idle + walk;
             h.rig.localRotation = h.smoothRot * walkRot;
+
+            // Left hand reaching down to (or coming back from) the pocket for the phone.
+            if (h.side < 0f && pocketReach > 0f)
+            {
+                float k = pocketReach * pocketReach * (3f - 2f * pocketReach);
+                h.rig.localPosition = Vector3.Lerp(h.rig.localPosition, PocketHandPos, k);
+                h.rig.localRotation = Quaternion.Slerp(h.rig.localRotation, PocketHandRot, k);
+            }
         }
     }
 
-    private bool IsReaching => reachTarget != null || reachTimer > 0f;
+    private bool IsReaching => !ReachSuppressed && (reachTarget != null || reachTimer > 0f);
+
+    // ---- Phone: the left hand goes down to the pocket (PocketPhone drives this) ----
+    private float pocketReach;           // 0 = normal pose, 1 = hand down at the left trouser pocket
+    // Camera-local pose of the left hand at the pocket opening (below the view, beside the hip).
+    private static readonly Vector3 PocketHandPos = new Vector3(-0.30f, -0.66f, 0.16f);
+    private static readonly Quaternion PocketHandRot = Quaternion.Euler(70f, 25f, -40f);
+
+    /// <summary>While true the right hand never reaches out for the E key (the phone is being used).</summary>
+    public bool ReachSuppressed { get; set; }
+
+    /// <summary>
+    /// Moves the LEFT hand toward the trouser pocket: 0 = its normal pose, 1 = at the pocket (out of view).
+    /// Used by PocketPhone so the empty hand visibly reaches down before the phone comes up, and comes back
+    /// up after the phone is put away.
+    /// </summary>
+    public void SetPocketReach(float amount) => pocketReach = Mathf.Clamp01(amount);
+
+    /// <summary>Shows or hides one hand (side +1 = right, -1 = left).</summary>
+    public void SetHandVisible(float side, bool visible)
+    {
+        foreach (var h in hands)
+            if (h.rig != null && Mathf.Sign(h.side) == Mathf.Sign(side)) h.rig.gameObject.SetActive(visible);
+    }
 
     // Pressing the reach key shoots a ray from the camera; if it hits something in range,
     // the right hand reaches out to that point and pulls back after a moment.
     private void UpdateReachInput(float dt)
     {
+        if (ReachSuppressed) { reachTimer = 0f; return; }   // phone in use: E must not send the right hand out
         var kb = Keyboard.current;
         if (kb != null && reachKey != Key.None)
         {

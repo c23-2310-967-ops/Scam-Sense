@@ -3,19 +3,26 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// First-person smartphone: a low-poly phone held in a low-poly right hand that is pulled out of the
-/// pocket, held up in front of the camera while a text message is read, then put back.
+/// First-person smartphone held in the player's LEFT hand (a low-poly hand and phone built in code - there is
+/// no Animator or clip; the motion is procedural).
 ///
-/// It only animates and displays. MessagePopupUI moves its phone screen onto <see cref="ScreenRoot"/>
-/// and keeps the decision card (timer, details, SCAM / LEGITIMATE, feedback) beside it, so the message
-/// flow, timer and scoring stay in QuizManager / ScoringSystem.
+/// Taking it out (PullOut):
+///   1. Reach - the floating left hand drops down to the left trouser pocket (FloatingHand.SetPocketReach).
+///   2. Grab  - out of view, that hand is swapped for this rig (the same hand now holding the phone), with a
+///              small dip into the pocket.
+///   3. Raise - the phone swings up out of the pocket along a curve and turns its screen toward the player,
+///              settling with a slight overshoot into the held pose left of the decision card.
+/// Putting it away (PutAway) plays the same steps in reverse: the phone goes down into the pocket, then the
+/// empty left hand comes back up to its normal pose.
+/// The right floating hand stays visible in its normal pose and never reaches out while the phone is used.
 ///
-/// Added to the player camera automatically (see <see cref="For"/>); no Inspector setup is needed.
-/// While the phone is out, player movement and mouse-look are frozen through InteractionGate and the
-/// floating hands are hidden (this rig has its own hand, so nothing overlaps).
+/// It only animates and displays. MessagePopupUI moves its phone screen onto <see cref="ScreenRoot"/> and keeps
+/// the decision card (timer, details, SCAM / LEGITIMATE, feedback) beside it, so the message flow, timer and
+/// scoring stay in QuizManager / ScoringSystem. Added to the player camera automatically (see <see cref="For"/>);
+/// no Inspector setup is needed. While the phone is out, movement and mouse-look are frozen through InteractionGate.
 ///
-/// Clipping: the phone stays between the camera's near clip plane (0.3 m) and the player's collider
-/// radius (0.5 m), so it is never cut by the camera and never pokes into walls or furniture.
+/// Clipping: the phone stays between the camera's near clip plane (0.3 m) and the player's collider radius
+/// (0.5 m), so it is never cut by the camera and never pokes into walls or furniture.
 /// </summary>
 [DisallowMultipleComponent]
 public class PocketPhone : MonoBehaviour
@@ -28,6 +35,10 @@ public class PocketPhone : MonoBehaviour
     [Tooltip("Hoodie sleeve on the holding arm (matches the KidHoodie character).")]
     [SerializeField] private Color sleeveColor = new Color32(0x2F, 0x80, 0xA8, 255);
 
+    [Header("Hand")]
+    [Tooltip("Hold the phone in the left hand (pocket on the left). Off = the original right-hand version.")]
+    [SerializeField] private bool leftHanded = true;
+
     [Header("Held pose")]
     [Tooltip("Metres in front of the camera. Keep it above the near clip plane and below the player's collider radius.")]
     [SerializeField] private float holdDistance = 0.37f;
@@ -38,8 +49,12 @@ public class PocketPhone : MonoBehaviour
     [SerializeField] private float reservedRightUnits = 680f;
 
     [Header("Timing")]
+    [Tooltip("The empty left hand dropping to the pocket before the phone comes up (0 = skip).")]
+    [SerializeField] private float reachTime = 0.22f;
     [SerializeField] private float pullOutTime = 0.6f;
     [SerializeField] private float putAwayTime = 0.45f;
+    [Tooltip("The empty left hand coming back up after the phone is pocketed.")]
+    [SerializeField] private float returnTime = 0.25f;
 
     /// <summary>Canvas units of the phone screen (same size as MessagePopupUI's phone view).</summary>
     public const float ScreenUnitsW = 500f, ScreenUnitsH = 920f;
@@ -60,11 +75,16 @@ public class PocketPhone : MonoBehaviour
     private float progress;          // 0 = in pocket, 1 = held up (position along the path)
     private bool holdingGate;
 
-    // Pocket and half-way poses, camera-local. The held pose is computed from the viewport.
+    private float Side => leftHanded ? -1f : 1f;
+
+    // Right-hand pocket and half-way poses, camera-local (mirrored for the left hand). The held pose comes from the viewport.
     private static readonly Vector3 PocketPos = new Vector3(0.30f, -0.62f, 0.16f);
-    private static readonly Quaternion PocketRot = Quaternion.Euler(80f, -40f, 65f);
+    private static readonly Vector3 PocketEuler = new Vector3(80f, -40f, 65f);
     private static readonly Vector3 MidPos = new Vector3(0.24f, -0.33f, 0.34f);
-    private static readonly Quaternion MidRot = Quaternion.Euler(38f, -22f, 28f);
+    private static readonly Vector3 MidEuler = new Vector3(38f, -22f, 28f);
+
+    Vector3 Mirror(Vector3 p) => new Vector3(p.x * Side, p.y, p.z);
+    Quaternion MirrorRot(Vector3 euler) => Quaternion.Euler(euler.x, euler.y * Side, euler.z * Side);
 
     /// <summary>The phone on this camera, created on first use.</summary>
     public static PocketPhone For(Camera camera)
@@ -88,17 +108,15 @@ public class PocketPhone : MonoBehaviour
 
     /// <summary>
     /// Takes the phone out of the pocket. <paramref name="onRaised"/> runs once it is held up.
-    /// Ignored if it is already out (it can never be pulled out twice); if it was on its way back,
+    /// Ignored if it is already coming out (it can never be pulled out twice); if it was on its way back,
     /// it turns around from where it is.
     /// </summary>
     public void PullOut(Action onRaised)
     {
         if (state == State.Held) { onRaised?.Invoke(); return; }
         if (state == State.PullingOut) return;
-
         TakeControl();
-        rig.gameObject.SetActive(true);
-        StartAnim(Animate(1f, pullOutTime, State.PullingOut, State.Held, onRaised));
+        StartAnim(PullOutSequence(onRaised));
     }
 
     /// <summary>Lowers the phone back into the pocket, then gives control back to the player.</summary>
@@ -106,12 +124,7 @@ public class PocketPhone : MonoBehaviour
     {
         if (state == State.Pocketed) { onPocketed?.Invoke(); return; }
         if (state == State.PuttingAway) return;
-        StartAnim(Animate(0f, putAwayTime, State.PuttingAway, State.Pocketed, () =>
-        {
-            rig.gameObject.SetActive(false);
-            ReleaseControl();
-            onPocketed?.Invoke();
-        }));
+        StartAnim(PutAwaySequence(onPocketed));
     }
 
     // ---------- Animation ----------
@@ -122,28 +135,82 @@ public class PocketPhone : MonoBehaviour
         anim = StartCoroutine(routine);
     }
 
-    IEnumerator Animate(float target, float duration, State during, State after, Action done)
+    IEnumerator PullOutSequence(Action onRaised)
     {
-        state = during;
+        state = State.PullingOut;
+        // 1. Reach: the empty left hand drops to the pocket (skipped if the phone is already part-way out).
+        if (progress <= 0f && !rig.gameObject.activeSelf && hands != null && reachTime > 0f)
+        {
+            hands.SetHandVisible(Side, true);
+            yield return Tween(reachTime, k => hands.SetPocketReach(k));
+        }
+        // 2. Grab: out of view, the floating hand becomes this rig's hand holding the phone.
+        if (hands != null) { hands.SetHandVisible(Side, false); hands.SetPocketReach(0f); }
+        rig.gameObject.SetActive(true);
+        // 3. Raise
+        yield return Move(1f, pullOutTime);
+        state = State.Held;
+        anim = null;
+        onRaised?.Invoke();
+    }
+
+    IEnumerator PutAwaySequence(Action onPocketed)
+    {
+        state = State.PuttingAway;
+        yield return Move(0f, putAwayTime);
+        rig.gameObject.SetActive(false);
+        // The empty left hand comes back up from the pocket to its normal pose.
+        if (hands != null)
+        {
+            hands.SetPocketReach(1f);
+            hands.SetHandVisible(Side, true);
+            if (returnTime > 0f) yield return Tween(returnTime, k => hands.SetPocketReach(1f - k));
+            hands.SetPocketReach(0f);
+        }
+        state = State.Pocketed;
+        anim = null;
+        ReleaseControl();
+        onPocketed?.Invoke();
+    }
+
+    /// <summary>Runs <paramref name="apply"/> from 0 to 1 over <paramref name="duration"/> scaled seconds (the pause menu freezes it).</summary>
+    static IEnumerator Tween(float duration, Action<float> apply)
+    {
+        for (float t = 0f; t < duration; t += Time.deltaTime)
+        {
+            apply(t / duration);
+            yield return null;
+        }
+        apply(1f);
+    }
+
+    /// <summary>Moves the phone along its path to <paramref name="target"/> (1 = held, 0 = pocket).</summary>
+    IEnumerator Move(float target, float duration)
+    {
         float start = progress;
         float time = Mathf.Max(0.05f, duration * Mathf.Abs(target - start));   // shorter if it turns around mid-way
-        for (float t = 0f; t < time; t += Time.deltaTime)                     // scaled: the pause menu freezes it
+        for (float t = 0f; t < time; t += Time.deltaTime)
         {
             float k = t / time;
-            // Ease in-out when coming up, ease-in (accelerating down) when going back.
-            k = target > start ? k * k * (3f - 2f * k) : k * k;
-            progress = Mathf.Lerp(start, target, k);
+            // Coming up: ease out with a slight overshoot so the phone settles in the hand.
+            // Going back: ease-in (accelerating down into the pocket).
+            k = target > start ? EaseOutBack(k) : k * k;
+            progress = Mathf.LerpUnclamped(start, target, k);
             yield return null;
         }
         progress = target;
-        state = after;
-        anim = null;
-        done?.Invoke();
+    }
+
+    static float EaseOutBack(float k)
+    {
+        const float s = 1.2f;   // small overshoot (about 4%)
+        k -= 1f;
+        return 1f + k * k * ((s + 1f) * k + s);
     }
 
     void LateUpdate()
     {
-        if (state == State.Pocketed || cam == null) return;
+        if (state == State.Pocketed || cam == null || !rig.gameObject.activeSelf) return;
 
         // The phone's size is set so it fills the same share of the screen at any distance / FOV.
         float h = screenHeightFill * 2f * holdDistance * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
@@ -153,7 +220,7 @@ public class PocketPhone : MonoBehaviour
         float freeRight = reservedRightUnits / (1080f * Mathf.Max(0.5f, cam.aspect));
         float cx = Mathf.Clamp((1f - freeRight) * 0.5f, 0.22f, 0.5f);
         Vector3 holdPos = cam.transform.InverseTransformPoint(cam.ViewportToWorldPoint(new Vector3(cx, viewportY, holdDistance)));
-        Quaternion holdRot = Quaternion.LookRotation(holdPos.normalized, Vector3.up) * Quaternion.Euler(-3f, 0f, 2.5f);
+        Quaternion holdRot = Quaternion.LookRotation(holdPos.normalized, Vector3.up) * Quaternion.Euler(-3f, 0f, 2.5f * Side);
 
         // Gentle breathing sway while it is up.
         float held = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.85f, 1f, progress));
@@ -161,12 +228,19 @@ public class PocketPhone : MonoBehaviour
         holdPos += new Vector3(Mathf.Sin(tt * 1.1f) * 0.0015f, Mathf.Sin(tt * 1.7f) * 0.002f, 0f) * held;
         holdRot *= Quaternion.Euler(Mathf.Sin(tt * 1.3f) * 0.4f * held, 0f, Mathf.Sin(tt * 0.9f) * 0.3f * held);
 
+        // Grab: a small dip deeper into the pocket at the very start of the pull (out of view), so the hand
+        // closes on the phone before lifting it.
+        float pc = Mathf.Clamp01(progress);
+        float dip = state == State.PullingOut ? Mathf.Sin(Mathf.Clamp01(pc / 0.18f) * Mathf.PI) * (1f - pc) : 0f;
+        Vector3 pocket = Mirror(PocketPos) + new Vector3(0f, -0.05f, -0.02f) * dip;
+
         // Curved path pocket -> mid -> held (quadratic Bezier), with a matching rotation blend,
         // so the phone swings up and turns toward the player instead of sliding in a straight line.
-        float p = progress;
-        Vector3 a = Vector3.Lerp(PocketPos, MidPos, p), b = Vector3.Lerp(MidPos, holdPos, p);
-        rig.localPosition = Vector3.Lerp(a, b, p);
-        rig.localRotation = Quaternion.Slerp(Quaternion.Slerp(PocketRot, MidRot, p), Quaternion.Slerp(MidRot, holdRot, p), p);
+        float p = progress;   // may overshoot slightly above 1 while settling
+        Vector3 a = Vector3.LerpUnclamped(pocket, Mirror(MidPos), p), b = Vector3.LerpUnclamped(Mirror(MidPos), holdPos, p);
+        rig.localPosition = Vector3.LerpUnclamped(a, b, p);
+        Quaternion pocketRot = MirrorRot(PocketEuler), midRot = MirrorRot(MidEuler);
+        rig.localRotation = Quaternion.Slerp(Quaternion.Slerp(pocketRot, midRot, pc), Quaternion.Slerp(midRot, holdRot, pc), pc);
     }
 
     // ---------- Player control ----------
@@ -175,13 +249,23 @@ public class PocketPhone : MonoBehaviour
     {
         if (!holdingGate) { InteractionGate.Acquire(this); holdingGate = true; }   // freezes movement + mouse-look
         if (hands == null) hands = FindFirstObjectByType<FloatingHand>();
-        if (hands != null) hands.SetHandsVisible(false);
+        if (hands != null)
+        {
+            hands.ReachSuppressed = true;   // the right hand stays at rest: E must not send it out
+            hands.Retract();
+            hands.SetHandVisible(-Side, true);
+        }
     }
 
     void ReleaseControl()
     {
         if (holdingGate) { InteractionGate.Release(this); holdingGate = false; }
-        if (hands != null) hands.SetHandsVisible(true);
+        if (hands != null)
+        {
+            hands.ReachSuppressed = false;
+            hands.SetPocketReach(0f);
+            hands.SetHandsVisible(true);
+        }
     }
 
     // ---------- Build (unit-height phone; scaled in LateUpdate) ----------
@@ -216,26 +300,31 @@ public class PocketPhone : MonoBehaviour
         ScreenRoot.localPosition = new Vector3(0f, 0f, -0.002f);
         ScreenRoot.localScale = Vector3.one / ScreenUnitsH;
 
-        // Right hand holding it from behind: palm on the back, fingers curling round the left edge,
-        // thumb along the right edge, wrist and forearm leaving the bottom of the screen.
-        var hand = new GameObject("Hand").transform;
+        // Hand holding it from behind: palm on the back, fingers curling round the far edge, thumb along the
+        // near edge, wrist and forearm leaving the bottom of the screen. Authored as a right hand; every hand
+        // block is mirrored on X for the left hand (the phone itself is not mirrored).
+        var hand = new GameObject(leftHanded ? "LeftHand" : "RightHand").transform;
         hand.SetParent(model, false);
-        Block(hand, "Palm", new Vector3(0.06f, -0.2f, depth + 0.035f), new Vector3(0.46f, 0.46f, 0.07f), Vector3.zero, skin);
+        HandBlock(hand, "Palm", new Vector3(0.06f, -0.2f, depth + 0.035f), new Vector3(0.46f, 0.46f, 0.07f), Vector3.zero, skin);
         float fx = -bw * 0.5f - 0.03f;
         for (int i = 0; i < 4; i++)
         {
             float fy = 0.02f - i * 0.12f;
-            Block(hand, "Finger" + i, new Vector3(fx, fy, depth * 0.5f + 0.01f), new Vector3(0.055f, 0.095f, depth + 0.07f), Vector3.zero, skin);
-            Block(hand, "Tip" + i, new Vector3(fx + 0.012f, fy, -0.006f), new Vector3(0.035f, 0.085f, 0.014f), Vector3.zero, skin);
+            HandBlock(hand, "Finger" + i, new Vector3(fx, fy, depth * 0.5f + 0.01f), new Vector3(0.055f, 0.095f, depth + 0.07f), Vector3.zero, skin);
+            HandBlock(hand, "Tip" + i, new Vector3(fx + 0.012f, fy, -0.006f), new Vector3(0.035f, 0.085f, 0.014f), Vector3.zero, skin);
         }
-        Block(hand, "Thumb", new Vector3(bw * 0.5f + 0.028f, -0.27f, depth * 0.5f), new Vector3(0.06f, 0.28f, depth + 0.03f), new Vector3(0f, 0f, 12f), skin);
-        Block(hand, "Wrist", new Vector3(0.14f, -0.58f, depth + 0.07f), new Vector3(0.34f, 0.34f, 0.13f), new Vector3(0f, 0f, -18f), skin);
+        HandBlock(hand, "Thumb", new Vector3(bw * 0.5f + 0.028f, -0.27f, depth * 0.5f), new Vector3(0.06f, 0.28f, depth + 0.03f), new Vector3(0f, 0f, 12f), skin);
+        HandBlock(hand, "Wrist", new Vector3(0.14f, -0.58f, depth + 0.07f), new Vector3(0.34f, 0.34f, 0.13f), new Vector3(0f, 0f, -18f), skin);
         // Hoodie sleeve over the forearm, with a darker cuff at the wrist
         var sleeve = MakeMaterial(sleeveColor, 0.12f, 0.35f);
         var cuff = MakeMaterial(sleeveColor * 0.78f, 0.12f, 0.35f);
-        Block(hand, "Sleeve", new Vector3(0.28f, -1.0f, depth + 0.12f), new Vector3(0.38f, 0.64f, 0.19f), new Vector3(0f, 0f, -22f), sleeve);
-        Block(hand, "Cuff", new Vector3(0.19f, -0.75f, depth + 0.1f), new Vector3(0.36f, 0.08f, 0.17f), new Vector3(0f, 0f, -20f), cuff);
+        HandBlock(hand, "Sleeve", new Vector3(0.28f, -1.0f, depth + 0.12f), new Vector3(0.38f, 0.64f, 0.19f), new Vector3(0f, 0f, -22f), sleeve);
+        HandBlock(hand, "Cuff", new Vector3(0.19f, -0.75f, depth + 0.1f), new Vector3(0.36f, 0.08f, 0.17f), new Vector3(0f, 0f, -20f), cuff);
     }
+
+    /// <summary>A hand block authored for the right hand, mirrored on X when the phone is left-handed.</summary>
+    void HandBlock(Transform parent, string name, Vector3 pos, Vector3 scale, Vector3 euler, Material mat) =>
+        Block(parent, name, Mirror(pos), scale, new Vector3(euler.x, euler.y * Side, euler.z * Side), mat);
 
     static void Block(Transform parent, string name, Vector3 pos, Vector3 scale, Vector3 euler, Material mat)
     {

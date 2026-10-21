@@ -35,3 +35,12 @@ Settings on the component (visible during Play Mode, or add it to the Main Camer
 ## Not included
 - No rigged or animated hand model exists in the project, so the hand is built from low-poly blocks in code, matching the existing FloatingHand style. A rigged hand with a grip pose could replace it later; you'd swap the blocks built in `PocketPhone.Build()`.
 - The SCAM / LEGITIMATE buttons stay on the decision card next to the phone, not on the phone screen. At the screen sizes tested (800×450), buttons on the phone would be small, and the card keeps the timer, Details and feedback together.
+
+## Left hand (2026-10-21)
+The phone is now taken out and held with the **left** hand (`PocketPhone > Left Handed`, on by default; off = the original right-hand version).
+1. **Reach:** the floating left hand drops down to the left trouser pocket (`FloatingHand.SetPocketReach`).
+2. **Grab:** out of view, that hand is swapped for the phone rig's left hand, with a small dip into the pocket.
+3. **Raise:** the phone swings up from the left, turns its screen toward the player and settles with a slight overshoot.
+4. **Put away:** the same in reverse. The phone goes into the pocket, then the empty left hand comes back up.
+
+The right floating hand stays visible in its normal pose, and its E-key reach is paused while the phone is out (`FloatingHand.ReachSuppressed`), so it never reaches for a wall or object while you read. The rig has no Animator or clips: the motion is code-driven, so the "mirroring" flips the hand blocks, the pocket and the path on X. Timing fields are under **Timing** (`reachTime`, `pullOutTime`, `putAwayTime`, `returnTime`).
