@@ -46,7 +46,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
 
     // Decision card
     private GameObject decisionGroup, feedbackGroup;
-    private TMP_Text channelHeader, timerText, worthText;
+    private TMP_Text channelHeader, timerLabel, timerText, worthText;
     private Button scamButton, legitButton, detailsButton;
     private TMP_Text hintText, detailsText, detailsMoreHint;
     private RectTransform detailsBox;
@@ -129,7 +129,8 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         feedbackGroup.SetActive(false);
         UIKit.SetInteractable(scamButton, true);
         UIKit.SetInteractable(legitButton, true);
-        SetTimer(0f, 0);
+        var sc = quiz != null ? quiz.Scoring : null;
+        SetTimer(0f, sc != null && sc.HasTimePressure ? sc.ReadingAllowance(msg) : 0f, sc != null ? sc.PointsFor(msg, true, 0f) : 0);
 
         if (sms && textsOnHandheldPhone && EnsurePocket())
         {
@@ -206,9 +207,13 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         hudHiddenByPhone = false;
     }
 
-    public void SetTimer(float seconds, int pointsIfCorrect)
+    public void SetTimer(float seconds, float allowance, int pointsIfCorrect)
     {
-        timerText.text = UIKit.FormatSeconds(seconds);
+        bool over = allowance > 0f && seconds > allowance;
+        timerLabel.text = allowance <= 0f ? "TIME SPENT  ·  NO RUSH" : over ? "OVERTIME" : "READING TIME LEFT";
+        timerText.text = allowance <= 0f ? ScoringSystem.Clock(seconds)
+                       : over ? $"<color={UIKit.HexWarning}>+{ScoringSystem.Clock(seconds - allowance)}</color>"
+                       : ScoringSystem.Clock(allowance - seconds);
         worthText.text = $"A correct answer now earns <color={UIKit.HexAccent}><b>{pointsIfCorrect} pts</b></color>";
     }
 
@@ -230,7 +235,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
             answerLine.text = $"You chose {UIKit.VerdictWord(r.chosen)}, but this message is <color={hex}><b>{word}</b></color>. Here is what to look for:";
         }
 
-        pointsLine.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {UIKit.FormatSeconds(r.seconds)}";
+        pointsLine.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {ScoringSystem.Clock(r.seconds)}";
         explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
         scoreLine.text = $"Score <b>{score}</b> / {maxScore}   ·   Messages reviewed <b>{reviewed}/{total}</b>";
         UIKit.SetLabel(continueButton, reviewed >= total ? "SEE RESULTS" : "CONTINUE");
@@ -245,6 +250,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
     {
         UIKit.SetInteractable(scamButton, answersEnabled);
         UIKit.SetInteractable(legitButton, answersEnabled);
+        timerLabel.text = "FOLLOW-UP  ·  NOT TIMED";
         timerText.text = answersEnabled ? "READY" : "RE-CHECK";
         worthText.text = status;
     }
@@ -476,9 +482,9 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         UIKit.AddImage(timerRow, UIKit.Background, rounded: true);
         var tv = UIKit.Vertical(timerRow, 18, 4);
         tv.childAlignment = TextAnchor.MiddleCenter;
-        var tLabel = UIKit.Text(timerRow, "Label", "RESPONSE TIME", 20, UIKit.TextSecondary, TextAlignmentOptions.Center, bold: true);
-        tLabel.characterSpacing = 4f;
-        timerText = UIKit.Text(timerRow, "Timer", "0.0s", 52, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
+        timerLabel = UIKit.Text(timerRow, "Label", "READING TIME LEFT", 20, UIKit.TextSecondary, TextAlignmentOptions.Center, bold: true);
+        timerLabel.characterSpacing = 4f;
+        timerText = UIKit.Text(timerRow, "Timer", "0:00", 52, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
         worthText = UIKit.Text(timerRow, "Worth", "", UIKit.SizeSmall, UIKit.TextSecondary, TextAlignmentOptions.Center);
 
         scamButton = UIKit.HudButton(d, "×  SCAM", () => Choose(MessageVerdict.Scam), UIKit.HudVariant.Danger, 32);

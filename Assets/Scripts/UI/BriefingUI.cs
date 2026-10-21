@@ -56,8 +56,8 @@ public class BriefingUI : MonoBehaviour
                 ob.Append($"<color={UIKit.HexAccent}><b>{i + 1:00}</b></color>   ").AppendLine(level.objectives[i]);
         objectives.text = ob.ToString().TrimEnd();
 
-        rules.text = $"Faster correct answers earn more points (up to {maxScore}). " +
-                     $"Score at least <color={UIKit.HexAccent}><b>{level.minScoreToUnlockNext}</b></color> to unlock the next room.";
+        rules.text = (level.scoring != null ? level.scoring.Summary() + " " : "") +
+                     $"Score at least <color={UIKit.HexAccent}><b>{level.minScoreToUnlockNext}</b></color> of {maxScore} to unlock the next room.";
 
         UIKit.SetInteractable(beginButton, true);
         root.gameObject.SetActive(true);

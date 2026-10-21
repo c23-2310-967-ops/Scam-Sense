@@ -1752,7 +1752,8 @@ public class MainMenuUI : MonoBehaviour
             Bullet("Emails are read on a <b>computer</b>: the downstairs desk or the upstairs computer room. Look at the monitor and press <b>E</b>.") +
             Bullet("Decide: <color=" + UIKit.HexDanger + "><b>SCAM</b></color> or <color=" + UIKit.HexSafe + "><b>LEGITIMATE</b></color>.") +
             Bullet("Check the <b>sender</b>, whether it matches something <b>you did</b>, any <b>urgency</b> or pressure, and where <b>links</b> lead.") +
-            Bullet("Faster correct answers earn more points (up to 100 per message). Wrong answers earn 0.") +
+            Bullet(lvl != null && lvl.scoring != null ? lvl.scoring.Summary() + " Later cases are worth more and ask for a little more speed."
+                                                     : "Correct answers earn points; take the time you need to read each message.") +
             Bullet($"Stars reward your score ({stars}). Reach <b>{unlock}</b> points to unlock the next room."),
             23, UIKit.TextPrimary);
         text.lineSpacing = 8f;

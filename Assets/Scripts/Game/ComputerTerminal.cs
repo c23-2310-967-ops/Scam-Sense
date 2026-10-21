@@ -269,12 +269,15 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         UIKit.SetInteractable(scamButton, true);
         UIKit.SetInteractable(legitButton, true);
         UIKit.SetInteractable(exitButton, false);
-        SetTimer(0f, quiz != null ? quiz.Scoring.PointsFor(true, 0f) : 0);
+        SetTimer(0f, quiz != null && quiz.Scoring.HasTimePressure ? quiz.Scoring.ReadingAllowance(msg) : 0f,
+                 quiz != null ? quiz.Scoring.PointsFor(msg, true, 0f) : 0);
     }
 
-    public void SetTimer(float seconds, int pointsIfCorrect)
+    public void SetTimer(float seconds, float allowance, int pointsIfCorrect)
     {
-        timerText.text = $"Response time  <b>{UIKit.FormatSeconds(seconds)}</b>";
+        timerText.text = allowance <= 0f ? $"No time pressure  ·  <b>{ScoringSystem.Clock(seconds)}</b>"
+                       : seconds <= allowance ? $"Reading time left  <b>{ScoringSystem.Clock(allowance - seconds)}</b>"
+                       : $"<color={UIKit.HexWarning}>Overtime  <b>+{ScoringSystem.Clock(seconds - allowance)}</b></color>";
         worthText.text = $"Correct now: <color={UIKit.HexAccent}><b>{pointsIfCorrect} pts</b></color>";
     }
 
@@ -298,7 +301,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
             verdictText.text = $"<color={UIKit.HexWarning}>×  NOT QUITE</color>";
             answerText.text = $"You chose {UIKit.VerdictWord(r.chosen)}. This {MessageChannels.Noun(r.message.channel)} is <color={hex}><b>{word}</b></color>.";
         }
-        pointsText.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {UIKit.FormatSeconds(r.seconds)}";
+        pointsText.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {ScoringSystem.Clock(r.seconds)}";
         explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
         scoreText.text = $"Score {score} / {maxScore}   ·   Messages reviewed {reviewed}/{total}";
         UIKit.SetLabel(backButton, reviewed >= total ? "Finish case" : "Back to inbox");

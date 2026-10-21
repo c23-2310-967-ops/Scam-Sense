@@ -61,7 +61,8 @@ public class QuizManager : MonoBehaviour
     private Phase phase = Phase.Idle;
     private int index;
     private float waitTimer, waitTarget, walked, reminderTimer, responseTime;
-    private int shownTenths = -1, shownPoints = -1;
+    private int shownSeconds = -1, shownPoints = -1;
+    private float allowance;
     private Vector3 lastPlayerPos;
     private MessageDevice[] devices = new MessageDevice[0];
     private bool hasComputers, hasCaseTerminal;
@@ -107,7 +108,7 @@ public class QuizManager : MonoBehaviour
         level = definition;
         index = 0;
         phase = Phase.Idle;
-        if (scoring != null) scoring.ResetRun();
+        if (scoring != null) { scoring.Configure(level); scoring.ResetRun(); }
         if (popup != null) popup.Hide();
         if (hud != null) hud.HideNotification();
         if (consequences != null) consequences.Close();
@@ -158,15 +159,15 @@ public class QuizManager : MonoBehaviour
                 // Reading a newly inspected detail's finding is free for a few seconds (MessageInvestigation).
                 if ((!(current is IPresenterTiming timing) || timing.TimerRunning) && !MessageInvestigation.PausesTimer)
                     responseTime += Time.deltaTime;
-                // The timer shows tenths of a second: rebuild its text only when what it shows changes
+                // The timer shows whole seconds: rebuild its text only when what it shows changes
                 // (not every frame - each update allocates strings and re-meshes the text).
-                int tenths = Mathf.FloorToInt(responseTime * 10f + 0.5f);
-                int points = scoring.PointsFor(true, responseTime);
-                if (tenths != shownTenths || points != shownPoints)
+                int secs = Mathf.FloorToInt(responseTime);
+                int points = scoring.PointsFor(Current, true, responseTime);
+                if (secs != shownSeconds || points != shownPoints)
                 {
-                    shownTenths = tenths;
+                    shownSeconds = secs;
                     shownPoints = points;
-                    current?.SetTimer(responseTime, points);
+                    current?.SetTimer(responseTime, scoring.HasTimePressure ? allowance : 0f, points);
                 }
                 break;
 
@@ -274,7 +275,8 @@ public class QuizManager : MonoBehaviour
 
         phase = Phase.Reading;
         responseTime = 0f;
-        shownTenths = shownPoints = -1;
+        shownSeconds = shownPoints = -1;
+        allowance = scoring.ReadingAllowance(Current);   // longer / more detailed messages get more reading time
         current = presenter;
         current.AnswerChosen += OnAnswer;
         current.ContinueClicked += OnContinue;

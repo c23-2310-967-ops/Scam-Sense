@@ -687,9 +687,25 @@ MonoBehaviour:
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 4
   oneStarScore: 1
-  twoStarScore: 475
-  threeStarScore: 600
-  minScoreToUnlockNext: 475
+  twoStarScore: 715
+  threeStarScore: 900
+  minScoreToUnlockNext: 715
+  scoring:
+    basePoints: 150
+    speedBonus: 15
+    fastWindow: 0.35
+    wrongPenalty: 25
+    recoveryPoints: 40
+    baseReadingSeconds: 20
+    secondsPerWord: 0.5
+    secondsPerDetail: 3
+    minReadingSeconds: 40
+    maxReadingSeconds: 120
+    caseExtraSeconds: 60
+    overtimeStepSeconds: 15
+    overtimePenaltyPerStep: 5
+    maxTimePenalty: 30
+    minCorrectPoints: 120
   nextLevelId: level_3
   nextSceneName: Room3_DigitalTrap
   lessons:

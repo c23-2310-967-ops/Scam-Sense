@@ -14,6 +14,81 @@ public class CaseFile
     [TextArea(4, 12)] public string body = "";
 }
 
+/// <summary>
+/// How one level scores answers (ScoringSystem reads it; nothing else hardcodes points).
+/// Correct = base points, plus a small speed bonus if answered well inside the reading allowance, minus a small
+/// stepped overtime deduction (capped) once the allowance runs out. Reading time is never wasted time: the
+/// allowance grows with the message's length and number of details. Wrong = 0 points and a small deduction.
+/// </summary>
+[System.Serializable]
+public class LevelScoring
+{
+    [Header("Points")]
+    [Tooltip("Points for a correct answer given within the reading allowance.")]
+    public int basePoints = 100;
+    [Tooltip("Extra points for a quick correct answer (full inside the fast window, fading to 0 at the end of the allowance). 0 = no speed bonus.")]
+    public int speedBonus = 0;
+    [Tooltip("Share of the reading allowance that earns the full speed bonus.")]
+    [Range(0f, 1f)] public float fastWindow = 0.35f;
+    [Tooltip("Taken off the total for a wrong answer (once per message; the total never goes below 0).")]
+    public int wrongPenalty = 10;
+    [Tooltip("Earned when a wrong answer is corrected in its follow-up re-check (half if a hint was used).")]
+    public int recoveryPoints = 20;
+
+    [Header("Reading allowance (seconds) = base + words x per word + details x per detail")]
+    public float baseReadingSeconds = 25f;
+    public float secondsPerWord = 0.6f;
+    [Tooltip("Per clickable detail and Details clue: time to inspect it.")]
+    public float secondsPerDetail = 4f;
+    public float minReadingSeconds = 45f;
+    public float maxReadingSeconds = 150f;
+    [Tooltip("Added for a multi-evidence final case.")]
+    public float caseExtraSeconds = 60f;
+
+    [Header("Overtime (after the allowance) - stepped, capped, never per second")]
+    [Tooltip("Every this many seconds past the allowance...")]
+    public float overtimeStepSeconds = 15f;
+    [Tooltip("...this many points come off a correct answer. 0 = no time penalty.")]
+    public int overtimePenaltyPerStep = 0;
+    [Tooltip("Most a correct answer can lose to overtime.")]
+    public int maxTimePenalty = 0;
+    [Tooltip("A correct answer never earns less than this.")]
+    public int minCorrectPoints = 100;
+
+    /// <summary>Speed bonus or overtime deductions exist (otherwise there is no time pressure at all).</summary>
+    public bool HasTimePressure => speedBonus > 0 || (maxTimePenalty > 0 && overtimePenaltyPerStep > 0);
+
+    public int MaxPointsPerMessage => Mathf.Max(0, basePoints) + Mathf.Max(0, speedBonus);
+
+    /// <summary>One sentence of rules for the briefing and How to Play.</summary>
+    public string Summary()
+    {
+        string s = $"Correct answers earn <b>{basePoints}</b> points" + (speedBonus > 0 ? $" (up to <b>+{speedBonus}</b> for a quick, confident answer)" : "") + ". ";
+        s += HasTimePressure && maxTimePenalty > 0
+            ? $"Each message gives you time to read it fully - longer messages get more. After that, a little comes off (at most <b>{maxTimePenalty}</b>). "
+            : "There is no time pressure - take the time you need to read and investigate. ";
+        return s + $"A wrong answer costs <b>{wrongPenalty}</b>.";
+    }
+
+    public void Validate()
+    {
+        basePoints = Mathf.Max(0, basePoints);
+        speedBonus = Mathf.Max(0, speedBonus);
+        wrongPenalty = Mathf.Max(0, wrongPenalty);
+        recoveryPoints = Mathf.Max(0, recoveryPoints);
+        baseReadingSeconds = Mathf.Max(0f, baseReadingSeconds);
+        secondsPerWord = Mathf.Max(0f, secondsPerWord);
+        secondsPerDetail = Mathf.Max(0f, secondsPerDetail);
+        minReadingSeconds = Mathf.Max(5f, minReadingSeconds);
+        maxReadingSeconds = Mathf.Max(minReadingSeconds, maxReadingSeconds);
+        caseExtraSeconds = Mathf.Max(0f, caseExtraSeconds);
+        overtimeStepSeconds = Mathf.Max(1f, overtimeStepSeconds);
+        overtimePenaltyPerStep = Mathf.Max(0, overtimePenaltyPerStep);
+        maxTimePenalty = Mathf.Clamp(maxTimePenalty, 0, basePoints);
+        minCorrectPoints = Mathf.Clamp(minCorrectPoints, 0, basePoints);
+    }
+}
+
 [CreateAssetMenu(fileName = "LevelDefinition", menuName = "Scam Sense/Level Definition")]
 public class LevelDefinition : ScriptableObject
 {
@@ -55,6 +130,9 @@ public class LevelDefinition : ScriptableObject
     [Tooltip("A message's activity trigger can fire early, but never sooner than this.")]
     public float minimumActivityDelay = 4f;
 
+    [Header("Scoring (points, reading time and penalties for this level)")]
+    public LevelScoring scoring = new LevelScoring();
+
     [Header("Stars (performance reward only)")]
     public int oneStarScore = 200;
     public int twoStarScore = 300;
@@ -87,6 +165,8 @@ public class LevelDefinition : ScriptableObject
         twoStarScore = Mathf.Max(oneStarScore, twoStarScore);
         threeStarScore = Mathf.Max(twoStarScore, threeStarScore);
         minScoreToUnlockNext = Mathf.Max(0, minScoreToUnlockNext);
+        if (scoring == null) scoring = new LevelScoring();
+        scoring.Validate();
         delayBetweenMessages.x = Mathf.Max(0f, delayBetweenMessages.x);
         delayBetweenMessages.y = Mathf.Max(delayBetweenMessages.x, delayBetweenMessages.y);
 

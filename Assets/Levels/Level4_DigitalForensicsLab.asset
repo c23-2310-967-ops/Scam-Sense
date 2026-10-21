@@ -347,9 +347,25 @@ MonoBehaviour:
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 5
   oneStarScore: 1
-  twoStarScore: 600
-  threeStarScore: 680
-  minScoreToUnlockNext: 600
+  twoStarScore: 1500
+  threeStarScore: 1700
+  minScoreToUnlockNext: 1500
+  scoring:
+    basePoints: 250
+    speedBonus: 25
+    fastWindow: 0.35
+    wrongPenalty: 50
+    recoveryPoints: 60
+    baseReadingSeconds: 20
+    secondsPerWord: 0.5
+    secondsPerDetail: 3
+    minReadingSeconds: 40
+    maxReadingSeconds: 120
+    caseExtraSeconds: 75
+    overtimeStepSeconds: 10
+    overtimePenaltyPerStep: 10
+    maxTimePenalty: 60
+    minCorrectPoints: 190
   nextLevelId: level_5
   nextSceneName: 
   lessons:

@@ -32,15 +32,15 @@ For emails with investigation data, **REVIEW EVIDENCE** opens the same email aga
 3. Give the verdict again. SCAM and LEGITIMATE stay locked until steps 1 and 2 are done.
 
 **Scoring the re-check:**
-- A correct re-check earns **20 recovery points**, or **10** if HINT was used.
+- A correct re-check earns the level's **recovery points** (20 / 40 / 50 / 60 for Levels 1-4), or half if HINT was used.
 - It is allowed once per message. A wrong re-check earns 0 with no further penalty.
 - The first answer's result is never changed.
 
 **SKIP FOLLOW-UP** gives up the recovery and continues.
 
 ## Scoring and case evaluation (`ScoringSystem`)
-- A wrong answer costs **10 points**, once per message. The shown total never goes below 0.
-- Penalties, recovery points and hint points are set in the Inspector under *Mistakes & Recovery*.
+- A wrong answer costs the level's **wrong-answer penalty** (10 / 25 / 40 / 50 for Levels 1-4), once per message. The shown total never goes below 0.
+- Penalties and recovery points are set per level in the Level Definition's **Scoring** block (see `Scoring.md`).
 - **Results screen:** case grade (A-F, half score and half accuracy, with a corrected mistake counting half), first-answer accuracy, evidence found, mistakes corrected, hints and average response time.
 - **HUD:** the case status line ("On track", "1 security risk missed" and so on) with the accuracy.
 - Stars, room unlocking (score only), career XP, saving and the cloud results are unchanged. They read the same `TotalScore`.

@@ -98,6 +98,7 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
         finished = leaving = false;
         LocalDataManager.Unlock(level.levelId);   // a room you are standing in is always unlocked
+        scoring.Configure(level);   // this level's points, reading time and penalties
         scoring.ResetRun();
 
         int max = scoring.MaxScoreFor(level.MessageCount);

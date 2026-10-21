@@ -267,9 +267,25 @@ MonoBehaviour:
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 5
   oneStarScore: 1
-  twoStarScore: 435
-  threeStarScore: 520
-  minScoreToUnlockNext: 435
+  twoStarScore: 870
+  threeStarScore: 1040
+  minScoreToUnlockNext: 870
+  scoring:
+    basePoints: 200
+    speedBonus: 20
+    fastWindow: 0.35
+    wrongPenalty: 40
+    recoveryPoints: 50
+    baseReadingSeconds: 20
+    secondsPerWord: 0.5
+    secondsPerDetail: 3
+    minReadingSeconds: 40
+    maxReadingSeconds: 110
+    caseExtraSeconds: 60
+    overtimeStepSeconds: 10
+    overtimePenaltyPerStep: 10
+    maxTimePenalty: 50
+    minCorrectPoints: 150
   nextLevelId: level_4
   nextSceneName: Room4_DigitalForensicsLab
   lessons:

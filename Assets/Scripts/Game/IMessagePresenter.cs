@@ -10,7 +10,11 @@ public interface IMessagePresenter
     event Action ContinueClicked;
 
     void ShowMessage(ScamMessage msg);
-    void SetTimer(float seconds, int pointsIfCorrect);
+    /// <summary>
+    /// Response timer: <paramref name="seconds"/> spent reading so far, the message's reading allowance
+    /// (0 = this level has no time pressure: show time spent, no countdown) and what a correct answer earns now.
+    /// </summary>
+    void SetTimer(float seconds, float allowance, int pointsIfCorrect);
     void ShowFeedback(ScoringSystem.AnswerResult result, int score, int maxScore, int reviewed, int total);
 
     /// <summary>The player has finished with this message (feedback closed).</summary>

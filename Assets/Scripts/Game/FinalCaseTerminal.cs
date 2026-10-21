@@ -341,13 +341,17 @@ public class FinalCaseTerminal : MonoBehaviour, IMessagePresenter
         UIKit.SetInteractable(legitButton, true);
         UIKit.SetInteractable(submitButton, false);
         UIKit.SetInteractable(exitButton, false);
-        SetTimer(0f, quiz != null ? quiz.Scoring.PointsFor(true, 0f) : 0);
+        SetTimer(0f, quiz != null && quiz.Scoring.HasTimePressure ? quiz.Scoring.ReadingAllowance(msg) : 0f,
+                 quiz != null ? quiz.Scoring.PointsFor(msg, true, 0f) : 0);
     }
 
-    public void SetTimer(float seconds, int pointsIfCorrect)
+    public void SetTimer(float seconds, float allowance, int pointsIfCorrect)
     {
-        if (timerText != null)
-            timerText.text = $"Response time  <b>{UIKit.FormatSeconds(seconds)}</b>   ·   correct now: <color={UIKit.HexAccent}><b>{pointsIfCorrect} pts</b></color>";
+        if (timerText == null) return;
+        string time = allowance <= 0f ? $"No time pressure  ·  <b>{ScoringSystem.Clock(seconds)}</b>"
+                    : seconds <= allowance ? $"Review time left  <b>{ScoringSystem.Clock(allowance - seconds)}</b>"
+                    : $"<color={UIKit.HexWarning}>Overtime  <b>+{ScoringSystem.Clock(seconds - allowance)}</b></color>";
+        timerText.text = $"{time}   ·   correct now: <color={UIKit.HexAccent}><b>{pointsIfCorrect} pts</b></color>";
     }
 
     public void ShowFeedback(ScoringSystem.AnswerResult r, int score, int maxScore, int reviewed, int total)
@@ -360,7 +364,7 @@ public class FinalCaseTerminal : MonoBehaviour, IMessagePresenter
             ? $"<color={UIKit.HexSafe}>✓  CORRECT</color>   <size=70%>The campaign is <color={hex}><b>{word}</b></color>.</size>"
             : $"<color={UIKit.HexWarning}>×  INCORRECT</color>   <size=70%>You submitted {UIKit.VerdictWord(r.chosen)}. The campaign is <color={hex}><b>{word}</b></color>.</size>";
         explanationText.text = r.message.explanation;
-        scoreText.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {UIKit.FormatSeconds(r.seconds)}   ·   " +
+        scoreText.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {ScoringSystem.Clock(r.seconds)}   ·   " +
                          $"Total score {score} / {maxScore}   ·   Messages reviewed {reviewed}/{total}";
         UIKit.SetInteractable(finishButton, true);
         UIKit.SetInteractable(exitButton, true);

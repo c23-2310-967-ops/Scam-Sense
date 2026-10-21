@@ -493,6 +493,22 @@ MonoBehaviour:
   twoStarScore: 325
   threeStarScore: 425
   minScoreToUnlockNext: 325
+  scoring:
+    basePoints: 100
+    speedBonus: 0
+    fastWindow: 0.35
+    wrongPenalty: 10
+    recoveryPoints: 20
+    baseReadingSeconds: 25
+    secondsPerWord: 0.6
+    secondsPerDetail: 4
+    minReadingSeconds: 45
+    maxReadingSeconds: 150
+    caseExtraSeconds: 60
+    overtimeStepSeconds: 15
+    overtimePenaltyPerStep: 0
+    maxTimePenalty: 0
+    minCorrectPoints: 100
   nextLevelId: level_2
   nextSceneName: Room2_InvestigationOffice
   lessons:
