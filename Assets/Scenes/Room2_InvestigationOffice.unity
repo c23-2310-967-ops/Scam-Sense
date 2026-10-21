@@ -2835,7 +2835,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4281805087
   m_fontColor: {r: 0.12156863, g: 0.16078432, b: 0.21568628, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -2848,7 +2848,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -15085,7 +15085,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c4a270aff2765e147a672e2dd38f94c6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.95016915
+      value: -1.04
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c4a270aff2765e147a672e2dd38f94c6, type: 3}
       propertyPath: m_LocalPosition.y
@@ -23246,6 +23246,7 @@ MonoBehaviour:
   starReveal: {fileID: 0}
   levelComplete: {fileID: 0}
   roomUnlocked: {fileID: 0}
+  investigationWarning: {fileID: 0}
   ambienceLoop: {fileID: 0}
   generateAmbience: 1
   ambienceVolume: 0.06
@@ -23262,17 +23263,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a3f7fceb816984fa48804b76f6884c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brackets:
-  - maxSeconds: 5
-    points: 100
-  - maxSeconds: 10
-    points: 80
-  - maxSeconds: 15
-    points: 60
-  - maxSeconds: 20
-    points: 40
-  slowestCorrectPoints: 20
-  incorrectPoints: 0
 --- !u!4 &1661322867
 Transform:
   m_ObjectHideFlags: 0
