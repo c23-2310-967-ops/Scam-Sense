@@ -47,7 +47,7 @@ public interface IWarningTarget
 }
 
 /// <summary>
-/// Optional: a screen area (pixels) where the investigation UI (findings card, Evidence Notebook) can sit
+/// Optional: a screen area (pixels) where the investigation UI (hint and finding card) can sit
 /// without covering the message or the answer buttons. Without it the UI docks on the right of the screen.
 /// </summary>
 public interface IInvestigationDock

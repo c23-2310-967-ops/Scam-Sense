@@ -80,7 +80,7 @@ public class QuizManager : MonoBehaviour
         if (popup == null) popup = GetComponent<MessagePopupUI>();
         if (hud == null) hud = GetComponent<LevelHUD>();
         if (levelAudio == null) levelAudio = GetComponent<LevelAudio>();
-        // Clickable details + Evidence Notebook for messages that have investigation data.
+        // Clickable details and finding cards for messages that have investigation data.
         investigation = GetComponent<MessageInvestigation>();
         if (investigation == null) investigation = gameObject.AddComponent<MessageInvestigation>();
         // Wrong-answer consequences and the follow-up re-check (needs the scoring system on this object).
@@ -329,7 +329,7 @@ public class QuizManager : MonoBehaviour
     void RecordEvidence()
     {
         var r = Evaluation();
-        if (r != null) scoring.RecordEvidence(Current.id, r.selectedCorrectly.Count + r.foundNotSelected.Count);
+        if (r != null) scoring.RecordEvidence(Current.id, r.found.Count);
     }
 
     // ---------- Follow-up re-check (after a wrong answer) ----------

@@ -103,7 +103,7 @@ public class ScamMessage
     [Tooltip("Neutral observations the player can inspect. Must not state the answer.")]
     public string[] clues;
 
-    [Header("Investigation (optional): clickable details and Evidence Notebook clues")]
+    [Header("Investigation (optional): clickable details and the clues they reveal")]
     [Tooltip("Details the player can click/tap to inspect. Leave empty for a message without investigation.")]
     public System.Collections.Generic.List<MessageInspectable> inspectables = new System.Collections.Generic.List<MessageInspectable>();
     [Tooltip("Clues the inspectables can reveal; supportsVerdict marks the expected evidence.")]

@@ -6,21 +6,20 @@ There is no separate Investigation Mode. **Emails** that have investigation data
 1. An email opens as usual.
 2. Inspectable details are underlined in cyan: sender, sender details, subject, body phrases and links. Clicking or tapping one opens a **finding card** that explains it.
    - Links are **never opened**. The card shows the address in a box marked "SIMULATED LINK · NOT OPENED".
-   - A detail that reveals a clue turns gold ★ and adds the clue to the **Evidence Notebook**. Neutral details turn grey ✓. Clicking a detail again adds nothing new.
+   - A detail that reveals a key clue turns gold ★ and the card says **KEY CLUE FOUND**. Neutral details turn grey ✓. Clicking a detail again adds nothing new.
    - Each newly inspected detail pauses the response timer for 6 s of reading time.
-3. **EVIDENCE NOTEBOOK · n** lists the clues found so far. Each clue can be selected or deselected as supporting evidence.
-4. The player answers with the normal buttons. The evidence is evaluated once, with that answer.
-5. The normal feedback adds a **YOUR EVIDENCE** block with four lists: selected, found but not selected, missed, and selected but not real evidence. The notebook becomes an **Evidence Review**. CONTINUE moves on as before.
+3. The player answers with the normal buttons. The clues are evaluated once, with that answer.
+4. The normal feedback adds a **CLUES YOU FOUND** block: the key clues found and the ones missed. CONTINUE moves on as before.
 
-Evidence does not change the score or XP. It only adds feedback.
+There is no notebook or clue selection: clues are found directly on screen. Found clues don't change the score; they add feedback and count towards *Evidence found* on the results screen.
 
 ## Files
 | File | Role |
 |---|---|
 | `Scripts/Data/MessageInvestigationData.cs` | `InspectField`, `MessageInspectable` (field + match phrase + finding + optional clue), `MessageEvidence` (clue; `supportsVerdict = false` for decoys). |
 | `Scripts/Data/CaseData.cs` | `ScamMessage.inspectables` / `evidence` / `HasInvestigation`; `MessageChannel.Chat`; `MessageChannels.OnPhone`. |
-| `Scripts/Game/InvestigationSession.cs` | Per-message state: inspected details, discovered and selected clues, one-time `Submit`, data `Validate`. |
-| `Scripts/Game/MessageInvestigation.cs` | Added by `QuizManager` at runtime. Builds the "Investigation Canvas" (hint, notebook tab, finding card, notebook) and provides `Bind`/`Mark` for presenters, the timer pause and `FeedbackFor`. |
+| `Scripts/Game/InvestigationSession.cs` | Per-message state: inspected details, discovered clues, one-time `Submit` (key clues found / missed), data `Validate`. |
+| `Scripts/Game/MessageInvestigation.cs` | Added by `QuizManager` at runtime. Builds the "Investigation Canvas" (hint and finding card) and provides `Bind`/`Mark` for presenters, the timer pause and `FeedbackFor`. |
 | `Scripts/UI/InvestigationLinkText.cs` | Makes TMP `<link>` parts clickable on overlay and world-space canvases. |
 | `Scripts/Game/IMessagePresenter.cs` | `IInvestigationDock`: where the investigation UI can sit without covering the message. The phone uses the gap beside the decision card; the computer uses the inbox column. |
 | `Editor/MessageInvestigationContent.cs` | **Tools › Scam Sense › Investigation › Apply Message Investigation Data**: writes the details and clues for Levels 1–2 and adds the Level 2 IT chat message. |

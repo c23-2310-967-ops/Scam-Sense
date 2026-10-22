@@ -8,10 +8,10 @@ using UnityEngine.UI;
 /// <summary>
 /// Message investigation inside the normal gameplay. While a message with investigation data is open on its
 /// presenter (phone pop-up or computer), the presenter's texts show clickable details (see <see cref="Bind"/> and
-/// <see cref="Mark"/>). Inspecting shows a finding card and may add a clue to the Evidence Notebook, where the
-/// player selects the clues that support their verdict. The verdict is still given with the presenter's
-/// SCAM / LEGITIMATE buttons; QuizManager then calls <see cref="Submit"/> and the presenter's feedback includes
-/// <see cref="FeedbackFor"/> (selected, unselected and missed evidence). Scoring is unchanged.
+/// <see cref="Mark"/>). Inspecting a detail shows a finding card on screen and, if the detail is a key clue, counts
+/// it as found. The verdict is given with the presenter's SCAM / LEGITIMATE buttons; QuizManager then calls
+/// <see cref="Submit"/> and the presenter's feedback includes <see cref="FeedbackFor"/> (the key clues found and
+/// missed). Scoring is unchanged.
 ///
 /// Created by QuizManager at runtime (no Inspector setup). Messages without investigation data behave exactly
 /// as before. Links are never opened.
@@ -35,10 +35,8 @@ public class MessageInvestigation : MonoBehaviour
     float pauseUntil;
     readonly List<(TMP_Text text, Func<string> build)> binds = new List<(TMP_Text, Func<string>)>();
 
-    RectTransform root, tab, card, panel, linkBox, panelList;
-    LayoutElement listLayout;
-    TMP_Text hint, cardLabel, cardStatus, cardFinding, linkText, panelTitle, panelIntro;
-    Button tabButton;
+    RectTransform root, card, linkBox;
+    TMP_Text hint, cardLabel, cardStatus, cardFinding, linkText;
 
     void Awake()
     {
@@ -71,22 +69,17 @@ public class MessageInvestigation : MonoBehaviour
         session = new InvestigationSession(msg);
         pauseUntil = 0f;
         root.gameObject.SetActive(true);
-        tab.gameObject.SetActive(true);
         hint.gameObject.SetActive(true);
-        card.gameObject.SetActive(false);
-        panel.gameObject.SetActive(false);
-        RefreshTab();
+        ShowCard(false);
     }
 
-    /// <summary>The player answered with the presenter's buttons: evaluate the evidence once.</summary>
+    /// <summary>The player answered with the presenter's buttons: evaluate the clues once.</summary>
     public void Submit(ScamMessage msg, MessageVerdict verdict)
     {
         if (session == null || session.Message != msg || session.Submitted) return;
         session.Submit(verdict);
-        card.gameObject.SetActive(false);
+        ShowCard(false);
         hint.gameObject.SetActive(false);
-        RefreshTab();
-        if (panel.gameObject.activeSelf) FillPanel();
     }
 
     /// <summary>The message is finished (feedback closed).</summary>
@@ -118,7 +111,7 @@ public class MessageInvestigation : MonoBehaviour
             Layout(null);
     }
 
-    /// <summary>Places hint, tab, card and notebook inside <paramref name="area"/> (canvas units), or on the right of the screen.</summary>
+    /// <summary>Places the hint and the finding card inside <paramref name="area"/> (canvas units), or on the right of the screen.</summary>
     void Layout(Rect? area)
     {
         if (area.HasValue)
@@ -126,19 +119,12 @@ public class MessageInvestigation : MonoBehaviour
             var a = area.Value;
             float w = Mathf.Min(a.width, 540f), x = a.x + (a.width - w) * 0.5f, top = a.yMax;
             Put(hint.rectTransform, x, top, w, 28f);
-            Put(tab, x, top - 34f, w, 60f);
-            Put(card, x, top - 106f, w, -1f);
-            float pw = Mathf.Min(a.width, 600f);
-            Put(panel, a.x + (a.width - pw) * 0.5f, top, pw, -1f);
-            listLayout.preferredHeight = listLayout.minHeight = Mathf.Clamp(a.height - 230f, 160f, 560f);
+            Put(card, x, top - 40f, w, -1f);
         }
         else
         {
             Dock(hint.rectTransform, new Vector2(-28, 190), new Vector2(520, 30), new Vector2(1, 0));
-            Dock(tab, new Vector2(-28, 150), new Vector2(420, 64), new Vector2(1, 0.5f));
-            Dock(card, new Vector2(-28, 104), new Vector2(520, card.sizeDelta.y), new Vector2(1, 1));
-            Dock(panel, new Vector2(-28, 0), new Vector2(600, panel.sizeDelta.y), new Vector2(1, 0.5f));
-            listLayout.preferredHeight = listLayout.minHeight = 560f;
+            Dock(card, new Vector2(-28, 170), new Vector2(520, card.sizeDelta.y), new Vector2(1, 1));
         }
     }
 
@@ -240,19 +226,17 @@ public class MessageInvestigation : MonoBehaviour
 
     static string Literal(string s) => string.IsNullOrEmpty(s) ? "" : "<noparse>" + s.Replace("</noparse>", "") + "</noparse>";
 
-    /// <summary>Evidence summary appended to the presenter's feedback explanation ("" if the message wasn't investigated).</summary>
+    /// <summary>Clue summary appended to the presenter's feedback explanation ("" if the message wasn't investigated).</summary>
     public static string FeedbackFor(ScamMessage msg)
     {
         var a = Active;
         var r = a != null && a.session != null && a.session.Message == msg ? a.session.Evaluation : null;
-        if (r == null) return "";
-        string Names(List<MessageEvidence> l) => l.Count == 0 ? "none" : string.Join(", ", l.ConvertAll(c => c.title));
+        if (r == null || r.KeyTotal == 0) return "";
+        string Names(List<MessageEvidence> l) => string.Join(", ", l.ConvertAll(c => c.title));
         var sb = new StringBuilder();
-        sb.Append($"\n\n<color={UIKit.HexAccent}><b>YOUR EVIDENCE</b></color>   key clues selected <b>{r.selectedCorrectly.Count} of {r.SupportingTotal}</b>");
-        sb.Append($"\n<color={UIKit.HexSafe}>✓ Selected:</color> {Names(r.selectedCorrectly)}");
-        if (r.foundNotSelected.Count > 0) sb.Append($"\n<color={UIKit.HexAccent}>• Found, not selected:</color> {Names(r.foundNotSelected)}");
-        if (r.missed.Count > 0) sb.Append($"\n<color={UIKit.HexDanger}>✗ Missed (never found):</color> {Names(r.missed)}");
-        if (r.selectedNotSupporting.Count > 0) sb.Append($"\n<color={UIKit.HexWarning}>! Selected, but not real evidence:</color> {Names(r.selectedNotSupporting)}");
+        sb.Append($"\n\n<color={UIKit.HexAccent}><b>CLUES YOU FOUND</b></color>   <b>{r.found.Count} of {r.KeyTotal}</b> key clues");
+        if (r.found.Count > 0) sb.Append($"\n<color={UIKit.HexSafe}>✓ Found:</color> {Names(r.found)}");
+        if (r.missed.Count > 0) sb.Append($"\n<color={UIKit.HexDanger}>✗ Missed:</color> {Names(r.missed)}");
         return sb.ToString();
     }
 
@@ -270,8 +254,8 @@ public class MessageInvestigation : MonoBehaviour
         cardLabel.text = part.label;
         cardStatus.text =
             session.Submitted ? $"<color={HexSeen}>ANSWER GIVEN  ·  REVIEWING</color>" :
-            outcome == InvestigationSession.InspectOutcome.NewClue ? $"<color={UIKit.HexSafe}>★ NEW CLUE ADDED TO YOUR NOTEBOOK</color>\n<b>{clue.title}</b>" :
-            outcome == InvestigationSession.InspectOutcome.KnownClue ? $"<color={UIKit.HexAccent}>ALREADY IN YOUR NOTEBOOK</color>  ·  {clue.title}" :
+            outcome == InvestigationSession.InspectOutcome.NewClue ? $"<color={UIKit.HexSafe}>★ KEY CLUE FOUND</color>\n<b>{clue.title}</b>" :
+            outcome == InvestigationSession.InspectOutcome.KnownClue ? $"<color={UIKit.HexAccent}>KEY CLUE  ·  ALREADY FOUND</color>  ·  {clue.title}" :
             $"<color={HexSeen}>✓ CHECKED  ·  NOT EVIDENCE ON ITS OWN</color>";
         cardFinding.text = part.finding;
         linkBox.gameObject.SetActive(part.IsLink);
@@ -280,105 +264,21 @@ public class MessageInvestigation : MonoBehaviour
             string address = !string.IsNullOrEmpty(part.linkAddress) ? part.linkAddress : session.Message.link;
             linkText.text = $"<b>SIMULATED LINK  ·  NOT OPENED</b>\n<color={HexLink}>{Literal(address)}</color>";
         }
-        if (!panel.gameObject.activeSelf) ShowCard(true);
-        RefreshTab();
-        if (panel.gameObject.activeSelf) FillPanel();
+        ShowCard(true);
     }
 
     void ShowCard(bool on)
     {
         card.gameObject.SetActive(on);
-        UpdateEscape();
-    }
-
-    void RefreshTab()
-    {
-        if (session == null) return;
-        int n = session.Discovered.Count;
-        UIKit.SetLabel(tabButton, session.Submitted ? "EVIDENCE REVIEW" : n > 0 ? $"EVIDENCE NOTEBOOK  ·  {n}" : "EVIDENCE NOTEBOOK");
-    }
-
-    // ---------- Notebook ----------
-
-    void TogglePanel()
-    {
-        if (panel.gameObject.activeSelf) { panel.gameObject.SetActive(false); tab.gameObject.SetActive(true); UpdateEscape(); return; }
-        card.gameObject.SetActive(false);
-        tab.gameObject.SetActive(false);
-        panel.gameObject.SetActive(true);
-        FillPanel();
-        UpdateEscape();
-    }
-
-    void UpdateEscape()
-    {
         InteractionGate.RemoveEscapeHandler(this);
-        if (panel.gameObject.activeSelf || card.gameObject.activeSelf) InteractionGate.PushEscapeHandler(this, OnEscape);
+        if (on) InteractionGate.PushEscapeHandler(this, OnEscape);
     }
 
     bool OnEscape()
     {
-        if (panel.gameObject.activeSelf) { TogglePanel(); return true; }
-        if (card.gameObject.activeSelf) { ShowCard(false); return true; }
-        return false;
-    }
-
-    void FillPanel()
-    {
-        if (session == null) return;
-        for (int i = panelList.childCount - 1; i >= 0; i--) { var c = panelList.GetChild(i).gameObject; c.SetActive(false); Destroy(c); }
-        var r = session.Evaluation;
-        panelTitle.text = r == null ? "EVIDENCE NOTEBOOK" : "EVIDENCE REVIEW";
-        panelIntro.text = r == null
-            ? "Clues you found in this message. Click a clue to select it as evidence for your verdict (click again to deselect), then answer SCAM or LEGITIMATE as usual."
-            : $"Correct answer: <b>{UIKit.VerdictWord(r.correct)}</b>   ·   your answer: <b>{UIKit.VerdictWord(r.submitted)}</b>   ·   key clues selected <b>{r.selectedCorrectly.Count} of {r.SupportingTotal}</b>";
-
-        if (session.Discovered.Count == 0 && r == null)
-            UIKit.Text(panelList, "Empty", "No clues yet. Click or tap the highlighted details in the message - real clues are added here automatically.", 20, Muted);
-
-        foreach (var c in session.Discovered)
-        {
-            string id = c.id;
-            bool on = session.IsSelected(id);
-            var row = UIKit.Rect("Clue_" + id, panelList);
-            var img = UIKit.AddImage(row, on ? new Color(0.05f, 0.29f, 0.42f, 1f) : UIKit.PanelRaised, rounded: true);
-            var outline = row.gameObject.AddComponent<Outline>();
-            outline.effectColor = on ? UIKit.Accent : UIKit.Border;
-            outline.effectDistance = new Vector2(2f, -2f);
-            var v = UIKit.Vertical(row, 16, 4);
-            v.padding.left = 70;
-            v.childForceExpandHeight = false;
-            string state = r == null ? (on ? "SELECTED" : "NOT SELECTED")
-                         : !c.supportsVerdict ? (on ? "SELECTED · NOT REAL EVIDENCE" : "NOT REAL EVIDENCE")
-                         : on ? "✓ SELECTED · KEY CLUE" : "FOUND · NOT SELECTED";
-            Color stateColor = r == null ? (on ? UIKit.Accent : Muted) : !c.supportsVerdict ? UIKit.Warning : on ? UIKit.Safe : UIKit.Accent;
-            UIKit.Text(row, "State", state, 16, stateColor, bold: true).characterSpacing = 1.5f;
-            UIKit.Text(row, "Title", c.title, 22, UIKit.TextPrimary, bold: true);
-            UIKit.Text(row, "Why", c.whyItMatters, 18, Muted);
-
-            var box = UIKit.Rect("Box", row);
-            UIKit.Place(box, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(36, 36));
-            box.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
-            UIKit.AddImage(box, on ? UIKit.Accent : new Color(0f, 0f, 0f, 0.35f), rounded: true).raycastTarget = false;
-            var be = box.gameObject.AddComponent<Outline>();
-            be.effectColor = on ? UIKit.Accent : Muted;
-            be.effectDistance = new Vector2(2f, -2f);
-            if (on) { var tick = UIKit.Text(box, "Tick", "✓", 26, UIKit.Background, TextAlignmentOptions.Center, bold: true); UIKit.Stretch(tick.rectTransform); }
-
-            if (r == null)
-            {
-                var b = row.gameObject.AddComponent<Button>();
-                b.targetGraphic = img;
-                b.onClick.AddListener(() => { session.ToggleSelected(id); FillPanel(); });
-            }
-        }
-
-        if (r != null && r.missed.Count > 0)
-        {
-            UIKit.Text(panelList, "MissedHeader", "✗  MISSED  ·  NEVER DISCOVERED", 18, UIKit.Danger, bold: true).characterSpacing = 1.5f;
-            foreach (var c in r.missed)
-                UIKit.Text(panelList, "Missed", $"<b>{c.title}</b>  <color={HexSeen}>-  {c.whyItMatters}</color>", 18, UIKit.TextPrimary);
-        }
+        if (!card.gameObject.activeSelf) return false;
+        ShowCard(false);
+        return true;
     }
 
     // ---------- Build ----------
@@ -390,14 +290,9 @@ public class MessageInvestigation : MonoBehaviour
         hint = UIKit.Text(root, "Hint", $"Click or tap the <color={HexLink}><u>highlighted details</u></color> to inspect them", 19, Muted, TextAlignmentOptions.BottomRight);
         UIKit.Place(hint.rectTransform, new Vector2(1, 0.5f), new Vector2(1, 0f), new Vector2(-28, 190), new Vector2(520, 30));
 
-        tab = UIKit.Rect("NotebookTab", root);
-        UIKit.Place(tab, new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-28, 150), new Vector2(420, 64));
-        tabButton = UIKit.HudButton(tab, "EVIDENCE NOTEBOOK", TogglePanel, UIKit.HudVariant.Primary, 21);
-        UIKit.Stretch((RectTransform)tabButton.transform);
-
-        // Finding card (under the tab)
+        // Finding card: what the inspected detail shows (and, for links, where it really goes)
         card = UIKit.Rect("FindingCard", root);
-        UIKit.Place(card, new Vector2(1, 0.5f), new Vector2(1, 1f), new Vector2(-28, 104), new Vector2(520, 0));
+        UIKit.Place(card, new Vector2(1, 0.5f), new Vector2(1, 1f), new Vector2(-28, 170), new Vector2(520, 0));
         UIKit.PanelImage(card);
         UIKit.AccentStrip(card, null, 6f);
         var cv = UIKit.Vertical(card, 22, 8);
@@ -420,39 +315,5 @@ public class MessageInvestigation : MonoBehaviour
         linkText = UIKit.Text(linkBox, "Address", "", 18, UIKit.TextPrimary);
         cardFinding = UIKit.Text(card, "Finding", "", 22, UIKit.TextPrimary);
         cardFinding.lineSpacing = 4f;
-
-        // Notebook panel (right side)
-        panel = UIKit.Rect("NotebookPanel", root);
-        UIKit.Place(panel, new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-28, 0), new Vector2(600, 0));
-        UIKit.PanelImage(panel);
-        UIKit.AccentStrip(panel, UIKit.Warning, 8f);
-        var pv = UIKit.Vertical(panel, 28, 12);
-        pv.padding.left = 36;
-        pv.childForceExpandHeight = false;
-        UIKit.FitHeight(panel);
-        panelTitle = UIKit.Text(panel, "Title", "EVIDENCE NOTEBOOK", 28, UIKit.TextPrimary, bold: true);
-        panelTitle.characterSpacing = 3f;
-        panelIntro = UIKit.Text(panel, "Intro", "", 19, Muted);
-        var viewport = UIKit.Rect("ListViewport", panel);
-        listLayout = UIKit.Size(viewport, -1, 560);
-        viewport.gameObject.AddComponent<RectMask2D>();
-        viewport.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0);
-        panelList = UIKit.Rect("List", viewport);
-        panelList.anchorMin = new Vector2(0, 1); panelList.anchorMax = new Vector2(1, 1);
-        panelList.pivot = new Vector2(0.5f, 1f);
-        panelList.anchoredPosition = Vector2.zero;
-        panelList.sizeDelta = Vector2.zero;
-        UIKit.Vertical(panelList, 0, 10).childForceExpandHeight = false;
-        panelList.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        var sr = viewport.gameObject.AddComponent<ScrollRect>();
-        sr.viewport = viewport;
-        sr.content = panelList;
-        sr.horizontal = false;
-        sr.movementType = ScrollRect.MovementType.Clamped;
-        sr.scrollSensitivity = 40f;
-        var closeRow = UIKit.Rect("Buttons", panel);
-        UIKit.Horizontal(closeRow, 0);
-        UIKit.Size(closeRow, -1, 64);
-        UIKit.HudButton(closeRow, "CLOSE NOTEBOOK", TogglePanel, UIKit.HudVariant.Secondary, 22);
     }
 }

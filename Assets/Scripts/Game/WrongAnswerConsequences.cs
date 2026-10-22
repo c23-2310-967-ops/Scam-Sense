@@ -13,8 +13,8 @@ using UnityEngine.UI;
 ///   flagged a genuine message -> investigation accuracy warning: the details that support legitimacy, verify first
 ///   wrong final case          -> the evidence that was overlooked (records not opened at the evidence stations)
 /// Every card explains why the answer was wrong and names the clue that was overlooked. For investigated messages
-/// it offers a follow-up: the message opens again, a checklist asks the player to re-check the key details and
-/// mark a key clue, and only then can the verdict be given again (once) for recovery points.
+/// it offers a follow-up: the message opens again, a checklist asks the player to re-check the key details, and
+/// only then can the verdict be given again (once) for recovery points.
 ///
 /// Per-message settings live in ScamMessage.consequence (empty = generated from the message's own data).
 /// Created by QuizManager at runtime (no Inspector setup). Everything shown is fictional: nothing real is
@@ -25,7 +25,7 @@ public class WrongAnswerConsequences : MonoBehaviour
     public enum Reaction { SecurityIncident, AccuracyWarning, MissedClue, FeedbackOnly }
 
     const int SortingOrder = 36;          // above the investigation UI (35), below the document reader, results and pause menu
-    const int TrackerSortingOrder = 34;   // checklist sits under the investigation UI, so the notebook and finding cards open over it
+    const int TrackerSortingOrder = 34;   // checklist sits under the investigation UI, so finding cards open over it
     const int MaxRecheckDetails = 3;
 
     /// <summary>The warning / recovery card is on screen.</summary>
@@ -62,7 +62,6 @@ public class WrongAnswerConsequences : MonoBehaviour
     IRecheckPresenter recheckPresenter;
     MessageInvestigation investigation;
     readonly List<MessageInspectable> recheckParts = new List<MessageInspectable>();
-    bool needsKeyClue;
     int shownProgress = -1;
     Action skipAction;
 
@@ -219,7 +218,6 @@ public class WrongAnswerConsequences : MonoBehaviour
         skipAction = onSkip;
         recheckParts.Clear();
         recheckParts.AddRange(RecheckParts(msg));
-        needsKeyClue = recheckParts.Exists(p => IsKeyClue(msg, p.clueId));
         RecheckReady = false;
         shownProgress = -1;
 
@@ -281,22 +279,18 @@ public class WrongAnswerConsequences : MonoBehaviour
         var s = investigation != null ? investigation.Session : null;
         int inspected = 0;
         foreach (var p in recheckParts) if (s != null && s.WasInspected(p.id)) inspected++;
-        bool marked = !needsKeyClue || (s != null && recheckParts.Exists(p => IsKeyClue(recheckMsg, p.clueId) && s.IsSelected(p.clueId)));
-        if (s != null && !marked && needsKeyClue && recheckMsg.evidence != null)
-            marked = recheckMsg.evidence.Exists(e => e.supportsVerdict && s.IsSelected(e.id));   // any key clue counts
         bool hint = scoring.HintUsedFor(recheckMsg.id);
-        int progress = inspected * 4 + (marked ? 2 : 0) + (hint ? 1 : 0);
+        int progress = inspected * 2 + (hint ? 1 : 0);
         if (!force && progress == shownProgress) return;
         shownProgress = progress;
 
-        bool ready = inspected >= recheckParts.Count && marked;
+        bool ready = inspected >= recheckParts.Count;
         var sb = new StringBuilder();
         foreach (var p in recheckParts)
         {
             bool done = s != null && s.WasInspected(p.id);
             sb.Append(Check(done)).Append($"Inspect: <b>{p.label}</b>").Append(done ? "" : $" <color={UIKit.HexSecondary}>({Where(p)})</color>").Append('\n');
         }
-        if (needsKeyClue) sb.Append(Check(marked)).Append("Mark a key clue in the <b>Evidence Notebook</b>\n");
         sb.Append(Check(false)).Append(ready ? "<b>Give your verdict again</b>" : $"<color={UIKit.HexSecondary}>Give your verdict again</color>");
         trackerList.text = sb.ToString();
         trackerReward.text = $"Recovery worth <color={UIKit.HexAccent}><b>{scoring.RecoveryPointsFor(hint)} pts</b></color>" + (hint ? "  (hint used)" : "");
@@ -320,7 +314,7 @@ public class WrongAnswerConsequences : MonoBehaviour
         var next = recheckParts.Find(p => s == null || !s.WasInspected(p.id));
         trackerHint.text = next != null
             ? $"<color={UIKit.HexWarning}>Hint:</color> in {Where(next)}, click <color=#7DD3FC><u>{Literal(string.IsNullOrEmpty(next.match) ? next.label : next.match)}</u></color>."
-            : $"<color={UIKit.HexWarning}>Hint:</color> open the Evidence Notebook and click a key clue to mark it.";
+            : $"<color={UIKit.HexWarning}>Hint:</color> every detail is checked - give your verdict again.";
         if (levelAudio != null) levelAudio.PlayClick();
         RefreshTracker(force: true);
     }
@@ -581,12 +575,12 @@ public class WrongAnswerConsequences : MonoBehaviour
 
     static string StatusHex(Reaction r) => r == Reaction.SecurityIncident ? UIKit.HexDanger : UIKit.HexWarning;
 
-    /// <summary>The configured clue, else the first key clue the player missed (or found but didn't mark), else the Details clues.</summary>
+    /// <summary>The configured clue, else the first key clue the player missed (or found but misjudged), else the Details clues.</summary>
     static string OverlookedClue(ScamMessage m, InvestigationSession.Result eval)
     {
         if (m.consequence != null && !string.IsNullOrEmpty(m.consequence.overlookedClue)) return m.consequence.overlookedClue;
         MessageEvidence c = null;
-        if (eval != null) c = eval.missed.Count > 0 ? eval.missed[0] : eval.foundNotSelected.Count > 0 ? eval.foundNotSelected[0] : null;
+        if (eval != null) c = eval.missed.Count > 0 ? eval.missed[0] : eval.found.Count > 0 ? eval.found[0] : null;
         if (c == null && m.evidence != null) c = m.evidence.Find(e => e.supportsVerdict);
         if (c != null) return $"<b>{c.title}</b>  -  {c.whyItMatters}";
         if (m.clues != null && m.clues.Length > 0) return m.clues[0];
@@ -600,7 +594,7 @@ public class WrongAnswerConsequences : MonoBehaviour
     {
         if (m.consequence != null && !string.IsNullOrEmpty(m.consequence.overlookedClue)) return m.consequence.overlookedClue;
         var list = new List<MessageEvidence>();
-        if (eval != null) { list.AddRange(eval.missed); list.AddRange(eval.foundNotSelected); list.AddRange(eval.selectedCorrectly); }
+        if (eval != null) { list.AddRange(eval.missed); list.AddRange(eval.found); }
         else if (m.evidence != null) list.AddRange(m.evidence.FindAll(e => e.supportsVerdict));
         var sb = new StringBuilder();
         int n = 0;
@@ -633,7 +627,7 @@ public class WrongAnswerConsequences : MonoBehaviour
     static string KeyClueList(ScamMessage m, InvestigationSession.Result eval)
     {
         var list = new List<MessageEvidence>();
-        if (eval != null) { list.AddRange(eval.selectedCorrectly); list.AddRange(eval.foundNotSelected); }
+        if (eval != null) list.AddRange(eval.found);
         var sb = new StringBuilder();
         foreach (var c in list) sb.Append($"<color={UIKit.HexSafe}>✓</color>  <b>{c.title}</b>  -  {c.whyItMatters}\n");
         if (eval != null && eval.missed.Count > 0)

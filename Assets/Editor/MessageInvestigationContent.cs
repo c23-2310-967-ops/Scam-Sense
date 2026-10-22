@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Tools > Scam Sense > Investigation > Apply Message Investigation Data.
-/// Adds clickable details and Evidence Notebook clues to the existing Level 1 and Level 2 messages (their text is
+/// Adds clickable details and the clues they reveal to the existing Level 1 and Level 2 messages (their text is
 /// not changed), and adds one work-chat message to Level 2. Safe to run again: it replaces only the investigation
 /// lists of the messages it knows and adds the chat message once. All content is fictional; links are never opened.
 /// </summary>

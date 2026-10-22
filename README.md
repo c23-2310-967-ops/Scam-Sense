@@ -66,8 +66,8 @@ Online scams are a growing problem, and many people can't tell a phishing messag
 - **Working computers:** a desktop-style mail app on the in-game monitors for emails and captured web pages.
 - **Message investigation (emails):**
   - Click the highlighted sender, subject, body phrases and links to inspect them. Simulated links are never opened.
-  - Clues you find go into an **Evidence Notebook**; select the ones that support your answer.
-  - After you answer, an **evidence review** shows what you selected, what you missed, and what wasn't real evidence.
+  - Each inspected detail shows a **finding card** on screen; key clues turn gold ★.
+  - After you answer, the feedback lists the key clues you **found** and the ones you **missed**.
 - **Details panel:** sender details, the requested action and a link description for every message.
 - **Scoring per level:** each level sets its own points (100 / 150 / 200 / 250 / 300 per correct answer for Levels 1–5), wrong-answer penalty and time rules.
   - Every message gets a **reading allowance** based on its length and details, so careful reading is never punished.
@@ -177,7 +177,7 @@ The real `SupabaseSettings.json` is git-ignored and must not be committed. The d
 
 **Investigating a message**
 - Open **SHOW DETAILS** to see the sender details, what the message asks you to do, and where a link would lead. Links are never opened.
-- On emails, click the underlined details to inspect them. Clues go into the **Evidence Notebook**, where you can select the ones that support your decision. Inspecting a new detail pauses the timer for a few seconds of reading time.
+- On emails, click the underlined details to inspect them. A finding card explains each one, and key clues turn gold ★. Inspecting a new detail pauses the timer for a few seconds of reading time.
 - The timer shows the **reading time left** for the message. In Level 1 there is no time pressure.
 - After a wrong answer on an email, choose **REVIEW EVIDENCE** to re-check the key details and answer again for recovery points.
 - In Room 5, the notification names the workstation (for example `MAC-31`) where the email is flagged.
@@ -221,7 +221,7 @@ Key scripts:
 | `Game/ScoringSystem.cs` | Level-based points, reading allowance, penalties, recovery, case grade, stars |
 | `Game/WrongAnswerConsequences.cs` | Wrong-answer cards, simulated incidents and the follow-up re-check |
 | `Game/ComputerTerminal.cs`, `Game/PocketPhone.cs`, `UI/MessagePopupUI.cs` | Reading messages on computers and the phone |
-| `Game/MessageInvestigation.cs`, `Game/InvestigationSession.cs` | Clickable details, Evidence Notebook and evidence review (emails) |
+| `Game/MessageInvestigation.cs`, `Game/InvestigationSession.cs` | Clickable details, finding cards, and the found / missed clue summary (emails) |
 | `Data/LocalDataManager.cs` | Local progress save and merge rules |
 | `Data/CareerSystem.cs` | Career XP, ranks and achievements |
 | `Online/CloudAccountService.cs`, `Online/SupabaseClient.cs` | Accounts and cloud sync with Supabase |
@@ -236,7 +236,7 @@ Menu scene ── MainMenuUI ── AccountUI ── CloudAccountService ── 
      ▼                                                     │
 Room scene ── GameManager ── BriefingUI                    │
                  │  ├── QuizManager ── IMessagePresenter (phone popup / computer / final case terminal)
-                 │  │        └── MessageInvestigation (email clues, Evidence Notebook)
+                 │  │        └── MessageInvestigation (clickable email clues)
                  │  ├── ScoringSystem
                  │  └── ResultsUI
                  └── LocalDataManager (PlayerPrefs JSON) ◄────────────┘
@@ -266,7 +266,7 @@ Room scene ── GameManager ── BriefingUI                    │
 **Completed**
 - Five playable rooms with progression, level-based scoring, stars and feedback.
 - Wrong-answer consequences, follow-up re-checks and the case grade.
-- Phone and computer message reading; email investigation with the Evidence Notebook.
+- Phone and computer message reading; email investigation with clickable clues and finding cards.
 - Career ranks and achievements; full main menu with settings, previews and Reset Progress.
 - Local save; Supabase account and cloud-sync code with the database schema applied.
 
@@ -286,7 +286,7 @@ There are no automated tests yet. The Unity Test Framework package is installed 
 - [ ] `Menu.unity` → **PLAY** starts Room 1 with its briefing.
 - [ ] A notification arrives; a text opens on the phone (`E`) and an email opens on a computer.
 - [ ] An answer is scored once. The feedback shows the correct answer and explanation, and **CONTINUE** moves on.
-- [ ] On an email, clicking a highlighted detail adds a clue to the Evidence Notebook, and the review appears after answering.
+- [ ] On an email, clicking a highlighted detail opens its finding card, and the feedback lists the clues found and missed.
 - [ ] The results screen shows score, stars and XP. Reaching the passing score unlocks the next room in **Level Selection**.
 - [ ] A locked room can be previewed but not played.
 - [ ] A wrong answer shows the consequence card; **REVIEW EVIDENCE** re-checks an email once for recovery points.

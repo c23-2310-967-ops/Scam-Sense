@@ -2,9 +2,8 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Investigation of one ScamMessage while it is open in the normal gameplay flow (never saved).
-/// Discovery and selection are separate: inspecting a detail may discover a clue (once, no duplicates);
-/// the player chooses which discovered clues support their verdict. <see cref="Submit"/> evaluates once,
-/// when the existing SCAM / LEGITIMATE answer is given.
+/// Inspecting a detail may discover a clue (once, no duplicates). <see cref="Submit"/> evaluates once, when the
+/// existing SCAM / LEGITIMATE answer is given: which key clues were found and which were missed.
 /// </summary>
 public class InvestigationSession
 {
@@ -14,28 +13,22 @@ public class InvestigationSession
     {
         public MessageVerdict submitted, correct;
         public bool VerdictCorrect => submitted == correct;
-        /// <summary>Supporting clues the player found and selected.</summary>
-        public readonly List<MessageEvidence> selectedCorrectly = new List<MessageEvidence>();
-        /// <summary>Supporting clues the player found but did not select.</summary>
-        public readonly List<MessageEvidence> foundNotSelected = new List<MessageEvidence>();
-        /// <summary>Supporting clues the player never discovered.</summary>
+        /// <summary>Key clues (supporting the correct verdict) the player found by inspecting the message.</summary>
+        public readonly List<MessageEvidence> found = new List<MessageEvidence>();
+        /// <summary>Key clues the player never discovered.</summary>
         public readonly List<MessageEvidence> missed = new List<MessageEvidence>();
-        /// <summary>Clues the player selected that do not support the correct verdict.</summary>
-        public readonly List<MessageEvidence> selectedNotSupporting = new List<MessageEvidence>();
-        public int SupportingTotal => selectedCorrectly.Count + foundNotSelected.Count + missed.Count;
+        public int KeyTotal => found.Count + missed.Count;
     }
 
     public ScamMessage Message { get; }
-    /// <summary>Discovered clues, in the order they were found (the notebook's order).</summary>
+    /// <summary>Discovered clues, in the order they were found.</summary>
     public IReadOnlyList<MessageEvidence> Discovered => discovered;
     public IReadOnlyCollection<string> InspectedIds => inspected;
     public Result Evaluation { get; private set; }
     public bool Submitted => Evaluation != null;
-    public int SelectedCount => selected.Count;
 
     readonly List<MessageEvidence> discovered = new List<MessageEvidence>();
     readonly HashSet<string> inspected = new HashSet<string>();
-    readonly HashSet<string> selected = new HashSet<string>();
 
     public InvestigationSession(ScamMessage message) { Message = message; }
 
@@ -60,33 +53,14 @@ public class InvestigationSession
 
     public bool WasInspected(string inspectId) => inspected.Contains(inspectId);
     public bool IsDiscovered(string clueId) => discovered.Exists(c => c.id == clueId);
-    public bool IsSelected(string clueId) => selected.Contains(clueId);
-
-    /// <summary>Selects or deselects a discovered clue as supporting evidence (ignored once submitted).</summary>
-    public bool ToggleSelected(string clueId)
-    {
-        if (Submitted || !IsDiscovered(clueId)) return false;
-        if (!selected.Remove(clueId)) selected.Add(clueId);
-        return true;
-    }
-
-    /// <summary>Evaluates the evidence once, with the verdict the player gave. Later calls return the same result.</summary>
+    /// <summary>Evaluates the clues once, with the verdict the player gave. Later calls return the same result.</summary>
     public Result Submit(MessageVerdict verdict)
     {
         if (Submitted) return Evaluation;
         var r = new Result { submitted = verdict, correct = Message.correctVerdict };
         if (Message.evidence != null)
             foreach (var c in Message.evidence)
-            {
-                bool found = IsDiscovered(c.id), sel = selected.Contains(c.id);
-                if (c.supportsVerdict)
-                {
-                    if (found && sel) r.selectedCorrectly.Add(c);
-                    else if (found) r.foundNotSelected.Add(c);
-                    else r.missed.Add(c);
-                }
-                else if (sel) r.selectedNotSupporting.Add(c);
-            }
+                if (c.supportsVerdict) (IsDiscovered(c.id) ? r.found : r.missed).Add(c);
         Evaluation = r;
         return r;
     }

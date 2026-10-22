@@ -28,8 +28,7 @@ Every card explains why the answer was wrong and names the clue that was overloo
 ## Follow-up investigation (re-check)
 For emails with investigation data, **REVIEW EVIDENCE** opens the same email again with a checklist in the inbox column:
 1. Inspect up to three key details. Links and senders come first.
-2. Mark a key clue in the Evidence Notebook.
-3. Give the verdict again. SCAM and LEGITIMATE stay locked until steps 1 and 2 are done.
+2. Give the verdict again. SCAM and LEGITIMATE stay locked until step 1 is done.
 
 **Scoring the re-check:**
 - A correct re-check earns the level's **recovery points** (20 / 40 / 50 / 60 for Levels 1-4), or half if HINT was used.

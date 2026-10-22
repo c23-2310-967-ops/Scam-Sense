@@ -43,7 +43,7 @@ The level content is in `Assets/Editor/Level5Content.cs`, which writes `Assets/L
   - The HUD notification names the workstation.
 - **Flagged stations** have an amber "FLAGGED" tent card and a chair pushed back. The other 31 computers are props showing ordinary desktop content.
 - **Instructor computer:** the official records station (`CaseFilesTerminal`). It holds Campus IT Security Notice, Official Contacts & Domains, Scholarships & Payments, and This Week on Campus.
-- **Every email has clickable details and Evidence Notebook clues,** so the existing investigation flow, the wrong-answer consequences and the follow-up re-check all apply.
+- **Every email has clickable details and key clues,** so the existing investigation flow, the wrong-answer consequences and the follow-up re-check all apply.
 
 ## Scoring and progression
 | | Level 5 |

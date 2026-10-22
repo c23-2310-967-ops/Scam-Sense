@@ -29,13 +29,13 @@ public class MessageInspectable
     public bool IsLink => field == InspectField.Link || !string.IsNullOrEmpty(linkAddress);
 }
 
-/// <summary>A clue that can go into the Evidence Notebook.</summary>
+/// <summary>A clue an inspectable detail can reveal (shown on the finding card and in the feedback).</summary>
 [Serializable]
 public class MessageEvidence
 {
     public string id = "";
     public string title = "";
-    [Tooltip("Shown in the Evidence Notebook: why this clue matters.")]
+    [Tooltip("Why this clue matters (shown in the feedback and the wrong-answer card).")]
     [TextArea(2, 4)] public string whyItMatters = "";
     [Tooltip("True if this clue supports the message's correct verdict (expected evidence).")]
     public bool supportsVerdict = true;

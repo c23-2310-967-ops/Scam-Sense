@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Content of Level 5 - The Compromised Campus Network (MacLab): briefing, the six reported messages with their
-/// clickable details and Evidence Notebook clues, and the instructor computer's records (the level's Case Files).
+/// clickable details and the clues they reveal, and the instructor computer's records (the level's Case Files).
 /// Used by Room5Builder to fill Assets/Levels/Level5_MacLab.asset; after that, edit the asset in the Inspector.
 /// The setting is UPHSL Biñan's MacLab; every person, message, office address, number and domain is fictional (training
 /// content, not official university communication). Domains use the reserved
