@@ -135,6 +135,7 @@ public class MainMenuUI : MonoBehaviour
         GameDisplaySettings.ApplySaved();
 
         if (catalog == null) Debug.LogError("MainMenuUI: assign the LevelCatalog asset (Assets/Levels/LevelCatalog.asset).", this);
+        else SceneLoader.RegisterLevels(catalog.levels);   // the loading screen shows the room that is opening
 
         bool inScene = builtInScene && root != null;
         if (inScene) root.gameObject.SetActive(true);

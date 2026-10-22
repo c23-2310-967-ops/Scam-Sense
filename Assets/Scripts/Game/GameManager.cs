@@ -62,6 +62,7 @@ public class GameManager : MonoBehaviour
         if (hud == null) hud = GetComponent<LevelHUD>();
         if (briefing == null) briefing = GetComponent<BriefingUI>();
         if (results == null) results = GetComponent<ResultsUI>();
+        SceneLoader.RegisterLevel(level);   // Replay shows this room on the loading screen even when started from the editor
     }
 
     void OnEnable()
