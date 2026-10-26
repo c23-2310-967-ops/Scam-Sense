@@ -27,6 +27,9 @@ using R3 = Room3Builder;
 ///   east door into the centre aisle (spawn): windows on the left, display on the right.
 /// Five pod seats are flagged investigation workstations (Level5Content.Stations); the rest are props.
 /// No people are modelled.
+///
+/// The walls, feature walls, pilasters, hexagonal desk pods, all-in-one computers, keyboards/mice and the laptop are
+/// reusable models in Assets/Models/Room5/ (OBJ file + prefab that adds the colliders); this builder only places them.
 /// </summary>
 public static class Room5Builder
 {
@@ -36,7 +39,7 @@ public static class Room5Builder
     const string Level4Path = "Assets/Levels/Level4_DigitalForensicsLab.asset";
     const string Level5Path = "Assets/Levels/Level5_MacLab.asset";
     const string CatalogPath = "Assets/Levels/LevelCatalog.asset";
-    const string HexMeshPath = "Assets/Materials/R5_HexDeskTop.asset";
+    const string ModelDir = "Assets/Models/Room5/";
 
     static readonly string[] Keep = { "DeskChair" };
     const float HalfX = 10f, HalfZ = 7f, Height = 2.75f;
@@ -227,13 +230,23 @@ public static class Room5Builder
     static Material Mat(string name, string hex, float smooth, string emission = null, float strength = 0f) =>
         R3.M("R5_" + name, hex, smooth, emission, strength);
 
+    /// <summary>Places one of the Room 5 model prefabs (Assets/Models/Room5/...) as a linked prefab instance.</summary>
+    static Transform PlaceModel(string model, Transform parent, Vector3 pos, Quaternion rot, string name)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ModelDir + model + ".prefab");
+        if (prefab == null) { Debug.LogError("Room5Builder: missing model " + ModelDir + model + ".prefab"); return null; }
+        var g = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+        g.transform.SetPositionAndRotation(pos, rot);
+        g.name = name;
+        return g.transform;
+    }
+
     // ---------- Shell: floor, ceiling, walls ----------
 
     static void BuildShell()
     {
         var floor = Mat("FloorTile", "#D6D8D7", 0.62f);          // light glossy floor tiles
         var seam = Mat("TileSeam", "#BFC2C2", 0.3f);
-        var wall = Mat("WallWhite", "#E9EAE8", 0.12f);
         var skirting = Mat("Skirting", "#A9ACAF", 0.35f);
         var ceiling = Mat("CeilingTile", "#EEEFF0", 0.05f);
         var grid = Mat("CeilingGrid", "#CFD2D5", 0.4f);
@@ -242,10 +255,11 @@ public static class Room5Builder
 
         R3.Box("Floor", s, new Vector3(0, -0.05f, 0), new Vector3(HalfX * 2 + 0.4f, 0.1f, HalfZ * 2 + 0.4f), floor, true);
         R3.Box("Ceiling", s, new Vector3(0, Height + 0.05f, 0), new Vector3(HalfX * 2 + 0.4f, 0.1f, HalfZ * 2 + 0.4f), ceiling, true);
-        R3.Box("Wall_North", s, new Vector3(0, Height / 2, HalfZ + 0.1f), new Vector3(HalfX * 2 + 0.4f, Height, 0.2f), wall, true);
-        R3.Box("Wall_South", s, new Vector3(0, Height / 2, -HalfZ - 0.1f), new Vector3(HalfX * 2 + 0.4f, Height, 0.2f), wall, true);
-        R3.Box("Wall_East", s, new Vector3(HalfX + 0.1f, Height / 2, 0), new Vector3(0.2f, Height, HalfZ * 2), wall, true);
-        R3.Box("Wall_West", s, new Vector3(-HalfX - 0.1f, Height / 2, 0), new Vector3(0.2f, Height, HalfZ * 2), wall, true);
+        // Walls: R5_Wall_Long (20.4 m) north and south, R5_Wall_Short (14 m) east and west; origin = bottom centre
+        PlaceModel("Walls/R5_Wall_Long", s, new Vector3(0, 0, HalfZ + 0.1f), Quaternion.identity, "Wall_North");
+        PlaceModel("Walls/R5_Wall_Long", s, new Vector3(0, 0, -HalfZ - 0.1f), Quaternion.identity, "Wall_South");
+        PlaceModel("Walls/R5_Wall_Short", s, new Vector3(HalfX + 0.1f, 0, 0), Quaternion.identity, "Wall_East");
+        PlaceModel("Walls/R5_Wall_Short", s, new Vector3(-HalfX - 0.1f, 0, 0), Quaternion.identity, "Wall_West");
 
         // 60 cm floor tiles
         for (float x = -HalfX + 0.6f; x < HalfX - 0.05f; x += 0.6f)
@@ -275,7 +289,6 @@ public static class Room5Builder
         // South wall: a long run of tall windows (bright daylight glass, white aluminium frames) between pilasters.
         var glass = Mat("WindowGlass", "#EEF4FA", 0.9f, "#EAF2FB", 1.05f);
         var frame = Mat("WindowFrame", "#F4F5F6", 0.5f);
-        var pilaster = Mat("WallWhite", "#E9EAE8", 0.12f);
         var sill = Mat("Sill", "#DADCDD", 0.4f);
         var s = R3.structure;
         float z = -HalfZ + 0.02f;
@@ -296,33 +309,15 @@ public static class Room5Builder
             R3.Box("Sill", s, new Vector3(gx, 0.87f, z + 0.08f), new Vector3(3.5f, 0.04f, 0.16f), sill);
         }
         foreach (float px in new[] { -HalfX + 0.2f, -6f, -2f, 2f, 6f, HalfX - 0.2f })
-            R3.Box("Pilaster", s, new Vector3(px, Height / 2f, -HalfZ + 0.12f), new Vector3(0.4f, Height, 0.24f), pilaster, true);
+            PlaceModel("Walls/R5_Pilaster", s, new Vector3(px, 0f, -HalfZ + 0.12f), Quaternion.identity, "Pilaster");
     }
 
     static void BuildFeatureWalls()
     {
         // West and east walls: warm taupe panelling with thin diagonal silver inlays, as in the reference lab.
-        var taupe = Mat("FeatureTaupe", "#BCAEA3", 0.25f);
-        var inlay = Mat("SilverInlay", "#E1E0DD", 0.85f);
-        var s = R3.structure;
-        foreach (float side in new[] { -1f, 1f })
-        {
-            float x = side * (HalfX - 0.015f);
-            var panel = R3.Box("FeaturePanel", s, new Vector3(x, 1.42f, 0), new Vector3(0.02f, 2.64f, HalfZ * 2 - 0.1f), taupe);
-            panel.name = side < 0 ? "FeatureWall_West" : "FeatureWall_East";
-            var rng = new System.Random(side < 0 ? 5 : 9);
-            int lines = Mathf.FloorToInt((HalfZ * 2f - 1.2f) / 1.3f);
-            for (int i = 0; i < lines; i++)
-            {
-                float zc = -HalfZ + 0.8f + i * 1.3f + (float)rng.NextDouble() * 0.4f;
-                float len = 1.6f + (float)rng.NextDouble() * 1.4f;
-                float yc = 0.7f + (float)rng.NextDouble() * 1.4f;
-                float angle = (i % 2 == 0 ? 1 : -1) * (25f + (float)rng.NextDouble() * 25f);
-                if (side > 0 && Mathf.Abs(zc - AisleZ) < 1.0f) continue;   // keep the door area clean
-                var line = R3.Box("Inlay", s, new Vector3(x - side * 0.012f, yc, zc), new Vector3(0.006f, 0.012f, len), inlay, shadow: false);
-                line.transform.rotation = Quaternion.Euler(angle, 0f, 0f);
-            }
-        }
+        // Two models because the inlay patterns differ (the east one leaves the door area clear).
+        PlaceModel("Walls/R5_FeatureWall_West", R3.structure, new Vector3(-(HalfX - 0.015f), 0f, 0f), Quaternion.identity, "FeatureWall_West");
+        PlaceModel("Walls/R5_FeatureWall_East", R3.structure, new Vector3(HalfX - 0.015f, 0f, 0f), Quaternion.identity, "FeatureWall_East");
     }
 
     static void BuildDoor()
@@ -401,7 +396,7 @@ public static class Room5Builder
         term.SetParent(stations, false);
         term.position = basePos;
         term.rotation = Quaternion.LookRotation(Vector3.forward);   // screen faces north (the instructor's side)
-        AllInOne(term, out _, out var screenCentre, collider: true);
+        AllInOne(term, out _, out var screenCentre);
         var vp = new GameObject("ViewPoint").transform;
         vp.SetParent(term, false);
         vp.localPosition = new Vector3(0f, screenCentre.y, 0.62f);
@@ -428,105 +423,27 @@ public static class Room5Builder
 
     static void BuildLaptop(Vector3 pos)
     {
-        var shell = Mat("LaptopShell", "#3B3F45", 0.55f);
-        var lap = new GameObject("Laptop").transform;
-        lap.SetParent(computers, false);
-        lap.position = pos;
-        R3.LocalBox("Base", lap, new Vector3(0, 0.008f, 0), new Vector3(0.32f, 0.016f, 0.22f), shell);
-        var lid = R3.LocalBox("Lid", lap, new Vector3(0, 0.11f, -0.1f), new Vector3(0.32f, 0.21f, 0.01f), shell);
-        lid.transform.localRotation = Quaternion.Euler(-12f, 0f, 0f);
-        var c = R3.WorldCanvas("Screen", lap, lid.transform.position + lid.transform.forward * 0.006f, lid.transform.forward, 0.29f, new Vector2(640, 400), false);
-        c.rotation = Quaternion.LookRotation(-lid.transform.forward, lid.transform.up);
+        var lap = PlaceModel("Computers/R5_Laptop", computers, pos, Quaternion.identity, "Laptop");
+        // The model's lid: 0.11 m up, 0.1 m back, tilted 12 degrees back
+        var lidRot = lap.rotation * Quaternion.Euler(-12f, 0f, 0f);
+        Vector3 lidPos = lap.TransformPoint(new Vector3(0, 0.11f, -0.1f)), lidFwd = lidRot * Vector3.forward;
+        var c = R3.WorldCanvas("Screen", lap, lidPos + lidFwd * 0.006f, lidFwd, 0.29f, new Vector2(640, 400), false);
+        c.rotation = Quaternion.LookRotation(-lidFwd, lidRot * Vector3.up);
         UIKit.AddImage(c, new Color32(0x1C, 0x3D, 0x6E, 255)).raycastTarget = false;
         R3.Txt(c, "T", "Lecture notes - Week 9\nPhishing & social engineering", 34, Color.white, new Vector2(30, -30), new Vector2(580, 140), bold: true);
     }
 
     // ---------- Pods ----------
 
-    static Mesh HexMesh()
-    {
-        var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(HexMeshPath);
-        if (mesh != null) return mesh;
-        float R = Apothem / Mathf.Cos(30f * Mathf.Deg2Rad), h = TopT * 0.5f;
-        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
-        Vector3 Corner(int k, float y) { float a = (30f + 60f * k) * Mathf.Deg2Rad; return new Vector3(Mathf.Cos(a) * R, y, Mathf.Sin(a) * R); }
-        foreach (float y in new[] { h, -h })   // top and bottom fans
-        {
-            int c0 = v.Count;
-            v.Add(new Vector3(0, y, 0)); n.Add(y > 0 ? Vector3.up : Vector3.down);
-            for (int k = 0; k < 6; k++) { v.Add(Corner(k, y)); n.Add(y > 0 ? Vector3.up : Vector3.down); }
-            for (int k = 0; k < 6; k++)
-            {
-                int a = c0 + 1 + k, b = c0 + 1 + (k + 1) % 6;
-                if (y > 0) { t.Add(c0); t.Add(b); t.Add(a); } else { t.Add(c0); t.Add(a); t.Add(b); }
-            }
-        }
-        for (int k = 0; k < 6; k++)   // sides
-        {
-            Vector3 a = Corner(k, h), b = Corner((k + 1) % 6, h), c = Corner((k + 1) % 6, -h), d = Corner(k, -h);
-            Vector3 nn = Vector3.Cross(b - a, d - a).normalized;
-            if (Vector3.Dot(nn, (a + b) * 0.5f) < 0) nn = -nn;
-            int i0 = v.Count;
-            v.AddRange(new[] { a, b, c, d }); n.AddRange(new[] { nn, nn, nn, nn });
-            t.AddRange(new[] { i0, i0 + 2, i0 + 1, i0, i0 + 3, i0 + 2 });
-        }
-        mesh = new Mesh { name = "R5_HexDeskTop" };
-        mesh.SetVertices(v); mesh.SetNormals(n); mesh.SetTriangles(t, 0);
-        mesh.RecalculateBounds();
-        // Check winding: every triangle's normal should point outwards; flip if not.
-        var tris = mesh.triangles;
-        for (int i = 0; i < tris.Length; i += 3)
-        {
-            Vector3 p0 = v[tris[i]], p1 = v[tris[i + 1]], p2 = v[tris[i + 2]];
-            if (Vector3.Dot(Vector3.Cross(p1 - p0, p2 - p0), n[tris[i]]) < 0f) { int tmp = tris[i + 1]; tris[i + 1] = tris[i + 2]; tris[i + 2] = tmp; }
-        }
-        mesh.triangles = tris;
-        AssetDatabase.CreateAsset(mesh, HexMeshPath);
-        return mesh;
-    }
-
     static void BuildPod(int p)
     {
-        var top = Mat("DeskWhite", "#F2F2F0", 0.45f);
-        var leg = Mat("DeskLeg", "#C4C7CA", 0.6f);
-        var core = Mat("DeskCore", "#D9DBDD", 0.3f);
-        var partition = Mat("Partition", "#CBCED1", 0.3f);
-        var cap = Mat("PartitionCap", "#B5B9BD", 0.7f);
         Vector2 c2 = Pods[p];
         var centre = new Vector3(c2.x, 0f, c2.y);
 
-        var pod = new GameObject("Pod_" + (p + 1)).transform;
-        pod.SetParent(desks, false);
-        pod.position = centre;
-
-        // Hexagonal desk top (flat faces towards the six seats) with a solid collider
-        var deskTop = new GameObject("DeskTop", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
-        deskTop.transform.SetParent(pod, false);
-        deskTop.transform.localPosition = new Vector3(0, DeskH + TopT * 0.5f, 0);
-        deskTop.GetComponent<MeshFilter>().sharedMesh = HexMesh();
-        deskTop.GetComponent<MeshRenderer>().sharedMaterial = top;
-        var mc = deskTop.GetComponent<MeshCollider>();
-        mc.sharedMesh = HexMesh();
-        mc.convex = true;
-        // Desk legs at the hexagon's corners and a central cable core
-        float R = Apothem / Mathf.Cos(30f * Mathf.Deg2Rad);
-        for (int k = 0; k < 6; k++)
-        {
-            float a = (30f + 60f * k) * Mathf.Deg2Rad;
-            R3.LocalBox("Leg", pod, new Vector3(Mathf.Cos(a) * (R - 0.12f), DeskH / 2f, Mathf.Sin(a) * (R - 0.12f)), new Vector3(0.045f, DeskH, 0.045f), leg, true);
-        }
-        R3.LocalBox("CableCore", pod, new Vector3(0, DeskH / 2f, 0), new Vector3(0.42f, DeskH, 0.42f), core, true);
+        // Hexagonal desk pod model: desk top (flat faces towards the six seats), corner legs, cable core and the
+        // radial partitions between the seats, with their colliders. Origin = pod centre on the floor.
+        var pod = PlaceModel("Desks/R5_HexDeskPod", desks, centre, Quaternion.identity, "Pod_" + (p + 1));
         R3.Shadow(centre, new Vector2(2.4f, 2.4f));
-
-        // Radial partitions between the seats (towards the hexagon's corners)
-        for (int k = 0; k < 6; k++)
-        {
-            float deg = 30f + 60f * k;
-            var dir = new Vector3(Mathf.Cos(deg * Mathf.Deg2Rad), 0, Mathf.Sin(deg * Mathf.Deg2Rad));
-            float yaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-            R3.Box("Partition", pod, centre + dir * 0.6f + Vector3.up * (TopY + 0.21f), new Vector3(0.024f, 0.42f, 1.1f), partition, true, yaw);
-            R3.Box("PartitionCap", pod, centre + dir * 0.6f + Vector3.up * (TopY + 0.425f), new Vector3(0.032f, 0.012f, 1.1f), cap, false, yaw, shadow: false);
-        }
 
         // Six workstations
         for (int k = 0; k < 6; k++)
@@ -547,7 +464,7 @@ public static class Room5Builder
         root.position = centre + dir * 0.6f + Vector3.up * TopY;
         root.rotation = Quaternion.LookRotation(dir);   // +Z = towards the person sitting there
 
-        AllInOne(root, out var screen, out var screenCentre, collider: true);
+        AllInOne(root, out var screen, out var screenCentre);
         Peripherals(root);
         DeskLabel(root, id);
 
@@ -581,30 +498,17 @@ public static class Room5Builder
         else Chair(seatPos, face);
     }
 
-    /// <summary>A 24-inch all-in-one in silver and white (no brand marks). Origin = desk surface below the stand; front = +Z.</summary>
-    static void AllInOne(Transform root, out Transform screen, out Vector3 screenCentre, bool collider)
+    /// <summary>A 24-inch all-in-one in silver and white (no brand marks): the R5_AllInOneComputer model.
+    /// Origin = desk surface below the stand; front = +Z. Its "Screen" part is the surface the terminal fits its UI to.</summary>
+    static void AllInOne(Transform root, out Transform screen, out Vector3 screenCentre)
     {
-        var silver = Mat("AioSilver", "#D5D8DB", 0.7f);
-        var bezel = Mat("AioBezel", "#F5F6F7", 0.6f);
-        var screenMat = Mat("AioScreen", "#0B0F14", 0.92f);
-        R3.LocalBox("StandFoot", root, new Vector3(0, 0.004f, -0.03f), new Vector3(0.15f, 0.008f, 0.15f), silver);
-        var arm = R3.LocalBox("StandArm", root, new Vector3(0, 0.11f, -0.085f), new Vector3(0.15f, 0.22f, 0.012f), silver);
-        arm.transform.localRotation = Quaternion.Euler(-12f, 0, 0);
-        R3.LocalBox("Body", root, new Vector3(0, 0.335f, -0.062f), new Vector3(0.547f, 0.461f, 0.012f), silver, collider);
-        R3.LocalBox("Bezel", root, new Vector3(0, 0.392f, -0.0555f), new Vector3(0.547f, 0.347f, 0.002f), bezel, shadow: false);
-        var s = R3.LocalBox("Screen", root, new Vector3(0, 0.395f, -0.0538f), new Vector3(0.52f, 0.293f, 0.002f), screenMat, shadow: false);
-        screen = s.transform;
+        var model = PlaceModel("Computers/R5_AllInOneComputer", root, root.position, root.rotation, "AllInOne");
+        screen = model.Find("Screen");
         screenCentre = new Vector3(0, 0.395f, -0.0528f);
     }
 
-    static void Peripherals(Transform root)
-    {
-        var white = Mat("KeyboardWhite", "#F3F3F2", 0.5f);
-        var keys = Mat("KeyGrey", "#E1E2E3", 0.3f);
-        R3.LocalBox("Keyboard", root, new Vector3(0, 0.004f, 0.24f), new Vector3(0.28f, 0.008f, 0.115f), white);
-        R3.LocalBox("Keys", root, new Vector3(0, 0.0085f, 0.243f), new Vector3(0.262f, 0.001f, 0.094f), keys, shadow: false);
-        R3.LocalBox("Mouse", root, new Vector3(0.24f, 0.007f, 0.255f), new Vector3(0.057f, 0.014f, 0.105f), white);
-    }
+    static void Peripherals(Transform root) =>
+        PlaceModel("Computers/R5_KeyboardMouse", root, root.position, root.rotation, "KeyboardMouse");
 
     static void DeskLabel(Transform root, string id)
     {

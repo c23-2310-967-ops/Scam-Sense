@@ -1,0 +1,25 @@
+# Materials for R5_AllInOneComputer. In Unity these are remapped to the project's own Assets/Materials/R5_*.mat.
+newmtl R5_AioSilver
+Kd 0.835294 0.847059 0.858824
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+
+newmtl R5_AioBezel
+Kd 0.960784 0.964706 0.968627
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+
+newmtl R5_AioScreen
+Kd 0.043137 0.058824 0.078431
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+

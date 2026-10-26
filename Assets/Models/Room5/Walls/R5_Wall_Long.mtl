@@ -1,0 +1,9 @@
+# Materials for R5_Wall_Long. In Unity these are remapped to the project's own Assets/Materials/R5_*.mat.
+newmtl R5_WallWhite
+Kd 0.913726 0.917647 0.909804
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+

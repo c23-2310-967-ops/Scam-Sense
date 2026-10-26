@@ -1,0 +1,17 @@
+# Materials for R5_FeatureWall_West. In Unity these are remapped to the project's own Assets/Materials/R5_*.mat.
+newmtl R5_FeatureTaupe
+Kd 0.737255 0.682353 0.639216
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+
+newmtl R5_SilverInlay
+Kd 0.882353 0.878431 0.866667
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+

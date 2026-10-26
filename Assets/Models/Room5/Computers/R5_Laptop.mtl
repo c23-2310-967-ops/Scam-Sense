@@ -1,0 +1,9 @@
+# Materials for R5_Laptop. In Unity these are remapped to the project's own Assets/Materials/R5_*.mat.
+newmtl R5_LaptopShell
+Kd 0.231373 0.247059 0.270588
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+

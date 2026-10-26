@@ -1,0 +1,41 @@
+# Materials for R5_HexDeskPod. In Unity these are remapped to the project's own Assets/Materials/R5_*.mat.
+newmtl R5_DeskWhite
+Kd 0.94902 0.94902 0.941177
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+
+newmtl R5_DeskLeg
+Kd 0.768628 0.780392 0.792157
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+
+newmtl R5_DeskCore
+Kd 0.85098 0.858824 0.866667
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+
+newmtl R5_Partition
+Kd 0.796078 0.807843 0.819608
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+
+newmtl R5_PartitionCap
+Kd 0.709804 0.72549 0.741177
+Ka 0 0 0
+Ks 0.2 0.2 0.2
+Ns 40
+d 1
+illum 2
+
