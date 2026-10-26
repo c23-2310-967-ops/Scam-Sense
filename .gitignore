@@ -28,6 +28,23 @@
 .DS_Store
 Thumbs.db
 Desktop.ini
+*.tmp
+*.swp
+~$*
+
+# Blender backup files (the .blend / .obj / .fbx sources themselves are kept)
+*.blend1
+*.blend2
+
+# Unity crash and memory logs
+sysinfo.txt
+mono_crash.*
+
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+*.pem
 
 # Build artifacts
 *.apk

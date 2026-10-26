@@ -1,4 +1,4 @@
-   # Scam Sense: Think Before You Click
+# Scam Sense: Think Before You Click
 
 > A first-person 3D educational game, made in Unity, that teaches players to recognize scam messages before they click. *(BSIT Capstone Project)*
 
@@ -11,22 +11,25 @@
 
 ## Table of Contents
 1. [About the Project](#about-the-project)
-2. [Game Overview](#game-overview)
-3. [Features](#features)
-4. [Screenshots](#screenshots)
-5. [Levels](#levels)
-6. [Built With](#built-with)
-7. [Getting Started](#getting-started)
-8. [How to Play](#how-to-play)
-9. [Project Structure](#project-structure)
-10. [System Architecture](#system-architecture)
-11. [Saving and Player Data](#saving-and-player-data)
-12. [Development Status and Roadmap](#development-status-and-roadmap)
-13. [Testing](#testing)
-14. [Troubleshooting](#troubleshooting)
-15. [Contributing](#contributing)
-16. [Team](#team)
-17. [License and Credits](#license-and-credits)
+2. [Learning Objectives](#learning-objectives)
+3. [Game Overview](#game-overview)
+4. [Features](#features)
+5. [Screenshots](#screenshots)
+6. [Levels](#levels)
+7. [Built With](#built-with)
+8. [Getting Started](#getting-started)
+9. [How to Play](#how-to-play)
+10. [Project Structure](#project-structure)
+11. [System Architecture](#system-architecture)
+12. [Saving and Player Data](#saving-and-player-data)
+13. [Development Status and Roadmap](#development-status-and-roadmap)
+14. [Known Limitations](#known-limitations)
+15. [Testing](#testing)
+16. [Troubleshooting](#troubleshooting)
+17. [Documentation](#documentation)
+18. [Contributing](#contributing)
+19. [Team](#team)
+20. [License and Credits](#license-and-credits)
 
 ---
 
@@ -37,6 +40,14 @@
 Online scams are a growing problem, and many people can't tell a phishing message from a real one. The game helps them practise. Every answer is followed by feedback that explains the warning signs (or the reassuring details), so players learn *why* a message is suspicious, not only *that* it is.
 
 **Audience:** students and general users who want to build basic cybersecurity awareness.
+
+## Learning Objectives
+
+After playing, players should be able to:
+- **Spot common warning signs** in texts, emails, chats and web pages: unknown or look-alike senders and domains, urgency and threats, requests for passwords, verification codes or payment, and offers that are too good to be true.
+- **Recognize legitimate messages** too, such as ones that match something the player actually did, ask for nothing, and point to the official app or site.
+- **Check before acting:** inspect the sender, the requested action and where a link would lead, instead of clicking.
+- **Learn from mistakes:** every answer explains why the message was a scam or legitimate, and a wrong answer shows what it would have led to.
 
 ## Game Overview
 
@@ -202,7 +213,13 @@ Scam-Sense/
 │   ├── Resources/         # Runtime-loaded assets (career config, UI sprites, loading background)
 │   ├── Art/LevelPreviews/ # Room preview images
 │   ├── Input/             # Input System actions
-│   └── Model/, Materials/, Textures/, Fonts/, Prefabs/, ...   # Art and audio
+│   ├── Models/            # 3D models by room (see Docs/ASSET_INVENTORY.md)
+│   │   ├── Room1/         # Models only Room 1 uses (house furniture, kitchen, bathroom)
+│   │   ├── Room2/         # Models only Room 2 uses
+│   │   ├── Room5/         # MacLab walls, hexagonal desk pods and computers (OBJ + prefab)
+│   │   ├── Shared/        # Models used by two or more rooms (desk, office chair, monitor, phone, hand)
+│   │   └── Unused/        # Rest of the Kenney Furniture Kit, not used by any room
+│   └── Materials/, Textures/, Fonts/, Prefabs/, ...   # Art and audio
 ├── Docs/                  # Feature notes and setup guides
 ├── Supabase/              # Database migrations and the settings template
 ├── Packages/              # Unity package manifest
@@ -269,6 +286,7 @@ Room scene ── GameManager ── BriefingUI                    │
 - Phone and computer message reading; email investigation with clickable clues and finding cards.
 - Career ranks and achievements; full main menu with settings, previews and Reset Progress.
 - Local save; Supabase account and cloud-sync code with the database schema applied.
+- 3D models organized by room; Room 5's walls, desk pods and computers are reusable model assets.
 
 **In progress**
 - Supabase: test guest play, sign-up, sign-in and sync end to end.
@@ -278,6 +296,13 @@ Room scene ── GameManager ── BriefingUI                    │
 - [x] Scoring and progress system
 - [ ] Voice acting and background music
 - [ ] Release a downloadable build
+
+## Known Limitations
+
+- **No automated tests yet.** Testing is manual (see [Testing](#testing)).
+- **Online accounts** are implemented but not yet tested end to end. Scores are sent by the game client, so they suit progress tracking, not competitive leaderboards.
+- **Windows only**, and no downloadable build has been released yet.
+- **Some third-party asset sources are unconfirmed:** the phone and ink pen models, two desk images and the menu music. See [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md).
 
 ## Testing
 
@@ -307,6 +332,18 @@ There are no automated tests yet. The Unity Test Framework package is installed 
 | PLAY AS GUEST says guest play isn't switched on | Enable **Allow anonymous sign-ins** in Supabase → Authentication → Sign In / Providers. |
 | A room shows the wrong messages | Check that the scene's **GameManager → Level** uses the matching `Assets/Levels` asset. |
 
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [Docs/DEVELOPMENT_SETUP.md](Docs/DEVELOPMENT_SETUP.md) | Opening the project, scenes, Editor tools, Room 5 models, Git workflow |
+| [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md) | Models and assets used in each room, their locations and sources |
+| [Docs/Scoring.md](Docs/Scoring.md) | Level-based scoring, reading time and penalties |
+| [Docs/WrongAnswerConsequences.md](Docs/WrongAnswerConsequences.md) | Wrong-answer cards and the follow-up re-check |
+| [Docs/MessageInvestigation.md](Docs/MessageInvestigation.md) | Clickable email clues and finding cards |
+| [Docs/SupabaseAccounts.md](Docs/SupabaseAccounts.md) | Setting up online accounts |
+| `Docs/Level1_Implementation.md` … `Docs/Level5_MacLab.md` | Notes for each room |
+
 ## Contributing
 1. Pull the latest `main` before you start (`git pull`).
 2. Keep each change focused, and test it in Play Mode with no Console errors.
@@ -328,7 +365,9 @@ There are no automated tests yet. The Unity Test Framework package is installed 
 This project was created as a capstone for academic purposes. **No license has been specified**; all rights are reserved by the team unless a license is added.
 
 - Built with [Unity](https://unity.com/); see the [Unity Documentation](https://docs.unity3d.com/).
-- Third-party assets keep their original licenses; this repository doesn't claim ownership of them.
+- 3D furniture models: [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) by Kenney (CC0).
+- Font: [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL Open Font License; licence in `Assets/Fonts/Inter-LICENSE.txt`). Fallback font: Liberation Sans, included with TextMesh Pro.
+- Third-party assets keep their original licenses; this repository doesn't claim ownership of them. Assets whose source is still being confirmed are listed in [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md).
 - Thanks to our capstone adviser and instructors.
 
 ---
