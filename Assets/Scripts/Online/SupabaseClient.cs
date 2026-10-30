@@ -53,8 +53,14 @@ public class SupabaseUserMetadata
 /// Minimal Supabase client over the official HTTP APIs (Auth = GoTrue /auth/v1, Database = PostgREST /rest/v1),
 /// using UnityWebRequest only - no extra packages, works in the Editor and Windows builds.
 /// Requests are awaited on Unity's main thread without blocking it, and time out after <see cref="TimeoutSeconds"/>.
-/// The client only ever sends the public key plus the signed-in player's own access token, so every database
-/// call runs under Row Level Security as that player.
+/// Two different credentials are involved:
+///   - The publishable (anon) key goes in the "apikey" header of every request. It only identifies the project;
+///     on its own it runs as the Postgres role "anon", which can't read or write any game table.
+///   - The player's access token goes in "Authorization: Bearer". It comes from signing in - including PLAY AS
+///     GUEST, which is a Supabase anonymous user: a real user with role "authenticated" and the claim
+///     is_anonymous = true. Database calls always use this token, so Row Level Security applies to that player
+///     (see Supabase/migrations/003_anonymous_user_hardening.sql for what guests may do).
+/// The key alone is only sent as the bearer to the Auth endpoints that create or restore a session.
 /// </summary>
 public class SupabaseClient
 {
@@ -98,10 +104,16 @@ public class SupabaseClient
         SetSession(JsonUtility.FromJson<SupabaseSession>(await SendAsync("POST", "/auth/v1/token?grant_type=password", body, auth: false)));
     }
 
-    /// <summary>Guest: an anonymous Supabase user (Authentication > Sign In / Providers > Allow anonymous sign-ins).</summary>
+    /// <summary>
+    /// Guest: creates an anonymous Supabase user (Authentication > Sign In / Providers > Allow anonymous sign-ins)
+    /// and signs in as it. The result is an authenticated identity of its own, not the public key.
+    /// </summary>
     public async Task SignInAnonymouslyAsync()
     {
-        SetSession(JsonUtility.FromJson<SupabaseSession>(await SendAsync("POST", "/auth/v1/signup", "{\"data\":{}}", auth: false)));
+        var s = JsonUtility.FromJson<SupabaseSession>(await SendAsync("POST", "/auth/v1/signup", "{\"data\":{}}", auth: false));
+        if (s != null && s.user != null && !s.user.is_anonymous)
+            throw new SupabaseException("The server didn't return a guest session.");
+        SetSession(s);
     }
 
     /// <summary>Restores a stored session with its refresh token (also used before the access token expires).</summary>

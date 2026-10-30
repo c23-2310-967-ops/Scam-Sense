@@ -234,6 +234,9 @@ public class CloudAccountService : MonoBehaviour
             if (SignedIn && CurrentMode == Mode.Guest)
             {
                 var user = await client.UpdateUserAsync(email, password, displayName);
+                // The guest's access token still says is_anonymous = true. Once the user is permanent, get a
+                // new token so the database treats it as an account (guests can't change the display name).
+                if (user != null && !user.is_anonymous) await client.RefreshAsync(client.Session.refresh_token);
                 await SaveDisplayNameAsync(displayName);
                 if (user != null && !string.IsNullOrEmpty(user.new_email) && string.IsNullOrEmpty(user.email))
                     LastNotice = $"Almost done: confirm the email sent to {email}. Until then you keep playing as this guest - your progress is safe.";

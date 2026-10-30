@@ -276,6 +276,7 @@ Room scene ── GameManager ── BriefingUI                    │
   - **Play offline** keeps using the local save, and results upload later.
   - Progress, achievements and run history sync to the tables `profiles`, `level_progress`, `achievements` and `game_results`.
   - **Row Level Security** limits every player to their own rows.
+  - A guest is a real Supabase user with an authenticated identity, not the public API key. The policies cover guests explicitly; see [Docs/SupabaseAccounts.md](Docs/SupabaseAccounts.md#public-key-vs-guest-anonymous-users).
 - **No secrets in the repository.** The client uses only the public (publishable) key, from a git-ignored file. Scores are sent by the game client, so they suit progress tracking, not competitive leaderboards.
 
 ## Development Status and Roadmap

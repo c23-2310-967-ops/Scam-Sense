@@ -31,6 +31,32 @@ This replaces the earlier Unity Gaming Services setup. The menu flow and panels 
 
 Every table has **Row Level Security**: a signed-in player (guest or account) can only read and write rows where the user id is their own (`auth.uid()`). Signed-out requests can read nothing. A trigger also stops progress from going down on the server: unlocks stay unlocked and best scores only go up.
 
+## Public key vs guest (anonymous) users
+
+These are two different things:
+
+| | Publishable (anon) key | Guest = Supabase anonymous user |
+|---|---|---|
+| What it is | The project's public API key, shipped inside the game | A real user in `auth.users`, created by PLAY AS GUEST |
+| Postgres role | `anon` | `authenticated` (the same role as accounts) |
+| Identity | None: no user id | Its own user id (`auth.uid()`), access token and refresh token |
+| JWT claim | (none) | `is_anonymous: true` (accounts have `false`) |
+| Access to game tables | None | Its own rows only |
+
+Because anyone holding the public key can create a guest, and every guest gets an authenticated identity, a policy written only as `to authenticated` would also let guests in. `Supabase/migrations/003_anonymous_user_hardening.sql` (applied 2026-10-31) makes this explicit:
+
+- Every policy says it is for guests **and** accounts, each limited to their own rows, and requires a real Supabase user token (one carrying `is_anonymous`).
+- Guests can't choose a display name: it stays "Guest" until the guest becomes an account, and the name given then is copied to the profile (`auth.users` decides who is a guest, not the token).
+- Table privileges the game never uses are removed (`TRUNCATE`, which ignores RLS, `TRIGGER`, `REFERENCES`, and `UPDATE`/`DELETE` on `game_results`).
+- Throwaway identities can only store valid level and achievement ids, at most 1000 run-history rows and 100 achievements each (extra rows are skipped, so sync never gets stuck).
+
+The game keeps a guest's **refresh token** (never the password or access token) in PlayerPrefs, so the same guest comes back after a restart. After a guest becomes an account, the game fetches a new token so the database sees `is_anonymous: false` straight away.
+
+**Recommended dashboard settings** (Authentication):
+- **Rate Limits → anonymous sign-ins per hour:** keep it low (default 30 per IP). It limits how many guests one machine can create.
+- **Attack Protection → Prevent use of leaked passwords:** turn on if the plan allows it (flagged by the Security Advisor).
+- CAPTCHA protection is Supabase's strongest defence against mass guest creation, but it needs a CAPTCHA widget in the game, which the desktop build doesn't have yet.
+
 Scores come from the game client, so they are fine for progress but not proof against cheating. For a competitive leaderboard, record results through a Supabase Edge Function that replays or validates the run.
 
 ## Setup steps (dashboard access needed)
@@ -46,5 +72,6 @@ Scores come from the game client, so they are fine for progress but not proof ag
 | 2 | Create account / sign in with email | The chip shows the display name. |
 | 3 | Session | Restart the game → the player is signed back in. SIGN OUT → PLAY asks again. |
 | 4 | Progress | Finish a level → rows appear in `level_progress` and `game_results` for that user only. |
+| 5 | Guest isolation | A second guest can't read or change the first guest's rows (checked 2026-10-31 over the API: 29/29 checks passed). |
 
 > Google and Facebook sign-in were tried and removed (2026-10-20). `Supabase/migrations/002_provider_display_names.sql` stays applied; it only affects users from those providers.
