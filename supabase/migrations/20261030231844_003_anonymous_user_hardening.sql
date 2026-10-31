@@ -1,6 +1,6 @@
 -- =====================================================================================
 -- Scam Sense: guests (Supabase anonymous users) vs accounts - security hardening
--- Run once in Supabase Dashboard > SQL Editor, after 001 and 002. Safe to run again.
+-- Applied to the project as migration 20261030231844, after the earlier migrations. Safe to run again.
 --
 -- Background
 --   * The publishable (anon) API key only identifies the project. A request made with the key
@@ -109,12 +109,12 @@ begin
   return new;
 end $$;
 
--- A guest can't set or change its display name. The check reads auth.users (the user's real state), not the
--- token, so a guest that has just become an account isn't held back by its older guest token.
+-- Requests made with a guest's token can't set or change the display name.
+-- (Replaced by 20261030232127_003b_guest_name_checks_auth_users.sql, which reads auth.users instead.)
 create or replace function public.profiles_guest_name() returns trigger
-language plpgsql security definer set search_path = '' as $$
+language plpgsql set search_path = '' as $$
 begin
-  if exists (select 1 from auth.users u where u.id = new.id and u.is_anonymous) then
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) then
     if tg_op = 'INSERT' then
       new.display_name := 'Guest';
     else

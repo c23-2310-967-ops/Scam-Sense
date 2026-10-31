@@ -625,7 +625,7 @@ public class CloudAccountService : MonoBehaviour
         if (Has("rate_limit") || se.Status == 429) return "Too many attempts. Wait a minute and try again.";
         if (Has("refresh_token") || Has("session_not_found") || Has("bad_jwt")) return "Your saved session expired. Please sign in again.";
         if (se.Status == 404 || Has("pgrst205") || Has("relation") || Has("schema cache"))
-            return "The game's database tables aren't set up yet. (Developer: run Supabase/migrations/001_scam_sense_schema.sql.)";
+            return "The game's database tables aren't set up yet. (Developer: run supabase/migrations/20261020022638_scam_sense_schema.sql.)";
         if (Has("42501") || Has("row-level security")) return "The server refused to save this data (permission). Please sign in again.";
         return "Request failed: " + se.Message;
     }

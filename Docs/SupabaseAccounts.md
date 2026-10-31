@@ -18,8 +18,8 @@ This replaces the earlier Unity Gaming Services setup. The menu flow and panels 
 | `Assets/Scripts/Online/CloudAccountService.cs` | Accounts, sessions, sync (download → merge with LocalDataManager's rules → upload), offline retry. |
 | `Assets/Scripts/Online/GameResultLog.cs` | Finished runs queued per save, uploaded to `game_results` with a `run_id` (no duplicates). |
 | `Assets/Scripts/UI/AccountUI.cs` | Email form with display name; PLAY AS GUEST, sign in, create account, account panel. |
-| `Supabase/migrations/*.sql` | Database schema and security, already applied to the project. |
-| `Supabase/SupabaseSettings.example.json` | Template for the settings file. |
+| `supabase/migrations/*.sql` | Database schema and security, in the order applied (file names start with the migration version). |
+| `supabase/SupabaseSettings.example.json` | Template for the settings file. |
 
 **Inspector:** nothing to assign. The new fields and buttons are saved in `Menu.unity`, and the code also adds them if they are missing.
 
@@ -43,7 +43,7 @@ These are two different things:
 | JWT claim | (none) | `is_anonymous: true` (accounts have `false`) |
 | Access to game tables | None | Its own rows only |
 
-Because anyone holding the public key can create a guest, and every guest gets an authenticated identity, a policy written only as `to authenticated` would also let guests in. `Supabase/migrations/003_anonymous_user_hardening.sql` (applied 2026-10-31) makes this explicit:
+Because anyone holding the public key can create a guest, and every guest gets an authenticated identity, a policy written only as `to authenticated` would also let guests in. `supabase/migrations/20261030231844_003_anonymous_user_hardening.sql` and `..._003b_guest_name_checks_auth_users.sql` (applied 2026-10-31) make this explicit:
 
 - Every policy says it is for guests **and** accounts, each limited to their own rows, and requires a real Supabase user token (one carrying `is_anonymous`).
 - Guests can't choose a display name: it stays "Guest" until the guest becomes an account, and the name given then is copied to the profile (`auth.users` decides who is a guest, not the token).
@@ -65,6 +65,17 @@ Scores come from the game client, so they are fine for progress but not proof ag
 - **Allow anonymous sign-ins:** ON (guest play).
 - **Email › Confirm email:** OFF while testing (accounts work right away). Turn it back on for release if you want; the game handles it.
 
+### Supabase › Project Settings › Integrations › GitHub
+The `supabase/` folder at the repository root follows the Supabase CLI layout, so the project can be linked to this repository:
+1. **Authorize GitHub** and choose the repository `c23-2310-967-ops/Scam-Sense`.
+2. **Working directory:** `.` (the `supabase/` folder is at the root).
+3. **Production branch:** `main`.
+4. **Deploy to production:** OFF. Database changes are applied on purpose, not on every push.
+5. Leave **Automatic branching** off (preview branches need a paid plan).
+6. **Enable integration.**
+
+The five migration files already carry the versions recorded in the project (Database › Migrations), so they count as applied and nothing would run again. A future change goes in a new file named `<yyyymmddhhmmss>_<name>.sql`.
+
 ## Testing checklist
 | # | Test | Expected |
 |---|---|---|
@@ -74,4 +85,4 @@ Scores come from the game client, so they are fine for progress but not proof ag
 | 4 | Progress | Finish a level → rows appear in `level_progress` and `game_results` for that user only. |
 | 5 | Guest isolation | A second guest can't read or change the first guest's rows (checked 2026-10-31 over the API: 29/29 checks passed). |
 
-> Google and Facebook sign-in were tried and removed (2026-10-20). `Supabase/migrations/002_provider_display_names.sql` stays applied; it only affects users from those providers.
+> Google and Facebook sign-in were tried and removed (2026-10-20). `supabase/migrations/20261020025802_provider_display_names.sql` stays applied; it only affects users from those providers.
