@@ -9,6 +9,17 @@ $version = (Select-String -Path "$project/ProjectSettings/ProjectVersion.txt" -P
 $unity = "C:/Program Files/Unity/Hub/Editor/$version/Editor/Unity.exe"
 if (-not (Test-Path $unity)) { Write-Error "Unity $version not found at $unity" }
 
+# Unity keeps Temp/UnityLockfile locked while the project is open in the editor.
+$lock = Join-Path $project 'Temp/UnityLockfile'
+if (Test-Path $lock) {
+    try { [System.IO.File]::Open($lock, 'Open', 'ReadWrite', 'None').Close() }
+    catch {
+        Write-Host "Unity is open on this project. Either close Unity and run this again," -ForegroundColor Yellow
+        Write-Host "or run the tests inside Unity: Tools > Scam Sense > Run All Tests." -ForegroundColor Yellow
+        exit 3
+    }
+}
+
 $out = Join-Path $project 'TestResults'
 New-Item -ItemType Directory -Force $out | Out-Null
 $xml = Join-Path $out 'results.xml'
