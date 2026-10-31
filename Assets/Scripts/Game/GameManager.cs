@@ -98,7 +98,7 @@ public class GameManager : MonoBehaviour
 
         Time.timeScale = 1f;
         finished = leaving = false;
-        LocalDataManager.Unlock(level.levelId);   // a room you are standing in is always unlocked
+        ProgressController.EnterRoom(level);   // a room you are standing in is always unlocked
         scoring.Configure(level);   // this level's points, reading time and penalties
         scoring.ResetRun();
 
@@ -153,15 +153,12 @@ public class GameManager : MonoBehaviour
         int stars = ScoringSystem.StarsFor(score, level);
         bool met = ScoringSystem.MeetsUnlockScore(score, level.minScoreToUnlockNext);
         bool hasNext = !string.IsNullOrEmpty(level.nextLevelId);
-        bool wasUnlocked = hasNext && LocalDataManager.IsUnlocked(level.nextLevelId);
 
-        // 5) Completed (finished the level) is saved separately from 6) the next-room unlock.
+        // 5) Completed (finished the level) is saved separately from 6) the next-room unlock - ProgressController
+        // handles both, plus the run history for the cloud.
         var careerBefore = CareerSystem.TakeSnapshot(level.levelId);
-        // Run history for the cloud (queued first: saving the result below starts the sync that uploads it).
-        GameResultLog.Add(level.levelId, score, scoring.MaxScoreFor(level.MessageCount), stars,
-                          scoring.CorrectCount, level.MessageCount, met, scoring.TotalAnswerTime);
-        var progress = LocalDataManager.RecordResult(level.levelId, score, stars, met);
-        if (met && hasNext) LocalDataManager.Unlock(level.nextLevelId);
+        var saved = ProgressController.SaveRun(level, score, scoring.MaxScoreFor(level.MessageCount), stars, met,
+                                               scoring.CorrectCount, scoring.TotalAnswerTime);
 
         var r = new LevelResult
         {
@@ -169,7 +166,7 @@ public class GameManager : MonoBehaviour
             levelName = level.displayName,
             score = score,
             maxScore = scoring.MaxScoreFor(level.MessageCount),
-            bestScore = progress.bestScore,
+            bestScore = saved.progress.bestScore,
             correct = scoring.CorrectCount,
             incorrect = scoring.IncorrectCount,
             totalMessages = level.MessageCount,
@@ -180,7 +177,7 @@ public class GameManager : MonoBehaviour
             requiredScore = level.minScoreToUnlockNext,
             metRequirement = met,
             hasNextRoom = hasNext,
-            nextRoomUnlocked = hasNext && LocalDataManager.IsUnlocked(level.nextLevelId),
+            nextRoomUnlocked = saved.nextUnlocked,
             nextSceneAvailable = CanLoad(level.nextSceneName),
             lessons = level.lessons,
             caseGrade = scoring.CaseGrade(scoring.MaxScoreFor(level.MessageCount)),
@@ -199,7 +196,7 @@ public class GameManager : MonoBehaviour
                                            finalTerminal != null ? finalTerminal.RequiredEvidence : null, evidenceTracker);
         r.evidenceFound = scoring.EvidenceFound + (evidenceTracker != null ? evidenceTracker.Count : 0);   // key clues + records opened
         r.performanceMessage = PerformanceMessage(r.correct, level.MessageCount, level);
-        r.unlockMessage = UnlockMessage(r, wasUnlocked);
+        r.unlockMessage = UnlockMessage(r, saved.nextWasUnlocked);
         return r;
     }
 
@@ -243,7 +240,7 @@ public class GameManager : MonoBehaviour
 
     public void ContinueToNextRoom()
     {
-        if (level == null || !LocalDataManager.IsUnlocked(level.nextLevelId)) return;
+        if (level == null || !ProgressController.IsUnlocked(level.nextLevelId)) return;
         if (!CanLoad(level.nextSceneName))
         {
             Debug.LogWarning($"GameManager: next scene '{level.nextSceneName}' is not in the Build Profile scene list.", this);
