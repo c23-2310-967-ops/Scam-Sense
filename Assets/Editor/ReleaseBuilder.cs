@@ -30,7 +30,7 @@ public static class ReleaseBuilder
     static void BuildMenu()
     {
         string version = PlayerSettings.bundleVersion;
-        string git = Git("status --porcelain --untracked-files=no");
+        string git = UncommittedFiles();
         string warning = string.IsNullOrWhiteSpace(git) ? "" :
             "\n\nWARNING: there are uncommitted changes. A release should be built from a committed, reviewed version.";
         if (EditorUtility.DisplayDialog("Build Release", $"Build Scam Sense version {version} for Windows?{warning}", "Build", "Cancel"))
@@ -77,7 +77,7 @@ public static class ReleaseBuilder
 
         string commit = Git("rev-parse HEAD").Trim();
         string branch = Git("rev-parse --abbrev-ref HEAD").Trim();
-        bool clean = string.IsNullOrWhiteSpace(Git("status --porcelain --untracked-files=no"));
+        bool clean = string.IsNullOrWhiteSpace(UncommittedFiles());
         File.WriteAllText(Path.Combine(folder, "BUILD_INFO.txt"),
             $"Product:        Scam Sense: Think Before You Click\r\n" +
             $"Version:        {version}\r\n" +
@@ -94,6 +94,12 @@ public static class ReleaseBuilder
         return $"Build Release {version} succeeded: {zip} ({mb:F0} MB, built in {report.summary.totalTime.TotalSeconds:F0} s)" +
                (clean ? "" : "  WARNING: built with uncommitted changes.");
     }
+
+    /// <summary>
+    /// Tracked files whose content differs from the last commit. Uses "git diff" rather than "git status": Unity re-saves
+    /// some assets during a build with different line endings, which "git status" reports as changed although the content is identical.
+    /// </summary>
+    static string UncommittedFiles() => Git("diff HEAD --name-only");
 
     /// <summary>Runs git in the project folder; returns "" if git isn't available.</summary>
     static string Git(string args)
