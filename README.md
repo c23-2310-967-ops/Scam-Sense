@@ -1,114 +1,147 @@
 # Scam Sense: Think Before You Click
 
-> A first-person 3D educational game, made in Unity, that teaches players to recognize scam messages before they click. *(BSIT Capstone Project)*
+> A first-person 3D investigation game, made in Unity, that teaches players to spot scam messages before they click. *(BSIT Capstone Project)*
 
 ![Unity](https://img.shields.io/badge/Unity-6000.0.38f1-black?logo=unity)
 ![C#](https://img.shields.io/badge/C%23-scripting-512BD4)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
+![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?logo=supabase)
+![Tests](https://img.shields.io/badge/tests-51%20automated-brightgreen)
 ![Status](https://img.shields.io/badge/status-in%20development-orange)
 
 ![Level 1 - The First Case](Assets/Art/LevelPreviews/level_1_preview.png)
 
+You are a cybercrime investigator. Texts, emails, work chats and web pages arrive while you explore five 3D rooms, from a family home to a university computer lab. Inspect each one, find the warning signs, and decide: **SCAM** or **LEGITIMATE**. Every answer explains *why*, so players learn the habits that keep them safe online.
+
 ## Table of Contents
-1. [About the Project](#about-the-project)
-2. [Learning Objectives](#learning-objectives)
-3. [Game Overview](#game-overview)
-4. [Features](#features)
+1. [About the Game](#about-the-game)
+2. [Game Features](#game-features)
+3. [Gameplay Overview](#gameplay-overview)
+4. [Story and Scenarios](#story-and-scenarios)
 5. [Screenshots](#screenshots)
-6. [Levels](#levels)
-7. [Built With](#built-with)
-8. [Getting Started](#getting-started)
-9. [How to Play](#how-to-play)
-10. [Project Structure](#project-structure)
-11. [System Architecture](#system-architecture)
-12. [Saving and Player Data](#saving-and-player-data)
-13. [Development Status and Roadmap](#development-status-and-roadmap)
-14. [Known Limitations](#known-limitations)
-15. [Testing](#testing)
-16. [Troubleshooting](#troubleshooting)
-17. [Documentation](#documentation)
-18. [Contributing](#contributing)
-19. [Team](#team)
-20. [License and Credits](#license-and-credits)
+6. [Technologies Used](#technologies-used)
+7. [System Requirements](#system-requirements)
+8. [Installation and Setup](#installation-and-setup)
+9. [Project Structure](#project-structure)
+10. [Database and Data Management](#database-and-data-management)
+11. [Testing](#testing)
+12. [Development Status](#development-status)
+13. [Future Improvements](#future-improvements)
+14. [Troubleshooting](#troubleshooting)
+15. [Documentation](#documentation)
+16. [Contributing](#contributing)
+17. [Team](#team)
+18. [License and Credits](#license-and-credits)
 
 ---
 
-## About the Project
+## About the Game
 
-**Scam Sense** is a capstone project built with **Unity** and **C#**. The player takes the role of an investigator. They receive a case briefing, explore a 3D room, and review incoming text messages, emails, chats and web pages. For each one they decide whether it is a **scam** or **legitimate**.
+**Scam Sense** is an educational cybersecurity-awareness game built with **Unity 6** and **C#**.
 
-Online scams are a growing problem, and many people can't tell a phishing message from a real one. The game helps them practise. Every answer is followed by feedback that explains the warning signs (or the reassuring details), so players learn *why* a message is suspicious, not only *that* it is.
+**The problem.** Phishing texts, fake prize emails, look-alike login pages and "urgent" requests from a fake boss are now part of everyday life. Many people, especially younger users who are new to email, online shopping and school accounts, can't yet tell a scam from a real message, and one wrong click can cost a password, money or personal data.
 
-**Audience:** students and general users who want to build basic cybersecurity awareness.
+**How the game teaches.** Instead of reading a list of rules, players *practise* in a safe, simulated world:
+- Messages look and behave like the real thing: a phone in your pocket, a mail app on a computer, a captured web page. Every person, link and domain is fictional (`.example` domains), and no real link is ever opened.
+- Players inspect the details that matter: the sender and their address, what the message asks for, where a link would really go, and whether it matches something they actually did.
+- Every answer is followed by feedback: the correct verdict, an explanation, the clues they found or missed and, after a mistake, what that click would have led to.
+- The rooms get harder: Room 1 has no time pressure and obvious signs; Room 5 mixes careful look-alikes with genuine notices that must be checked against official records.
 
-## Learning Objectives
+**Educational value.** Players finish able to:
+- **Spot common warning signs:** unknown or look-alike senders and domains, urgency and threats, requests for passwords, verification codes, payment or gift cards, and offers that are too good to be true.
+- **Recognize legitimate messages:** ones that match something the player really did, ask for nothing sensitive, and point to the official app or site.
+- **Check before acting:** inspect first, never click first.
+- **Learn from mistakes** in a place where mistakes cost nothing.
 
-After playing, players should be able to:
-- **Spot common warning signs** in texts, emails, chats and web pages: unknown or look-alike senders and domains, urgency and threats, requests for passwords, verification codes or payment, and offers that are too good to be true.
-- **Recognize legitimate messages** too, such as ones that match something the player actually did, ask for nothing, and point to the official app or site.
-- **Check before acting:** inspect the sender, the requested action and where a link would lead, instead of clicking.
-- **Learn from mistakes:** every answer explains why the message was a scam or legitimate, and a wrong answer shows what it would have led to.
+**Audience:** students and general users, including younger players, who want to build basic cybersecurity awareness.
 
-## Game Overview
+## Game Features
 
-| | |
+Only features that are implemented in the current project are listed.
+
+### Investigation and learning
+| Feature | What it does |
 |---|---|
-| Genre | Educational / investigation |
-| Perspective | First person, 3D |
-| Platform | Windows PC (Unity Standalone) |
-| Content | All people, messages, links and domains are fictional (`.example` domains); no real links are opened. Level 5 is set in the UPHSL Biñan MacLab, with fictional training messages |
+| **Five playable rooms** | Each room has its own case briefing, messages, environment and difficulty (see [Story and Scenarios](#story-and-scenarios)). |
+| **In-game phone** | Texts and work chats open on a phone the player pulls from their pocket. |
+| **Working computers** | A desktop-style mail app on the in-game monitors shows emails and captured web pages; each computer has its own inbox. |
+| **Clickable investigation** | In Rooms 1, 2 and 5, the sender, subject, body phrases and links can be clicked. Each shows a finding card, and key clues turn gold ★. |
+| **Details panel** | Sender details, the requested action and a description of where a link would lead, for every message. |
+| **Case files and evidence stations** | Rooms 3–5 add trusted records to compare against; Room 4 ends with a final multi-evidence case. |
+| **Readable case objects** | Case folders, evidence documents and investigation boards open in a document reader. |
+| **Educational feedback** | Verdict, explanation, clues found and missed, and lessons on the results screen. |
+| **Wrong-answer consequences** | A simulated security incident (trusted a scam) or an accuracy warning (reported a real message), plus the overlooked clue. |
+| **Follow-up re-check** | After a wrong answer on an email with clues, the player can review the evidence and answer once more for recovery points. |
+
+### Scoring, timer and progression
+| Feature | What it does |
+|---|---|
+| **Level-based scoring** | 100 / 150 / 200 / 250 / 300 points per correct answer in Rooms 1–5, with a wrong-answer penalty of 10 / 25 / 40 / 50 / 60. The score never drops below 0, and each message is scored once. |
+| **Reading timer** | Each message gets a reading allowance based on its length and number of details, so careful reading is never punished. Room 1 has no time pressure. Rooms 2–5 add a small speed bonus and a small, capped overtime deduction. The timer pauses in the pause menu, while the phone comes out, and briefly after each inspected detail. |
+| **Case grade and stars** | A case grade (A–F), accuracy, evidence found and corrected mistakes, plus 1–3 stars. |
+| **Score-based unlocking** | Reaching a room's passing score unlocks the next room. |
+| **Career progression** | XP from completed cases, **9 cybersecurity ranks** (Cybersecurity Trainee → Master Digital Investigator) and **10 achievements**, on the menu's Career panel. Replays only add XP when they beat your best. |
+
+### Presentation
+| Feature | What it does |
+|---|---|
+| **First-person exploration** | Walking, mouse look, jumping, opening doors and sitting on chairs. |
+| **Player character** | A low-poly kid in a hoodie (visible in the shadow, sleeves and feet) with first-person hands. |
+| **Interaction highlight** | The object you can press `E` on (computer, chair, door, case item) gets a soft, pulsing cyan outline. |
+| **Mood lighting** | The room dims and cools briefly after a wrong answer and gives a warm pulse after a correct one. |
+| **Soft-realism look** | Natural wood, fabric and metal materials, and UI panels and buttons with soft depth and smooth animation. |
+| **Main menu** | Play / Continue, Level Selection with room previews, Career, Settings (audio, display, quality, mouse sensitivity), How to Play, About, Reset Progress, and Quit with confirmation, over an animated 3D backdrop that cycles through the rooms. |
+| **Loading and transitions** | A loading screen that shows the room being opened with tips, plus fades, screen flicker and glitch effects. |
+| **Audio** | Notification, answer, star, unlock and click sounds, a room tone and menu music, with separate music and effects volume. Sound effects are generated in code when no clip is assigned. |
+
+### Saving and accounts
+| Feature | What it does |
+|---|---|
+| **Local save** | Progress is saved on the PC per player profile and survives restarts. |
+| **Online accounts (Supabase)** | Play as guest, sign in with email and password, or play offline, with cloud sync of progress (see [Database and Data Management](#database-and-data-management)). |
+
+## Gameplay Overview
 
 **Core loop**
-1. Read the **case briefing**: what happened, case notes and objectives. Then press **BEGIN INVESTIGATION**.
-2. Explore the room. A **notification** arrives after a delay or when you move around.
+1. Read the **case briefing** (what happened, case notes, objectives), then press **BEGIN INVESTIGATION**.
+2. Explore the room. A **notification** arrives after a delay or as you move around.
 3. Open the message:
-   - **texts and chats** on the in-game **phone** (press `E`);
+   - **texts and chats** on the **phone** (press `E`);
    - **emails and web pages** on a **computer** (look at a monitor and press `E`).
-4. Inspect it, then answer **SCAM** or **LEGITIMATE**. Each message gives you time to read it fully; longer messages get more time.
-5. Read the **feedback**: whether you were right, the correct answer, and an explanation. A wrong answer also shows what it would have led to and the clue you missed.
-6. After the last message, the **results screen** shows your score, case grade, accuracy, stars and career XP, and whether the next room is unlocked.
+4. **Investigate:** open **DETAILS**, click the highlighted details on emails, and compare them with case files where the room has them.
+5. Answer **SCAM** or **LEGITIMATE**.
+6. Read the **feedback**, then continue. A wrong answer shows what it would have led to, and on emails you may **REVIEW EVIDENCE** for a second chance.
+7. After the last message, the **results screen** shows your score, grade, accuracy, stars and XP, and whether the next room is unlocked.
 
-## Features
+**Controls**
 
-### Implemented
-- **First-person exploration:** walking, mouse look, jumping, opening doors and sitting on chairs.
-- **Five playable rooms**, each with its own case, messages and environment (see [Levels](#levels)).
-- **In-game phone:** pull the phone out of your pocket to read and answer texts and chats.
-- **Working computers:** a desktop-style mail app on the in-game monitors for emails and captured web pages.
-- **Message investigation (emails):**
-  - Click the highlighted sender, subject, body phrases and links to inspect them. Simulated links are never opened.
-  - Each inspected detail shows a **finding card** on screen; key clues turn gold ★.
-  - After you answer, the feedback lists the key clues you **found** and the ones you **missed**.
-- **Details panel:** sender details, the requested action and a link description for every message.
-- **Scoring per level:** each level sets its own points (100 / 150 / 200 / 250 / 300 per correct answer for Levels 1–5), wrong-answer penalty and time rules.
-  - Every message gets a **reading allowance** based on its length and details, so careful reading is never punished.
-  - Level 1 has no time pressure. Later levels add a small speed bonus and a small, capped overtime deduction.
-  - The timer pauses in the pause menu, while the phone comes out, and briefly after each inspected detail.
-- **Wrong-answer consequences:** an investigation error card with a simulated security incident (trusted scams) or an accuracy warning (genuine messages reported as scams), the explanation and the overlooked clue.
-  - On emails with clues, a **follow-up re-check** lets you inspect the key details again and answer once more for recovery points.
-- **Case evaluation:** a HUD case status and a case grade (A–F), accuracy, evidence found, corrected mistakes and hints on the results screen.
-- **Stars (1–3)** reward performance.
-- **Score-based unlocking:** reach a room's passing score to unlock the next room. Each room asks for a higher share of its maximum.
-- **Educational feedback** after every message, plus lessons on the results screen.
-- **Case files and evidence stations** (Rooms 3–5), a **final multi-evidence case** (Room 4), and **workstation-specific emails** in the Room 5 MacLab.
-- **Readable case objects:** case folders, evidence documents and investigation boards open in a document reader (`E`).
-- **Career progression:** XP from completed cases, cybersecurity ranks and achievements, shown on the menu's Career panel. Replays only add XP when they improve your best.
-- **Main menu:**
-  - Play / Continue and Level Selection with room previews;
-  - Settings (audio, display, quality, mouse sensitivity), How to Play and About;
-  - **Reset Progress**;
-  - an animated 3D backdrop that cycles through the rooms;
-  - **Quit** with a confirmation dialog (closes the built game; stops Play Mode in the Editor).
-- **Pause menu**, scene loading screen with tips, fade transitions, and screen flicker and glitch effects.
-- **Audio:** notification, answer, star, unlock and button sounds, with separate volume controls.
-- **Local save:** progress is saved on the PC per player profile and survives restarts.
-- **Player accounts (Supabase):** guest, email + password, and offline play, with cloud sync of progress. See [Saving and Player Data](#saving-and-player-data) for its current status.
+| Action | Key |
+|---|---|
+| Move | `W` `A` `S` `D` |
+| Look around | Mouse |
+| Jump | `Space` |
+| Interact: phone, computer, doors, chairs, case objects | `E` |
+| Stand up from a chair | `Space` or `E` |
+| Choose answers and buttons | Mouse click |
+| Show / hide objectives | `Tab` |
+| Start the level from the briefing | `Enter` or **BEGIN INVESTIGATION** |
+| Pause menu / leave the computer | `Esc` (`P` also pauses) |
 
-### In development / planned
-- End-to-end testing of Supabase accounts.
-- More scam cases and scenarios.
-- Voice acting and background music.
-- A downloadable Windows build.
+**Warning signs the game trains players to notice:** unknown or look-alike senders, free-mail addresses posing as offices, urgency and threats, requests for passwords, codes, payment or gift cards, unexpected attachments, prizes that are too good to be true, and links to unfamiliar domains.
+
+## Story and Scenarios
+
+The player is a new investigator in a cybercrime unit. Each room is one case, and the cases build from a single home to a campus-wide phishing wave. Room 1 is always open; each later room unlocks when the previous room's passing score is reached.
+
+| # | Case (scene) | Setting and story | Messages | Points per correct / max / passing |
+|---|---|---|---|---|
+| 1 | **The First Case** (`Game`) | Your first day on the case: texts and emails arrive while you explore a house, including a fake bank verification, a prize scam, a real delivery text and a real password-change notice. | 5 (2 texts, 3 emails) | 100 / 500 / 325 |
+| 2 | **The Investigation** (`Room2_InvestigationOffice`) | Flagged messages in an investigation office with an evidence board: a fake "Office Director" request, a fake IT helpdesk text, and genuine invoices, schedules and IT chats. | 7 (2 texts, 4 emails, 1 work chat) | 150 / 1155 / 715 |
+| 3 | **The Digital Trap** (`Room3_DigitalTrap`) | A dark cybersecurity operations room. Convincing messages must be compared with trusted records on the case-files computer: a look-alike bank domain, a credential request and an executive impersonation. | 6 (1 text, 5 emails) | 200 / 1320 / 870 |
+| 4 | **Digital Forensics Lab** (`Room4_DigitalForensicsLab`) | A forensics lab with evidence stations: account-verification and fee scams, a fake security tool, a fake sign-in page and a final case, *Operation Billing Storm*, that ties several pieces of evidence together. | 8 (2 texts, 4 emails, 1 web page, 1 final case) | 250 / 2200 / 1500 |
+| 5 | **The Compromised Campus Network** (`Room5_MacLab`) | The final case, set in the UPHSL Biñan MacLab (six hexagonal pods, 36 computers). Five flagged workstations each hold one email (an account-suspension notice, a fake grant, a disguised executable, a payment-redirection scam and a genuine Wi-Fi notice), checked against the instructor's official records. | 6 (1 text, 5 emails) | 300 / 1980 / 1380 |
+
+All messages, names and domains are fictional training content. The maximum scores include the small speed bonuses; the passing scores can be reached without them. Level data (messages, explanations, scoring, timing, stars and unlock rules) lives in `Assets/Levels/*.asset`, and each room has notes in `Docs/` (for example `Docs/Level5_MacLab.md`).
 
 ## Screenshots
 
@@ -120,80 +153,93 @@ After playing, players should be able to:
 | **Room 5 – The Compromised Campus Network (MacLab)** | |
 | ![Room 5](Assets/Art/LevelPreviews/level_5_preview.png) | |
 
-> These are the room previews used in the main menu. To add gameplay screenshots or GIFs later, put them in a folder such as `Docs/images/` and link them here with a relative path, e.g. `![Phone view](Docs/images/phone.png)`.
+These are the room previews used in the main menu.
 
-## Levels
+### Gameplay screenshots (to be added)
 
-All five rooms are in the build and playable. Room 1 is always open; each later room unlocks when the previous room's passing score is reached.
+The repository doesn't contain gameplay screenshots yet. Recommended shots:
 
-| # | Room (scene) | Setting | Messages | Points per correct answer | Max / passing score |
-|---|---|---|---|---|---|
-| 1 | **The First Case** (`Game`) | A home: texts and emails arrive while you explore the house | 5 (2 texts, 3 emails) | 100 | 500 / 325 |
-| 2 | **The Investigation** (`Room2_InvestigationOffice`) | Cybersecurity investigation office with an evidence board | 7 (2 texts, 4 emails, 1 work chat) | 150 | 1155 / 715 |
-| 3 | **The Digital Trap** (`Room3_DigitalTrap`) | Dark cybersecurity operations room with a case-files computer | 6 (1 text, 5 emails) | 200 | 1320 / 870 |
-| 4 | **Digital Forensics Lab** (`Room4_DigitalForensicsLab`) | Bright forensics lab with evidence stations and a final case terminal | 8 (2 texts, 4 emails, 1 web page, 1 final case) | 250 | 2200 / 1500 |
-| 5 | **The Compromised Campus Network** (`Room5_MacLab`) | The UPHSL Biñan MacLab: six hexagonal pods of 36 computers; five flagged workstations each hold one email, and the instructor's computer holds the official records | 6 (1 text, 5 emails) | 300 | 1980 / 1380 |
-
-Room 5 is the final case. The maximum includes the small speed bonuses; the passing scores can be reached without them. Level data (messages, explanations, scoring, timing, stars and unlock rules) lives in `Assets/Levels/*.asset`, and the rooms and systems have notes in `Docs/` (for example `Docs/Level5_MacLab.md` and `Docs/Scoring.md`).
-
-## Built With
-
-| Item | Details |
+| Screenshot | What to capture |
 |---|---|
-| Engine | Unity **6000.0.38f1** (Unity 6) |
-| Language | C# |
-| Rendering | Built-in Render Pipeline |
-| UI | uGUI + TextMeshPro; most menus are built at runtime by `UI/UIKit.cs` |
+| Main menu | The menu over the animated room backdrop |
+| Case briefing | The briefing panel at the start of Room 1 |
+| Phone message | A text open on the pocket phone |
+| Email investigation | An email on a computer, with a finding card and a gold ★ clue |
+| Feedback | The CORRECT / NOT QUITE card with clues found and missed |
+| Results | The results screen with grade, stars and XP |
+| Career | The Career panel with ranks and achievements |
+
+**How to add them:** capture the Game view at 1920×1080 (or use `Win` + `Shift` + `S`), save the PNG files in a new `Docs/images/` folder, commit them, and replace the table above with image links such as `![Email investigation](Docs/images/email-investigation.png)`.
+
+## Technologies Used
+
+| Category | Technology |
+|---|---|
+| Engine | **Unity 6** (6000.0.38f1) |
+| Language | **C#** |
+| Rendering | Built-in Render Pipeline, Linear colour space, plus a custom unlit highlight shader (`Assets/Resources/Shaders/InteractHighlight.shader`) |
+| UI | uGUI + **TextMeshPro**; most menus and HUD are built at runtime by `Assets/Scripts/UI/UIKit.cs` |
 | Input | Unity **Input System** 1.14.2 (`Assets/Input/PlayerInput.inputactions`) |
-| Other packages | Timeline, Test Framework, Visual Scripting, 2D Animation (see `Packages/manifest.json`) |
-| Online accounts | **Supabase** (Auth + Postgres) over its HTTP API using `UnityWebRequest`; no extra package |
-| Version control | Git and GitHub |
+| Audio | Unity Audio with an Audio Mixer (`Assets/MainMixer.mixer`); procedurally generated sound effects (`LevelAudio.cs`) |
+| Other Unity packages | Timeline 1.8.7, Test Framework 1.4.6, Visual Scripting 1.9.7, 2D Animation 10.2.3 (full list in `Packages/manifest.json`) |
+| Testing | Unity Test Framework (NUnit), edit-mode tests in `Assets/Tests` |
+| Backend | **Supabase**: Auth (anonymous and email sign-in) and Postgres with Row Level Security, called over its REST API with `UnityWebRequest` (no SDK package) |
+| 3D assets | Kenney Furniture Kit (CC0) and models made for the project (Room 5 MacLab, player character) |
+| Font | Inter (SIL Open Font License) |
+| Version control | **Git** and **GitHub** (feature branches and pull requests; the Supabase migrations are linked through the GitHub integration) |
 
-## Getting Started
+## System Requirements
 
-### Prerequisites
-- [Unity Hub](https://unity.com/download)
-- Unity Editor **6000.0.38f1**
-- [Git](https://git-scm.com/)
+The game targets **Windows PC** (Unity Standalone, 64-bit). The default window is 1920×1080.
 
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/c23-2310-967-ops/Scam-Sense.git
-   ```
-2. In **Unity Hub**, click **Add → Add project from disk** and select the cloned `Scam-Sense` folder.
-3. Open it with Unity **6000.0.38f1**. The first open takes a few minutes while Unity rebuilds the `Library` folder.
-4. Open `Assets/Scenes/Menu.unity` and press **Play**.
+| | Minimum | Recommended |
+|---|---|---|
+| OS | Windows 10 (64-bit) | Windows 10 or 11 (64-bit) |
+| CPU | x64 with SSE2 | Quad-core, e.g. AMD Ryzen 5 4500U or better |
+| Graphics | DirectX 11 capable GPU | Integrated Radeon / Intel Iris Xe or better |
+| Memory | 4 GB RAM | 8 GB RAM |
+| Storage | about 1 GB free | about 1 GB free |
+| Input | Keyboard and mouse | Keyboard and mouse |
+| Internet | Not required (offline play) | Needed only for online accounts and cloud sync |
 
-### Optional: online accounts (Supabase)
-The game runs without this; progress is then saved on the PC only. To enable accounts:
+The minimum follows Unity 6's Windows player requirements. The recommended row is based on the team's test laptop (Ryzen 5 4500U, integrated Radeon graphics, Direct3D 11), which averaged about 12.6 ms per frame in Room 1 at 1600×900 on Ultra quality (see [Docs/Performance.md](Docs/Performance.md)). It has not been benchmarked on other hardware.
+
+**To develop the project:** Unity Hub, Unity Editor 6000.0.38f1 with Windows Build Support, Git, and a Windows 10/11 64-bit PC with 8 GB RAM or more.
+
+## Installation and Setup
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/c23-2310-967-ops/Scam-Sense.git
+```
+
+### 2. Open the project in Unity
+1. Install [Unity Hub](https://unity.com/download) and Unity Editor **6000.0.38f1**.
+2. In Unity Hub, click **Add → Add project from disk** and select the cloned `Scam-Sense` folder.
+3. Open it. The first open takes a few minutes while Unity rebuilds the `Library` folder.
+
+### 3. Dependencies
+All packages are listed in `Packages/manifest.json` and are downloaded automatically by Unity's Package Manager on first open. No manual installs are needed. If Unity reports a package error, open **Window → Package Manager** and let it resolve, then restart the editor.
+
+### 4. Optional: online accounts (Supabase)
+The game runs without this, with progress saved on the PC only. To enable accounts:
 1. Copy `supabase/SupabaseSettings.example.json` to `Assets/Resources/SupabaseSettings.json`.
-2. Fill in the project URL and the **publishable (anon)** key from the Supabase dashboard. Never use the secret or service_role key.
+2. Fill in the project URL and the **publishable (anon)** key from your Supabase dashboard. Never use the secret or service_role key in the game.
+3. In Supabase → Authentication → Sign In / Providers, enable **Allow anonymous sign-ins** (for guest play).
+4. Apply the database schema from `supabase/migrations/` (in order).
 
-The real `SupabaseSettings.json` is git-ignored and must not be committed. The database setup is in `supabase/migrations/`, and the full guide is in [`Docs/SupabaseAccounts.md`](Docs/SupabaseAccounts.md).
+`Assets/Resources/SupabaseSettings.json` is git-ignored and must never be committed. The full guide is in [Docs/SupabaseAccounts.md](Docs/SupabaseAccounts.md).
 
-## How to Play
+### 5. Run the game in the editor
+Open `Assets/Scenes/Menu.unity` and press **Play**. All rooms are already in **File → Build Profiles → Scene List**.
 
-| Action | Key |
-|---|---|
-| Move | `W` `A` `S` `D` |
-| Look around | Mouse |
-| Jump | `Space` |
-| Interact: phone, computer, doors, chairs | `E` |
-| Stand up from a chair | `Space` or `E` |
-| Choose answers and buttons | Mouse click |
-| Show / hide objectives | `Tab` |
-| Start the level from the briefing | `Enter` or **BEGIN INVESTIGATION** |
-| Pause menu / leave the computer | `Esc` (`P` also pauses) |
+### 6. Build for Windows
+1. Open **File → Build Profiles** and select **Windows**.
+2. Check that `Menu` is the first scene in the list.
+3. Click **Build** and choose an output folder (for example `Builds/`, which is git-ignored).
 
-**Investigating a message**
-- Open **SHOW DETAILS** to see the sender details, what the message asks you to do, and where a link would lead. Links are never opened.
-- On emails, click the underlined details to inspect them. A finding card explains each one, and key clues turn gold ★. Inspecting a new detail pauses the timer for a few seconds of reading time.
-- The timer shows the **reading time left** for the message. In Level 1 there is no time pressure.
-- After a wrong answer on an email, choose **REVIEW EVIDENCE** to re-check the key details and answer again for recovery points.
-- In Room 5, the notification names the workstation (for example `MAC-31`) where the email is flagged.
-- Answer **SCAM** or **LEGITIMATE**, then read the feedback and press **CONTINUE**.
-- Watch for these warning signs: unknown or look-alike senders, urgency and threats, requests for passwords, codes, payment or gift cards, offers that are too good to be true, and links to unfamiliar domains.
+### Android
+Android is **not supported** at the moment. The project is developed and tested for Windows only, and the controls are designed for keyboard and mouse.
 
 ## Project Structure
 
@@ -204,47 +250,45 @@ Scam-Sense/
 │   │                      # Room4_DigitalForensicsLab, Room5_MacLab, MenuBackdrop_Room1
 │   ├── Levels/            # LevelDefinition assets (messages, scoring, unlock rules) + LevelCatalog
 │   ├── Scripts/
-│   │   ├── Data/          # Level and message data, local save (LocalDataManager), career system
-│   │   ├── Game/          # Quiz flow, scoring, game manager, computers, phone, investigation
+│   │   ├── Data/          # Level and message data, local save, progress controller, career system
+│   │   ├── Game/          # Quiz flow, scoring, game manager, computers, phone, investigation,
+│   │   │                  # mood lighting, interaction highlight
 │   │   ├── Online/        # Supabase client, account service, result upload queue
 │   │   ├── UI/            # Main menu, accounts, HUD, briefing, message popup, results, UIKit
 │   │   └── *.cs           # Player movement, interaction, doors, chairs, pause, settings, scene loading
-│   ├── Editor/            # Editor tools (room builders, level content, previews)
-│   ├── Resources/         # Runtime-loaded assets (career config, UI sprites, loading background)
+│   ├── Tests/             # Automated tests (Editor/) and the command-line test runner
+│   ├── Editor/            # Editor tools (room builders, level content, previews, visual style)
+│   ├── Resources/         # Runtime-loaded assets (career config, UI sprites, fonts, shaders)
 │   ├── Art/LevelPreviews/ # Room preview images
 │   ├── Input/             # Input System actions
-│   ├── Models/            # 3D models by room (see Docs/ASSET_INVENTORY.md)
-│   │   ├── Room1/         # Models only Room 1 uses (house furniture, kitchen, bathroom)
-│   │   ├── Room2/         # Models only Room 2 uses
-│   │   ├── Room5/         # MacLab walls, hexagonal desk pods and computers (OBJ + prefab)
-│   │   ├── Shared/        # Models used by two or more rooms (desk, office chair, monitor, phone, hand)
-│   │   └── Unused/        # Rest of the Kenney Furniture Kit, not used by any room
-│   └── Materials/, Textures/, Fonts/, Prefabs/, ...   # Art and audio
+│   ├── Models/            # 3D models by room: Room1/, Room2/, Room5/, Shared/, Unused/
+│   ├── Prefabs/           # Player (kid character) and other prefabs
+│   └── Materials/, Textures/, Fonts/, Scam Sense Menu/   # Art, UI art and menu music
 ├── Docs/                  # Feature notes and setup guides
-├── supabase/              # Database migrations (linked through GitHub) and the settings template
+├── supabase/              # Database migrations and the settings template
 ├── Packages/              # Unity package manifest
 ├── ProjectSettings/       # Unity project settings
 └── README.md
 ```
 
-Key scripts:
+**Key scripts**
 
 | Script | Purpose |
 |---|---|
-| `PlayerMotor.cs`, `Mouselook.cs`, `InputManager.cs` | First-person movement, look and jump |
-| `PlayerInteractor.cs`, `Door.cs`, `Sittablechair.cs` | Doors and chairs |
 | `Game/GameManager.cs` | Level lifecycle: briefing → messages → results; stars, unlocking, saving |
-| `Game/QuizManager.cs` | Message delivery, response timer, answers and feedback |
-| `Game/ScoringSystem.cs` | Level-based points, reading allowance, penalties, recovery, case grade, stars |
+| `Game/QuizManager.cs` | Message delivery, reading timer, answers and feedback |
+| `Game/ScoringSystem.cs` | Level-based points, reading allowance, penalties, recovery, case grade |
 | `Game/WrongAnswerConsequences.cs` | Wrong-answer cards, simulated incidents and the follow-up re-check |
 | `Game/ComputerTerminal.cs`, `Game/PocketPhone.cs`, `UI/MessagePopupUI.cs` | Reading messages on computers and the phone |
-| `Game/MessageInvestigation.cs`, `Game/InvestigationSession.cs` | Clickable details, finding cards, and the found / missed clue summary (emails) |
-| `Data/LocalDataManager.cs` | Local progress save and merge rules |
+| `Game/MessageInvestigation.cs`, `Game/InvestigationSession.cs` | Clickable details, finding cards and the found / missed clue summary |
+| `Game/AtmosphereDirector.cs`, `Game/InteractHighlighter.cs` | Mood lighting and the interaction highlight |
+| `Data/LocalDataManager.cs`, `Data/ProgressController.cs` | Local progress save, merge rules and saving a finished run |
 | `Data/CareerSystem.cs` | Career XP, ranks and achievements |
-| `Online/CloudAccountService.cs`, `Online/SupabaseClient.cs` | Accounts and cloud sync with Supabase |
-| `UI/MainMenuUI.cs`, `UI/AccountUI.cs`, `UI/ResultsUI.cs` | Main menu, account panels and results screen |
+| `Online/CloudAccountService.cs`, `Online/SupabaseClient.cs`, `Online/GameResultLog.cs` | Accounts, cloud sync and the result upload queue |
+| `UI/UIKit.cs`, `UI/MainMenuUI.cs`, `UI/ResultsUI.cs`, `Sceneloader.cs` | UI toolkit, main menu, results and loading screen |
+| `PlayerMotor.cs`, `Mouselook.cs`, `PlayerInteractor.cs`, `Door.cs`, `Sittablechair.cs` | Movement, look, doors and chairs |
 
-## System Architecture
+**Architecture**
 
 ```
 Menu scene ── MainMenuUI ── AccountUI ── CloudAccountService ── SupabaseClient ──> Supabase (optional)
@@ -256,101 +300,118 @@ Room scene ── GameManager ── BriefingUI                    │
                  │  │        └── MessageInvestigation (clickable email clues)
                  │  ├── ScoringSystem
                  │  └── ResultsUI
-                 └── LocalDataManager (PlayerPrefs JSON) ◄────────────┘
-                      CareerSystem (XP, ranks, achievements)
+                 └── ProgressController ── LocalDataManager (PlayerPrefs JSON) ◄──┘
+                                           CareerSystem (XP, ranks, achievements)
 ```
 
-- **GameManager** runs one level: briefing, then **QuizManager** delivers the messages, then the results. It works out stars and unlocking from the final score and saves through **LocalDataManager**.
-- **QuizManager** opens each message on a presenter (phone popup, computer, or final case terminal) and scores each answer exactly once.
-- **LocalDataManager** is the single source of progress. **CloudAccountService** only merges it with the player's cloud copy.
+## Database and Data Management
 
-## Saving and Player Data
+### Local save
+- Progress is stored as **JSON in Unity PlayerPrefs**, one save per player profile: unlocked and completed rooms, best and last scores, stars, career XP and achievements.
+- Settings (volume, display, quality, sensitivity) are saved separately.
+- **Reset Progress** clears only the active profile's progress, after a confirmation.
+- `LocalDataManager` is the single source of progress; the cloud copy is only merged into it.
 
-- **Local save:**
-  - progress is stored as JSON in Unity **PlayerPrefs**, one save per player profile: unlocked and completed rooms, best and last scores, stars, career XP and achievements;
-  - settings (volume, display, quality, sensitivity) are saved separately;
-  - **Reset Progress** in Settings clears only the active profile's progress.
-- **Supabase accounts (implemented; end-to-end testing pending):**
-  - **Guest** uses Supabase anonymous sign-in (**Allow anonymous sign-ins** is enabled in the dashboard).
-  - **Email + password** accounts have a display name.
-  - **Play offline** keeps using the local save, and results upload later.
-  - Progress, achievements and run history sync to the tables `profiles`, `level_progress`, `achievements` and `game_results`.
-  - **Row Level Security** limits every player to their own rows.
-  - A guest is a real Supabase user with an authenticated identity, not the public API key. The policies cover guests explicitly; see [Docs/SupabaseAccounts.md](Docs/SupabaseAccounts.md#public-key-vs-guest-anonymous-users).
-- **No secrets in the repository.** The client uses only the public (publishable) key, from a git-ignored file. Scores are sent by the game client, so they suit progress tracking, not competitive leaderboards.
+### Online backend: Supabase
+| Part | Details |
+|---|---|
+| Technology | Supabase (Postgres + Auth), called over HTTPS with `UnityWebRequest` |
+| Authentication | **Guest** (Supabase anonymous sign-in: a real, temporary user), **email + password** accounts with a display name, and **play offline** |
+| Security | **Row Level Security** on every table: each player can read and write only their own rows. The game uses only the public (publishable) key, from a git-ignored file. |
+| Offline | Finished runs are queued on the PC and uploaded when the player is online again. |
 
-## Development Status and Roadmap
+**Tables** (schema in `supabase/migrations/`)
 
-**Completed**
-- Five playable rooms with progression, level-based scoring, stars and feedback.
-- Wrong-answer consequences, follow-up re-checks and the case grade.
-- Phone and computer message reading; email investigation with clickable clues and finding cards.
-- Career ranks and achievements; full main menu with settings, previews and Reset Progress.
-- Local save; Supabase account and cloud-sync code with the database schema applied.
-- 3D models organized by room; Room 5's walls, desk pods and computers are reusable model assets.
+| Table | Purpose |
+|---|---|
+| `profiles` | One row per player: display name and the time of the last progress reset |
+| `level_progress` | One row per player per room: unlocked, completed, passed, best and last score and stars, XP, times completed |
+| `achievements` | Achievements a player has unlocked, and when |
+| `game_results` | History of finished runs: score, max score, stars, correct answers, passed, total answer time (duplicate uploads are rejected) |
 
-**In progress**
-- Supabase: test guest play, sign-up, sign-in and sync end to end.
+**Leaderboard:** not implemented. Each player can only read their own results, and scores are sent by the game client, so the data suits progress tracking rather than a competitive leaderboard.
 
-**Planned**
-- [ ] More scam cases and scenarios
-- [x] Scoring and progress system
-- [ ] Voice acting and background music
-- [ ] Release a downloadable build
-
-## Known Limitations
-
-- **No automated tests yet.** Testing is manual (see [Testing](#testing)).
-- **Online accounts** are implemented but not yet tested end to end. Scores are sent by the game client, so they suit progress tracking, not competitive leaderboards.
-- **Windows only**, and no downloadable build has been released yet.
-- **Some third-party asset sources are unconfirmed:** the phone and ink pen models, two desk images and the menu music. See [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md).
+Credentials are never stored in the repository. See [Docs/SupabaseAccounts.md](Docs/SupabaseAccounts.md) for the setup and the security model.
 
 ## Testing
 
-There are no automated tests yet. The Unity Test Framework package is installed but no test scripts exist. Manual checklist:
+The project has **51 automated edit-mode tests** in `Assets/Tests`, run after every finished feature to catch regressions.
 
-- [ ] `Menu.unity` → **PLAY** starts Room 1 with its briefing.
-- [ ] A notification arrives; a text opens on the phone (`E`) and an email opens on a computer.
-- [ ] An answer is scored once. The feedback shows the correct answer and explanation, and **CONTINUE** moves on.
-- [ ] On an email, clicking a highlighted detail opens its finding card, and the feedback lists the clues found and missed.
-- [ ] The results screen shows score, stars and XP. Reaching the passing score unlocks the next room in **Level Selection**.
-- [ ] A locked room can be previewed but not played.
-- [ ] A wrong answer shows the consequence card; **REVIEW EVIDENCE** re-checks an email once for recovery points.
-- [ ] In Room 5, each flagged email opens only at its workstation (`MAC-xx`).
-- [ ] **QUIT GAME → YES, QUIT** stops Play Mode in the Editor and closes the built game.
-- [ ] Settings are kept after restarting; **Reset Progress** clears progress after confirmation.
-- [ ] Pause (`Esc` / `P`), resume, and return to the menu all work.
-- [ ] The Unity Console shows no errors.
+| How | Steps |
+|---|---|
+| In Unity (easiest) | **Tools → Scam Sense → Run All Tests**. About 30 seconds; the Console shows the summary and the report is written to `TestResults/latest.txt`. |
+| Test Runner window | **Window → General → Test Runner → EditMode → Run All** |
+| Command line (Unity closed) | `powershell -ExecutionPolicy Bypass -File Assets/Tests/run-tests.ps1` |
+
+| Test file | Checks |
+|---|---|
+| `ScoringTests.cs` | Points, penalties, score never below 0, no double scoring, missed-scam / false-alarm counters, timer text |
+| `LevelDataTests.cs` | Every room is in the catalog and the build; messages are complete; ids are unique; each room mixes scams and real messages; stars and unlock scores are reachable |
+| `SceneIntegrityTests.cs` | In every scene: no missing scripts, no objects without a mesh or material, every computer has a screen, every chair can be sat on |
+| `UILayoutTests.cs` | Crowded panels don't draw text over each other; UI panels keep their soft depth; the highlight shader loads |
+
+The tests never enter Play Mode and never touch saved progress or the online account. Save/load is still checked by hand (see [Assets/Tests/README.md](Assets/Tests/README.md)).
+
+**Manual checks before a release:** play each room from the menu, answer right and wrong, use **REVIEW EVIDENCE**, confirm unlocking in Level Selection, restart the game to confirm progress was saved, and confirm the Console shows no errors.
+
+## Development Status
+
+| Status | Features |
+|---|---|
+| ✅ **Completed and functional** | Five playable rooms with briefings, messages and feedback · phone and computer message reading · clickable email investigation · case files, evidence stations and the final case · level-based scoring, reading timer, penalties and recovery · case grade, stars and score-based unlocking · career ranks and achievements · main menu, settings, Level Selection and Reset Progress · local save · soft-realism visuals, mood lighting and interaction highlight · loading screen and transitions · automated regression tests |
+| 🛠️ **In development** | Supabase accounts: the code and database schema are in place; guest play, sign-up, sign-in and cloud sync still need full end-to-end testing |
+| 📋 **Planned** | More scam cases and scenarios · voice acting and background music for the rooms · a downloadable Windows build |
+
+### Known limitations
+- **Windows only**, and no downloadable build has been released yet.
+- **Save/load** isn't covered by the automated tests yet (it writes straight to PlayerPrefs).
+- **Some third-party asset sources are unconfirmed:** the phone and ink pen models, two desk images and the menu music. See [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md).
+
+## Future Improvements
+
+- **More cases:** new scam types such as QR-code scams, fake job offers, romance and social-media scams, and voice / call scams.
+- **Accessibility:** adjustable text size, colour-blind-friendly highlights, subtitles for sounds, and remappable keys.
+- **Filipino language option** for local players.
+- **Teacher / class mode:** a class code and a dashboard where an instructor sees each student's progress and common mistakes.
+- **Trusted scoring:** validate results on the server (for example with a Supabase Edge Function) before adding any leaderboard.
+- **Save/load tests:** move PlayerPrefs access behind a small storage interface so progress saving can be tested automatically.
+- **Performance:** baked lighting for the larger rooms to reduce the GPU cost of many realtime lights.
+- **Background music and voice-over** for briefings and feedback.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
 | Unity opens in **Safe Mode** | A script has a compile error. Read the Console, fix the script, then click **Exit Safe Mode**. |
-| Pressing Play shows an empty or wrong scene | Open `Assets/Scenes/Menu.unity` first. All rooms are listed in **File → Build Profiles**. |
+| Pressing Play shows an empty or wrong scene | Open `Assets/Scenes/Menu.unity` first. |
 | "Scene … is not in the Build Profile scene list" | Add the scene under **File → Build Profiles → Scene List**. |
-| Account buttons say online accounts aren't set up | `Assets/Resources/SupabaseSettings.json` is missing. See [Optional: online accounts](#optional-online-accounts-supabase). |
+| Account buttons say online accounts aren't set up | `Assets/Resources/SupabaseSettings.json` is missing; see [Installation and Setup](#4-optional-online-accounts-supabase). |
 | PLAY AS GUEST says guest play isn't switched on | Enable **Allow anonymous sign-ins** in Supabase → Authentication → Sign In / Providers. |
 | A room shows the wrong messages | Check that the scene's **GameManager → Level** uses the matching `Assets/Levels` asset. |
+| `run-tests.ps1` says Unity is open | Close Unity, or run the tests inside Unity with **Tools → Scam Sense → Run All Tests**. |
 
 ## Documentation
 
 | Document | Contents |
 |---|---|
-| [Docs/DEVELOPMENT_SETUP.md](Docs/DEVELOPMENT_SETUP.md) | Opening the project, scenes, Editor tools, Room 5 models, Git workflow |
+| [Docs/DEVELOPMENT_SETUP.md](Docs/DEVELOPMENT_SETUP.md) | Opening the project, scenes, editor tools, Git workflow |
 | [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md) | Models and assets used in each room, their locations and sources |
 | [Docs/Scoring.md](Docs/Scoring.md) | Level-based scoring, reading time and penalties |
 | [Docs/WrongAnswerConsequences.md](Docs/WrongAnswerConsequences.md) | Wrong-answer cards and the follow-up re-check |
 | [Docs/MessageInvestigation.md](Docs/MessageInvestigation.md) | Clickable email clues and finding cards |
-| [Docs/SupabaseAccounts.md](Docs/SupabaseAccounts.md) | Setting up online accounts |
+| [Docs/CareerProgression.md](Docs/CareerProgression.md) | XP, ranks and achievements |
+| [Docs/SupabaseAccounts.md](Docs/SupabaseAccounts.md) | Setting up online accounts and the security model |
+| [Docs/VisualUpgrade.md](Docs/VisualUpgrade.md), [Docs/Performance.md](Docs/Performance.md) | Lighting and visual changes; performance measurements |
+| [Assets/Tests/README.md](Assets/Tests/README.md) | Running and adding automated tests |
 | `Docs/Level1_Implementation.md` … `Docs/Level5_MacLab.md` | Notes for each room |
 
 ## Contributing
-1. Pull the latest `main` before you start (`git pull`).
+1. Pull the latest `main` before you start (`git pull`), and work on a feature branch.
 2. Keep each change focused, and test it in Play Mode with no Console errors.
-3. Don't edit the same Unity scene as a teammate at the same time; scene files don't merge well.
-4. Never commit `Assets/Resources/SupabaseSettings.json`, keys or passwords.
-5. Write clear commit messages that describe the change (e.g. `Add Level 5 messages`), then push or open a pull request.
+3. Run **Tools → Scam Sense → Run All Tests** before committing; when you fix a bug, add a test that would have caught it.
+4. Don't edit the same Unity scene as a teammate at the same time; scene files don't merge well.
+5. Never commit `Assets/Resources/SupabaseSettings.json`, keys or passwords.
+6. Write clear commit messages (e.g. `Add Level 5 messages`), push, and open a pull request for review.
 
 ## Team
 
@@ -366,6 +427,7 @@ There are no automated tests yet. The Unity Test Framework package is installed 
 This project was created as a capstone for academic purposes. **No license has been specified**; all rights are reserved by the team unless a license is added.
 
 - Built with [Unity](https://unity.com/); see the [Unity Documentation](https://docs.unity3d.com/).
+- Online accounts by [Supabase](https://supabase.com/).
 - 3D furniture models: [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) by Kenney (CC0).
 - Font: [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL Open Font License; licence in `Assets/Fonts/Inter-LICENSE.txt`). Fallback font: Liberation Sans, included with TextMesh Pro.
 - Third-party assets keep their original licenses; this repository doesn't claim ownership of them. Assets whose source is still being confirmed are listed in [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md).
