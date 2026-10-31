@@ -47,7 +47,7 @@ A room scene can be played on its own for testing, but the normal flow starts fr
 | `Assets/Materials/` | Materials (prefixes show the room: `R2_` to `R5_`, `SetDressing/`, `Kid_` for the player) |
 | `Assets/Art/LevelPreviews/` | Room preview images used by the menu |
 | `Docs/` | Feature notes and guides |
-| `Supabase/` | Database migrations and the settings template |
+| `supabase/` | Database migrations (linked to Supabase through GitHub) and the settings template |
 
 ## Editor tools
 

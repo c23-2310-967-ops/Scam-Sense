@@ -1,0 +1,11 @@
+# Supabase project files for Scam Sense: Think Before You Click.
+# Linked to the "Scam Sense Database" project through Supabase's GitHub integration
+# (Project Settings > Integrations > GitHub, working directory ".", "Deploy to production" off).
+#
+# migrations/ holds every database change in the order it was applied; each file name starts
+# with the version recorded in the project's migration history.
+#
+# Auth, API and other service settings are managed in the Supabase Dashboard, not here.
+# Don't add an [auth] section without copying the live settings first: values left out fall
+# back to the CLI defaults, which turn anonymous (guest) sign-ins off.
+project_id = "scam-sense"

@@ -167,10 +167,10 @@ Room 5 is the final case. The maximum includes the small speed bonuses; the pass
 
 ### Optional: online accounts (Supabase)
 The game runs without this; progress is then saved on the PC only. To enable accounts:
-1. Copy `Supabase/SupabaseSettings.example.json` to `Assets/Resources/SupabaseSettings.json`.
+1. Copy `supabase/SupabaseSettings.example.json` to `Assets/Resources/SupabaseSettings.json`.
 2. Fill in the project URL and the **publishable (anon)** key from the Supabase dashboard. Never use the secret or service_role key.
 
-The real `SupabaseSettings.json` is git-ignored and must not be committed. The database setup is in `Supabase/migrations/`, and the full guide is in [`Docs/SupabaseAccounts.md`](Docs/SupabaseAccounts.md).
+The real `SupabaseSettings.json` is git-ignored and must not be committed. The database setup is in `supabase/migrations/`, and the full guide is in [`Docs/SupabaseAccounts.md`](Docs/SupabaseAccounts.md).
 
 ## How to Play
 
@@ -221,7 +221,7 @@ Scam-Sense/
 │   │   └── Unused/        # Rest of the Kenney Furniture Kit, not used by any room
 │   └── Materials/, Textures/, Fonts/, Prefabs/, ...   # Art and audio
 ├── Docs/                  # Feature notes and setup guides
-├── Supabase/              # Database migrations and the settings template
+├── supabase/              # Database migrations (linked through GitHub) and the settings template
 ├── Packages/              # Unity package manifest
 ├── ProjectSettings/       # Unity project settings
 └── README.md

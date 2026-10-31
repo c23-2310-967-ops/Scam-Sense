@@ -1,6 +1,6 @@
 -- =====================================================================================
 -- Scam Sense: Think Before You Click - player accounts and progress (Supabase)
--- Run once in the Supabase Dashboard > SQL Editor (safe to run again: everything is
+-- Applied to the project as migration 20261020022638 (safe to run again: everything is
 -- "if not exists" / "or replace", and policies are dropped before they are recreated).
 --
 -- Tables
@@ -174,11 +174,6 @@ drop policy if exists "game_results: read own"   on public.game_results;
 drop policy if exists "game_results: insert own" on public.game_results;
 create policy "game_results: read own"   on public.game_results for select to authenticated using ((select auth.uid()) = user_id);
 create policy "game_results: insert own" on public.game_results for insert to authenticated with check ((select auth.uid()) = user_id);
-
--- Trigger functions run only from their triggers: nobody can call them through the API.
-revoke execute on function public.handle_new_user() from public, anon, authenticated;
-revoke execute on function public.touch_updated_at() from public, anon, authenticated;
-revoke execute on function public.level_progress_keep_best() from public, anon, authenticated;
 
 -- Nothing is readable without signing in (guests sign in anonymously).
 revoke all on public.profiles, public.level_progress, public.achievements, public.game_results from anon;

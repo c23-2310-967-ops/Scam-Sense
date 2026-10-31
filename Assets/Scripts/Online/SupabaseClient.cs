@@ -59,7 +59,7 @@ public class SupabaseUserMetadata
 ///   - The player's access token goes in "Authorization: Bearer". It comes from signing in - including PLAY AS
 ///     GUEST, which is a Supabase anonymous user: a real user with role "authenticated" and the claim
 ///     is_anonymous = true. Database calls always use this token, so Row Level Security applies to that player
-///     (see Supabase/migrations/003_anonymous_user_hardening.sql for what guests may do).
+///     (see supabase/migrations/20261030231844_003_anonymous_user_hardening.sql for what guests may do).
 /// The key alone is only sent as the bearer to the Auth endpoints that create or restore a session.
 /// </summary>
 public class SupabaseClient
