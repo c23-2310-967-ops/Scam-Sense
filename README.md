@@ -8,10 +8,13 @@
 ![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?logo=supabase)
 ![Tests](https://img.shields.io/badge/tests-55%20automated-brightgreen)
 ![Status](https://img.shields.io/badge/status-in%20development-orange)
+[![Release](https://img.shields.io/badge/release-v0.1.0%20(pre--release)-blue)](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0)
 
 ![Level 1 - The First Case](Assets/Art/LevelPreviews/level_1_preview.png)
 
 You are a cybercrime investigator. Texts, emails, work chats and web pages arrive while you explore five 3D rooms, from a family home to a university computer lab. Inspect each one, find the warning signs, and decide: **SCAM** or **LEGITIMATE**. Every answer explains *why*, so players learn the habits that keep them safe online.
+
+**▶ Download:** [Scam Sense v0.1.0 for Windows](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0) (development pre-release). See [Download and Play](#download-and-play).
 
 ## Table of Contents
 1. [About the Game](#about-the-game)
@@ -21,17 +24,19 @@ You are a cybercrime investigator. Texts, emails, work chats and web pages arriv
 5. [Screenshots](#screenshots)
 6. [Technologies Used](#technologies-used)
 7. [System Requirements](#system-requirements)
-8. [Installation and Setup](#installation-and-setup)
-9. [Project Structure](#project-structure)
-10. [Database and Data Management](#database-and-data-management)
-11. [Testing](#testing)
-12. [Development Status](#development-status)
-13. [Future Improvements](#future-improvements)
-14. [Troubleshooting](#troubleshooting)
-15. [Documentation](#documentation)
-16. [Contributing](#contributing)
-17. [Team](#team)
-18. [License and Credits](#license-and-credits)
+8. [Download and Play](#download-and-play)
+9. [Installation and Setup](#installation-and-setup) (for developers)
+10. [Project Structure](#project-structure)
+11. [Database and Data Management](#database-and-data-management)
+12. [Testing](#testing)
+13. [Releases and Versioning](#releases-and-versioning)
+14. [Development Status](#development-status)
+15. [Future Improvements](#future-improvements)
+16. [Troubleshooting](#troubleshooting)
+17. [Documentation](#documentation)
+18. [Contributing](#contributing)
+19. [Team](#team)
+20. [License and Credits](#license-and-credits)
 
 ---
 
@@ -206,7 +211,23 @@ The minimum follows Unity 6's Windows player requirements. The recommended row i
 
 **To develop the project:** Unity Hub, Unity Editor 6000.0.38f1 with Windows Build Support, Git, and a Windows 10/11 64-bit PC with 8 GB RAM or more.
 
+## Download and Play
+
+The latest build is **[v0.1.0](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0)**, released 31 Oct 2026. It is a development pre-release, the first controlled build of the game.
+
+1. Download **`ScamSense-v0.1.0.zip`** (56 MB) from the [release page](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0).
+2. Extract the whole ZIP to a folder. Don't run the game from inside the ZIP.
+3. Open `ScamSense-v0.1.0` and double-click **`ScamSense.exe`**. Nothing needs to be installed.
+4. If Windows shows *"Windows protected your PC"*, click **More info → Run anyway**. The game isn't code-signed yet.
+5. Choose **PLAY**. Room 1 is always open; each later room unlocks when you reach the previous room's passing score.
+
+The ZIP also contains `README.txt` (controls and requirements), `RELEASE_NOTES.txt` and `BUILD_INFO.txt`, which names the exact source commit. The version is shown in the top-right corner of the main menu. Progress is saved on the PC, and online accounts need an internet connection.
+
+**SHA-256 of `ScamSense-v0.1.0.zip`:** `170b2d85a5bed1a8727a45316c2fffdbfa2a505e2aa8a0a7f552c90c62c277f1`
+
 ## Installation and Setup
+
+These steps are for working on the project in Unity. To just play, use [Download and Play](#download-and-play).
 
 ### 1. Clone the repository
 ```bash
@@ -353,16 +374,28 @@ The tests never enter Play Mode and never touch saved progress or the online acc
 
 **Manual checks before a release** (on the packaged build, see [Docs/RELEASE_PROCESS.md](Docs/RELEASE_PROCESS.md)): play each room from the menu, answer right and wrong, use **REVIEW EVIDENCE**, confirm unlocking in Level Selection, restart the game to and confirm progress was saved.
 
+## Releases and Versioning
+
+Versions use **MAJOR.MINOR.PATCH**: a bug fix raises PATCH (0.1.0 → 0.1.1), a new working feature raises MINOR (0.1.0 → 0.2.0), and a change that breaks saved data or a major redesign raises MAJOR. Versions stay `0.x.y` until the complete, stable capstone release, **1.0.0**.
+
+| Version | Date | Type | Source | Download |
+|---|---|---|---|---|
+| **0.1.0** | 31 Oct 2026 | Development (pre-release) | tag `v0.1.0`, commit `1510aed` | [Release page](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0) · [Release notes](Docs/Releases/RELEASE_NOTES_v0.1.0.txt) |
+
+Every release is built from the reviewed `main` with **Tools → Scam Sense → Build Release**, tested as a packaged build (not in the editor), tagged in Git and published on GitHub Releases. The steps are in [Docs/RELEASE_PROCESS.md](Docs/RELEASE_PROCESS.md). The packaged v0.1.0 build passed all release tests (launch, version shown, Room 1 play-through, save and load, every room, guest play and sign-in, close) on two Windows PCs.
+
 ## Development Status
 
 | Status | Features |
 |---|---|
-| ✅ **Completed and functional** | Five playable rooms with briefings, messages and feedback · phone and computer message reading · clickable email investigation · case files, evidence stations and the final case · level-based scoring, reading timer, penalties and recovery · case grade, stars and score-based unlocking · career ranks and achievements · main menu, settings, Level Selection and Reset Progress · local save · soft-realism visuals, mood lighting and interaction highlight · loading screen and transitions · automated regression tests |
-| 🛠️ **In development** | Supabase accounts: the code and database schema are in place; guest play, sign-up, sign-in and cloud sync still need full end-to-end testing |
+| ✅ **Completed and functional** | Five playable rooms with briefings, messages and feedback · phone and computer message reading · clickable email investigation · case files, evidence stations and the final case · level-based scoring, reading timer, penalties and recovery · case grade, stars and score-based unlocking · career ranks and achievements · main menu, settings, Level Selection and Reset Progress · local save · soft-realism visuals, mood lighting and interaction highlight · loading screen and transitions · automated regression tests · versioned Windows release (v0.1.0) |
+| 🛠️ **In development** | Supabase accounts: guest play and sign-in passed the v0.1.0 release tests; sign-up and cloud sync across PCs still need full end-to-end testing |
 | 📋 **Planned** | More scam cases and scenarios · voice acting and background music for the rooms |
 
 ### Known limitations
-- **Windows only.** The first controlled release is v0.1.0 (a development build); see [Docs/Releases/](Docs/Releases/).
+- **Windows only.** v0.1.0 is a development pre-release, not the final capstone version.
+- **Not code-signed:** Windows SmartScreen may warn the first time the game is run.
+- The window title and save location still use the working name **"Capstone"**; this will change before 1.0.0, together with a plan for existing saves.
 - **Save/load** isn't covered by the automated tests yet (it writes straight to PlayerPrefs).
 - **Some third-party asset sources are unconfirmed:** the phone and ink pen models, two desk images and the menu music. See [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md).
 
@@ -381,6 +414,8 @@ The tests never enter Play Mode and never touch saved progress or the online acc
 
 | Problem | Fix |
 |---|---|
+| *"Windows protected your PC"* when starting `ScamSense.exe` | The build isn't code-signed yet. Click **More info → Run anyway**. |
+| `ScamSense.exe` closes or says files are missing | Extract the whole ZIP first and keep `ScamSense_Data`, `UnityPlayer.dll` and `MonoBleedingEdge` next to the .exe. |
 | Unity opens in **Safe Mode** | A script has a compile error. Read the Console, fix the script, then click **Exit Safe Mode**. |
 | Pressing Play shows an empty or wrong scene | Open `Assets/Scenes/Menu.unity` first. |
 | "Scene … is not in the Build Profile scene list" | Add the scene under **File → Build Profiles → Scene List**. |
@@ -435,4 +470,4 @@ This project was created as a capstone for academic purposes. **No license has b
 
 ---
 
-**Project information:** BSIT capstone · Unity 6 (6000.0.38f1) · C# · Windows · in development
+**Project information:** BSIT capstone · Unity 6 (6000.0.38f1) · C# · Windows · latest release v0.1.0 (development)
