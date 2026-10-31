@@ -39,8 +39,11 @@ public class ButtonPressFeedback : MonoBehaviour,
 
     void Update()
     {
-        float target = pressed ? 0.96f : (hovered && IsOn() ? 1.02f : 1f);
-        float s = Mathf.MoveTowards(transform.localScale.x, target, Time.unscaledDeltaTime * 1.5f);
+        float target = pressed ? 0.96f : (hovered && IsOn() ? 1.03f : 1f);
+        float current = transform.localScale.x;
+        if (Mathf.Abs(current - target) < 0.0005f) { if (current != target) transform.localScale = new Vector3(target, target, 1f); return; }
+        // Ease out: quick at first, settling softly (about 0.15 s), instead of snapping.
+        float s = Mathf.Lerp(current, target, 1f - Mathf.Exp(-Time.unscaledDeltaTime * 16f));
         transform.localScale = new Vector3(s, s, 1f);
     }
 }
