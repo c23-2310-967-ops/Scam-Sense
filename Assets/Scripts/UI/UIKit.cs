@@ -126,13 +126,14 @@ public static class UIKit
         return img;
     }
 
-    /// <summary>Rounded panel with a subtle border, separating text from the 3D scene.</summary>
+    /// <summary>Rounded panel with a subtle border, a soft top-to-bottom gradient and a soft drop shadow.</summary>
     public static Image PanelImage(RectTransform r, Color? color = null)
     {
         var img = AddImage(r, color ?? Panel, rounded: true);
         var outline = r.gameObject.AddComponent<Outline>();
         outline.effectColor = Border;
         outline.effectDistance = new Vector2(2f, -2f);
+        r.gameObject.AddComponent<UISoftDepth>().Configure(1.08f, 0.92f, layers: 4, spread: 14f, offsetY: -10f, alpha: 0.4f);
         return img;
     }
 
@@ -277,6 +278,8 @@ public static class UIKit
         var outline = r.gameObject.AddComponent<Outline>();
         outline.effectColor = style.outline;
         outline.effectDistance = new Vector2(2f, -2f);
+        // Slightly raised: lighter top, darker bottom, a crisp lip underneath and a small soft shadow.
+        r.gameObject.AddComponent<UISoftDepth>().Configure(1.14f, 0.86f, layers: 3, spread: 6f, offsetY: -5f, alpha: 0.35f, lip: 3f);
 
         var btn = r.gameObject.AddComponent<Button>();
         btn.targetGraphic = img;
@@ -341,6 +344,8 @@ public static class UIKit
                    : danger ? new Color(DangerButton.r, DangerButton.g, DangerButton.b, 0.95f)
                    : safe ? new Color(SafeButton.r, SafeButton.g, SafeButton.b, 0.95f)
                              : new Color(PanelRaised.r, PanelRaised.g, PanelRaised.b, 0.88f);
+        // Gradient only: a shadow here would also enlarge the mask that clips the light sweep.
+        r.gameObject.AddComponent<UISoftDepth>().Configure(1.12f, 0.88f);
         var mask = r.gameObject.AddComponent<Mask>();
         mask.showMaskGraphic = true;                    // the fill is visible and clips the sweep to the shape
 

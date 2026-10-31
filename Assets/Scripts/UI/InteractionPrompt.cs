@@ -21,6 +21,11 @@ public class InteractionPrompt : MonoBehaviour
     static InteractionPrompt instance;
     static readonly Dictionary<object, Request> requests = new Dictionary<object, Request>();
 
+    /// <summary>Who made the prompt shown this frame (null when hidden); used by InteractHighlighter.</summary>
+    public static object ActiveOwner { get; private set; }
+    /// <summary>True when the shown prompt has a key, i.e. pressing it does something now (not a locked/idle label).</summary>
+    public static bool ActiveIsActionable { get; private set; }
+
     private RectTransform pill;
     private TMP_Text keyText, actionText, secondaryText;
     private RectTransform keyBox;
@@ -72,6 +77,7 @@ public class InteractionPrompt : MonoBehaviour
         // Pick the best request made this frame (stale ones from disabled scripts expire automatically).
         bool found = false;
         Request best = default;
+        object bestOwner = null;
         List<object> stale = null;
         foreach (var kv in requests)
         {
@@ -80,11 +86,13 @@ public class InteractionPrompt : MonoBehaviour
                 (stale ??= new List<object>()).Add(kv.Key);
                 continue;
             }
-            if (!found || kv.Value.priority > best.priority) { best = kv.Value; found = true; }
+            if (!found || kv.Value.priority > best.priority) { best = kv.Value; bestOwner = kv.Key; found = true; }
         }
         if (stale != null) foreach (var k in stale) requests.Remove(k);
 
         bool show = found && !InteractionGate.UIOpen && !PauseMenu.IsPaused;
+        ActiveOwner = show ? bestOwner : null;
+        ActiveIsActionable = show && !string.IsNullOrEmpty(best.key);
         pill.gameObject.SetActive(show);
         if (!show) return;
 

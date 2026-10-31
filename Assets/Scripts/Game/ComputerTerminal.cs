@@ -17,7 +17,7 @@ using UnityEngine.UI;
 /// created automatically in front of the screen if left empty.
 /// </summary>
 [DefaultExecutionOrder(-90)]
-public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigationDock, IRecheckPresenter, IWarningTarget
+public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigationDock, IRecheckPresenter, IWarningTarget, IHighlightable
 {
     [Header("Screen")]
     [Tooltip("The monitor model (with Screen Submesh set) or a thin object covering the display area.")]
@@ -57,6 +57,9 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
 
     /// <summary>The reading pane flashes red after a wrong answer.</summary>
     public RectTransform WarningTarget => InUse ? paneRoot : null;
+
+    /// <summary>The monitor glows when the player can use this computer (the terminal object itself may only hold collider boxes).</summary>
+    public Transform HighlightRoot => screenSurface != null ? screenSurface : transform;
 
     /// <summary>While a message is open, the investigation UI sits over the inbox column (not needed while reading).</summary>
     public bool TryGetDockArea(out Rect area)
@@ -291,6 +294,12 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
     {
         answering = false;
         SetDetailsView(false);   // the feedback needs the room; the toggle lives in the hidden decision bar
+        // Keep the subject and sender for context; fold the body away so the explanation and clues fit
+        // (opening any email again shows it in full - ShowPane resets the view).
+        paneBody.gameObject.SetActive(false);
+        paneLink.gameObject.SetActive(false);
+        paneMeta.gameObject.SetActive(false);
+        if (paneDivider != null) paneDivider.SetActive(false);
         decisionBar.gameObject.SetActive(false);
         feedbackBox.gameObject.SetActive(true);
         UIKit.SetInteractable(exitButton, true);
@@ -309,7 +318,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         }
         pointsText.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {ScoringSystem.Clock(r.seconds)}";
         explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
-        scoreText.text = $"Score {score} / {maxScore}   ·   Messages reviewed {reviewed}/{total}";
+        scoreText.text = $"Score {score} / {maxScore}  ·  Reviewed {reviewed}/{total}";
         UIKit.SetLabel(backButton, reviewed >= total ? "Finish case" : "Back to inbox");
         UIKit.SetInteractable(backButton, true);
     }
@@ -761,11 +770,13 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         paneSubject = UIKit.Text(pane, "Subject", "", 32, UIKit.TextPrimary, bold: true);
         paneFrom = UIKit.Text(pane, "From", "", 23, UIKit.TextPrimary);
         paneMeta = UIKit.Text(pane, "Meta", "", 20, UIKit.TextSecondary);
+        foreach (var t in new[] { paneSubject, paneFrom, paneMeta }) t.gameObject.AddComponent<LayoutKeepHeight>();   // a long subject wraps instead of overlapping the sender
         paneDivider = UIKit.Divider(pane).gameObject;
         paneBody = UIKit.Text(pane, "Body", "", 25, UIKit.TextPrimary);
         paneBody.lineSpacing = 10f;
         FitToSpace(paneBody, 17f);
         paneLink = UIKit.Text(pane, "Link", "", 22, UIKit.Link);
+        paneLink.gameObject.AddComponent<LayoutKeepHeight>();
         paneDetails = UIKit.Text(pane, "Details", "", 21, UIKit.TextPrimary);
         paneDetails.lineSpacing = 4f;
         FitToSpace(paneDetails, 15f);
@@ -801,9 +812,17 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         pointsText = UIKit.Text(feedbackBox, "Points", "", 21, UIKit.TextPrimary);
         answerText = UIKit.Text(feedbackBox, "Answer", "", 21, UIKit.TextPrimary);
         explanationText = UIKit.Text(feedbackBox, "Why", "", 21, UIKit.TextPrimary);
-        scoreText = UIKit.Text(feedbackBox, "Score", "", 19, UIKit.TextSecondary);
-        backButton = UIKit.HudButton(feedbackBox, "Back to inbox", BackToInbox, UIKit.HudVariant.Primary, 24);
-        UIKit.Size(backButton, -1, 58);
+        FitToSpace(explanationText, 14f);   // the explanation + clue list takes the room left and shrinks to fit
+        foreach (var t in new[] { verdictText, pointsText, answerText }) t.gameObject.AddComponent<LayoutKeepHeight>();
+        // Score and the button share the bottom row to leave the explanation more room
+        var footer = UIKit.Rect("Footer", feedbackBox);
+        var fh = UIKit.Horizontal(footer, 14, TextAnchor.MiddleLeft);
+        fh.childForceExpandWidth = false;
+        UIKit.Size(footer, -1, 58).flexibleHeight = 0f;   // spare height goes to the explanation, not the button
+        scoreText = UIKit.Text(footer, "Score", "", 19, UIKit.TextSecondary, TextAlignmentOptions.MidlineLeft);
+        scoreText.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
+        backButton = UIKit.HudButton(footer, "Back to inbox", BackToInbox, UIKit.HudVariant.Primary, 24);
+        UIKit.Size(backButton, 240, 58);
 
         // Review (answered / old email)
         reviewBox = UIKit.Rect("Review", pane);
@@ -811,10 +830,12 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         UIKit.Vertical(reviewBox, 16, 8);
         reviewVerdict = UIKit.Text(reviewBox, "Verdict", "", 22, UIKit.TextPrimary, bold: true);
         reviewExplanation = UIKit.Text(reviewBox, "Why", "", 21, UIKit.TextSecondary);
+        foreach (var t in new[] { reviewVerdict, reviewExplanation }) t.gameObject.AddComponent<LayoutKeepHeight>();
 
         // Boxes keep their natural height; only the body/details text grows into spare space.
+        // The feedback box is the exception: the email body folds away while it shows, so it fills the pane.
         foreach (var box in new[] { decisionBar, feedbackBox, reviewBox })
-            box.gameObject.AddComponent<LayoutElement>().flexibleHeight = 0f;
+            box.gameObject.AddComponent<LayoutElement>().flexibleHeight = box == feedbackBox ? 1f : 0f;
 
         pane.gameObject.SetActive(false);
         decisionBar.gameObject.SetActive(false);
