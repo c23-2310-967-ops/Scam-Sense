@@ -17,7 +17,7 @@ using UnityEngine.UI;
 /// created automatically in front of the screen if left empty.
 /// </summary>
 [DefaultExecutionOrder(-90)]
-public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigationDock, IRecheckPresenter, IWarningTarget
+public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigationDock, IRecheckPresenter, IWarningTarget, IHighlightable
 {
     [Header("Screen")]
     [Tooltip("The monitor model (with Screen Submesh set) or a thin object covering the display area.")]
@@ -57,6 +57,9 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
 
     /// <summary>The reading pane flashes red after a wrong answer.</summary>
     public RectTransform WarningTarget => InUse ? paneRoot : null;
+
+    /// <summary>The monitor glows when the player can use this computer (the terminal object itself may only hold collider boxes).</summary>
+    public Transform HighlightRoot => screenSurface != null ? screenSurface : transform;
 
     /// <summary>While a message is open, the investigation UI sits over the inbox column (not needed while reading).</summary>
     public bool TryGetDockArea(out Rect area)
