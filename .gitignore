@@ -63,3 +63,6 @@ crashlytics-build.properties
 # Supabase connection settings (project URL + publishable key) - stay on this PC, never committed
 /Assets/Resources/SupabaseSettings.json
 /Assets/Resources/SupabaseSettings.json.meta
+
+# Test reports (written by Tools > Scam Sense > Run All Tests and Assets/Tests/run-tests.ps1)
+/[Tt]est[Rr]esults/
