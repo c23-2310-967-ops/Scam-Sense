@@ -1,0 +1,72 @@
+SCAM SENSE: THINK BEFORE YOU CLICK - RELEASE NOTES
+
+Project:        Scam Sense: Think Before You Click (BSIT Capstone)
+Version:        0.1.0
+Release Date:   2026-10-31
+Release Type:   Development (first controlled build)
+Platform:       Windows 10/11, 64-bit
+Source:         GitHub c23-2310-967-ops/Scam-Sense, Git tag v0.1.0
+                (the exact commit hash is in BUILD_INFO.txt)
+Built with:     Unity 6000.0.38f1
+
+
+INCLUDED IN THIS VERSION
+- Five playable rooms, each with a case briefing, its own messages and difficulty:
+  1 The First Case, 2 The Investigation, 3 The Digital Trap,
+  4 Digital Forensics Lab, 5 The Compromised Campus Network (32 messages in total)
+- In-game phone for texts and work chats; working computers with a mail app
+  for emails and captured web pages
+- Clickable email investigation (sender, subject, phrases, links) with finding
+  cards, a Details panel, case files and evidence stations
+- Feedback after every answer, wrong-answer consequences and a follow-up
+  re-check for recovery points
+- Level-based scoring with a fair reading timer, case grade, 1-3 stars and
+  score-based unlocking of the next room
+- Career progression: XP, 9 cybersecurity ranks and 10 achievements
+- Main menu: Play / Continue, Level Selection with previews, Career, Settings
+  (audio, display, quality, mouse sensitivity), How to Play, About,
+  Reset Progress, Quit; animated 3D room backdrop
+- Version number shown on the main menu (top-right corner)
+- Loading screen, transitions, mood lighting, soft-realism visuals and the
+  interaction highlight on objects that can be used with E
+- Local save of progress and settings on the PC
+- Online accounts (Supabase): play as guest, sign in or play offline, with
+  cloud sync of progress
+
+
+FIXED (during development of this version)
+- Text no longer overlaps on the computer's email screen
+- The two dining chairs in Room 1 can now be sat on
+- Case items that never glowed (static-batched objects) now show the
+  interaction highlight
+- Removed a hitch when a message arrives and per-frame memory garbage
+
+
+KNOWN ISSUES
+- The window title and the save location still use the project's working name
+  "Capstone" (HKEY_CURRENT_USER\Software\DefaultCompany\Capstone).
+- Online accounts: the database security rules have been tested, but guest
+  play, sign-up, sign-in and cloud sync have not been fully tested end to end
+  inside the game. Offline play does not need them.
+- The main-menu backdrop once showed a brown band over the room in the Unity
+  Editor; it could not be reproduced afterwards.
+- The game is not code-signed, so Windows SmartScreen may warn on first run.
+- Saving and loading are not yet covered by the automated tests.
+- The sources of a few third-party assets (phone and pen models, two desk
+  images, menu music) are still being confirmed.
+
+
+NOT YET INCLUDED
+- More scam cases (QR-code, fake job offer, social-media and voice scams)
+- Background music and voice-over in the rooms
+- Accessibility options (text size, colour-blind highlights, key remapping)
+- Filipino language option
+- Teacher / class mode and a leaderboard with server-checked scores
+- Android or other platforms
+
+
+INSTALLATION / RUNNING
+1. Extract ScamSense-v0.1.0.zip to a folder.
+2. Open the ScamSense-v0.1.0 folder and run ScamSense.exe.
+3. If Windows SmartScreen appears: More info > Run anyway.
+4. Choose PLAY on the main menu. See README.txt for controls.
