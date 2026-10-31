@@ -142,6 +142,7 @@ public class MainMenuUI : MonoBehaviour
         else Build(useShots);   // fallback: same UI, created at runtime
         BindRuntime();
         if (!panels.ContainsKey("resetprogress")) BuildResetProgress();   // menu baked before RESET PROGRESS existed
+        AddVersionLabel();
         RefreshProgress();
 
         // Account panels (guest / sign-in / cloud status) - in the scene under MainMenu Canvas/Panels.
@@ -152,6 +153,18 @@ public class MainMenuUI : MonoBehaviour
         StartCoroutine(Intro());
         StartCoroutine(FeedLoop());
         StartCoroutine(LoadBackdrop());
+    }
+
+    /// <summary>
+    /// "Version 0.1.0" in the top-right corner, from Player Settings > Version, so testers can tell which build they have.
+    /// Created at runtime (not baked into the scene) so it always shows the version of the build that is running.
+    /// </summary>
+    void AddVersionLabel()
+    {
+        if (root == null || root.Find("Version") != null) return;
+        var v = UIKit.Text(root, "Version", "Version " + Application.version, 18, new Color(1, 1, 1, 0.55f), TextAlignmentOptions.TopRight);
+        UIKit.Place(v.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-120, -40), new Vector2(400, 26));
+        v.raycastTarget = false;
     }
 
     /// <summary>Things that can't be saved in a scene: the panel lookup and hover sounds (C# callbacks).</summary>

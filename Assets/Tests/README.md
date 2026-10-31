@@ -21,6 +21,7 @@ The tests never press Play, never save anything and never touch PlayerPrefs or t
 | `Editor/LevelDataTests.cs` | Every room is in the catalog and the build, messages have an id, body, explanation and (for emails) a subject, ids are unique, each room mixes scams and real messages, star and unlock scores are reachable |
 | `Editor/SceneIntegrityTests.cs` | In every scene: no missing scripts, no objects without a mesh or material, every computer has a screen, every chair has seat and exit points |
 | `Editor/UILayoutTests.cs` | Crowded panels do not draw text lines over each other (the email-screen bug), UI panels keep their soft depth, the interaction highlight shader loads |
+| `Editor/ReleaseTests.cs` | The version is MAJOR.MINOR.PATCH, release notes exist for that version, the build target is Windows 64-bit |
 
 ## Adding a test
 

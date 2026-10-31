@@ -6,7 +6,7 @@
 ![C#](https://img.shields.io/badge/C%23-scripting-512BD4)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
 ![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?logo=supabase)
-![Tests](https://img.shields.io/badge/tests-51%20automated-brightgreen)
+![Tests](https://img.shields.io/badge/tests-55%20automated-brightgreen)
 ![Status](https://img.shields.io/badge/status-in%20development-orange)
 
 ![Level 1 - The First Case](Assets/Art/LevelPreviews/level_1_preview.png)
@@ -234,9 +234,7 @@ The game runs without this, with progress saved on the PC only. To enable accoun
 Open `Assets/Scenes/Menu.unity` and press **Play**. All rooms are already in **File → Build Profiles → Scene List**.
 
 ### 6. Build for Windows
-1. Open **File → Build Profiles** and select **Windows**.
-2. Check that `Menu` is the first scene in the list.
-3. Click **Build** and choose an output folder (for example `Builds/`, which is git-ignored).
+Use **Tools → Scam Sense → Build Release**. It builds the version set in **Project Settings → Player → Version** into `Builds/ScamSense-vX.Y.Z/` (git-ignored), adds `README.txt`, `RELEASE_NOTES.txt` and `BUILD_INFO.txt` (version and source commit), and zips it as `Builds/ScamSense-vX.Y.Z.zip`. The full release steps (versioning, testing the packaged build, tagging) are in [Docs/RELEASE_PROCESS.md](Docs/RELEASE_PROCESS.md).
 
 ### Android
 Android is **not supported** at the moment. The project is developed and tested for Windows only, and the controls are designed for keyboard and mouse.
@@ -335,7 +333,7 @@ Credentials are never stored in the repository. See [Docs/SupabaseAccounts.md](D
 
 ## Testing
 
-The project has **51 automated edit-mode tests** in `Assets/Tests`, run after every finished feature to catch regressions.
+The project has **55 automated edit-mode tests** in `Assets/Tests`, run after every finished feature to catch regressions.
 
 | How | Steps |
 |---|---|
@@ -349,10 +347,11 @@ The project has **51 automated edit-mode tests** in `Assets/Tests`, run after ev
 | `LevelDataTests.cs` | Every room is in the catalog and the build; messages are complete; ids are unique; each room mixes scams and real messages; stars and unlock scores are reachable |
 | `SceneIntegrityTests.cs` | In every scene: no missing scripts, no objects without a mesh or material, every computer has a screen, every chair can be sat on |
 | `UILayoutTests.cs` | Crowded panels don't draw text over each other; UI panels keep their soft depth; the highlight shader loads |
+| `ReleaseTests.cs` | The version is `MAJOR.MINOR.PATCH`, release notes exist for it, and the build target is Windows 64-bit |
 
 The tests never enter Play Mode and never touch saved progress or the online account. Save/load is still checked by hand (see [Assets/Tests/README.md](Assets/Tests/README.md)).
 
-**Manual checks before a release:** play each room from the menu, answer right and wrong, use **REVIEW EVIDENCE**, confirm unlocking in Level Selection, restart the game to confirm progress was saved, and confirm the Console shows no errors.
+**Manual checks before a release** (on the packaged build, see [Docs/RELEASE_PROCESS.md](Docs/RELEASE_PROCESS.md)): play each room from the menu, answer right and wrong, use **REVIEW EVIDENCE**, confirm unlocking in Level Selection, restart the game to and confirm progress was saved.
 
 ## Development Status
 
@@ -360,10 +359,10 @@ The tests never enter Play Mode and never touch saved progress or the online acc
 |---|---|
 | ✅ **Completed and functional** | Five playable rooms with briefings, messages and feedback · phone and computer message reading · clickable email investigation · case files, evidence stations and the final case · level-based scoring, reading timer, penalties and recovery · case grade, stars and score-based unlocking · career ranks and achievements · main menu, settings, Level Selection and Reset Progress · local save · soft-realism visuals, mood lighting and interaction highlight · loading screen and transitions · automated regression tests |
 | 🛠️ **In development** | Supabase accounts: the code and database schema are in place; guest play, sign-up, sign-in and cloud sync still need full end-to-end testing |
-| 📋 **Planned** | More scam cases and scenarios · voice acting and background music for the rooms · a downloadable Windows build |
+| 📋 **Planned** | More scam cases and scenarios · voice acting and background music for the rooms |
 
 ### Known limitations
-- **Windows only**, and no downloadable build has been released yet.
+- **Windows only.** The first controlled release is v0.1.0 (a development build); see [Docs/Releases/](Docs/Releases/).
 - **Save/load** isn't covered by the automated tests yet (it writes straight to PlayerPrefs).
 - **Some third-party asset sources are unconfirmed:** the phone and ink pen models, two desk images and the menu music. See [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md).
 
@@ -403,6 +402,7 @@ The tests never enter Play Mode and never touch saved progress or the online acc
 | [Docs/SupabaseAccounts.md](Docs/SupabaseAccounts.md) | Setting up online accounts and the security model |
 | [Docs/VisualUpgrade.md](Docs/VisualUpgrade.md), [Docs/Performance.md](Docs/Performance.md) | Lighting and visual changes; performance measurements |
 | [Assets/Tests/README.md](Assets/Tests/README.md) | Running and adding automated tests |
+| [Docs/RELEASE_PROCESS.md](Docs/RELEASE_PROCESS.md), [Docs/Releases/](Docs/Releases/) | Version numbers, building, testing and tagging a release; release notes |
 | `Docs/Level1_Implementation.md` … `Docs/Level5_MacLab.md` | Notes for each room |
 
 ## Contributing
