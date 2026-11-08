@@ -358,7 +358,7 @@ The project has **55 automated edit-mode tests** in `Assets/Tests`, run after ev
 
 | How | Steps |
 |---|---|
-| In Unity (easiest) | **Tools → Scam Sense → Run All Tests**. About 30 seconds; the Console shows the summary and the report is written to `TestResults/latest.txt`. |
+| In Unity (easiest) | **Tools → Scam Sense → Run All Tests**. About 20 seconds; the Console shows the summary and the report is written to `TestResults/latest.txt`. |
 | Test Runner window | **Window → General → Test Runner → EditMode → Run All** |
 | Command line (Unity closed) | `powershell -ExecutionPolicy Bypass -File Assets/Tests/run-tests.ps1` |
 
