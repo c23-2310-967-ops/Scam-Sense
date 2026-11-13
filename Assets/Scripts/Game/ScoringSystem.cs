@@ -49,6 +49,7 @@ public class ScoringSystem : MonoBehaviour
     private readonly HashSet<string> recoveredIds = new HashSet<string>();
     private readonly HashSet<string> hintIds = new HashSet<string>();
     private readonly Dictionary<string, int> evidenceById = new Dictionary<string, int>();
+    private readonly Dictionary<string, (MessageVerdict chosen, bool hint)> recoveryAnswers = new Dictionary<string, (MessageVerdict, bool)>();
 
     public event Action<AnswerResult> AnswerRecorded;
 
@@ -94,6 +95,7 @@ public class ScoringSystem : MonoBehaviour
         recoveredIds.Clear();
         hintIds.Clear();
         evidenceById.Clear();
+        recoveryAnswers.Clear();
         PenaltyPoints = RecoveryPointsEarned = MissedRisks = FalseAlarms = EvidenceFound = 0;
     }
 
@@ -220,6 +222,15 @@ public class ScoringSystem : MonoBehaviour
         return false;
     }
 
+    /// <summary>The follow-up answer given for this message, if the player answered one (sent to the server with the run).</summary>
+    public bool TryGetRecovery(string messageId, out MessageVerdict chosen, out bool hintUsed)
+    {
+        bool found = recoveryAnswers.TryGetValue(messageId ?? "", out var r);
+        chosen = r.chosen;
+        hintUsed = r.hint;
+        return found;
+    }
+
     /// <summary>Uses up the recovery attempt without answering (the player skipped the follow-up).</summary>
     public void ForfeitRecovery(string messageId) { if (!string.IsNullOrEmpty(messageId)) recoveryAttempts.Add(messageId); }
 
@@ -232,6 +243,7 @@ public class ScoringSystem : MonoBehaviour
         result = default;
         if (message == null || !CanRecover(message.id)) return false;
         recoveryAttempts.Add(message.id);
+        recoveryAnswers[message.id] = (chosen, hintUsed);
         bool correct = chosen == message.correctVerdict;
         result = new AnswerResult
         {

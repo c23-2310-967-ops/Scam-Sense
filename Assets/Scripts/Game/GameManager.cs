@@ -158,7 +158,7 @@ public class GameManager : MonoBehaviour
         // handles both, plus the run history for the cloud.
         var careerBefore = CareerSystem.TakeSnapshot(level.levelId);
         var saved = ProgressController.SaveRun(level, score, scoring.MaxScoreFor(level.MessageCount), stars, met,
-                                               scoring.CorrectCount, scoring.TotalAnswerTime);
+                                               scoring.CorrectCount, scoring.TotalAnswerTime, GameResultLog.AnswersFrom(scoring));
 
         var r = new LevelResult
         {

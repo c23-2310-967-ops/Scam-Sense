@@ -6,17 +6,29 @@ using UnityEngine;
 /// Finished runs waiting to be uploaded to Supabase's game_results table (history only; progress and
 /// unlocks live in LocalDataManager). Kept per save profile in PlayerPrefs, so results recorded offline
 /// upload later, and each run has its own run_id so an upload that is retried is never stored twice.
+/// Each run keeps the player's answers: the server (submit_game_result) recalculates the score from them with
+/// its own answer key, so the stored result never depends on a score the game reports.
 /// </summary>
 public static class GameResultLog
 {
     const string KeyPrefix = "scamsense_pending_results";
     const int MaxPending = 200;   // oldest dropped beyond this (the progress itself is never lost)
 
-    /// <summary>One row of public.game_results (field names match the columns).</summary>
+    /// <summary>One answer as the server expects it: the first verdict, its reading time and the follow-up re-check, if any.</summary>
+    [Serializable]
+    public class Answer
+    {
+        public string id;
+        public string verdict;            // "scam" or "legit"
+        public float seconds;
+        public string recovery_verdict;   // "" when there was no follow-up answer
+        public bool recovery_hint;
+    }
+
+    /// <summary>A finished run (field names match public.game_results; score and stars are the game's own result).</summary>
     [Serializable]
     public class Row
     {
-        public string user_id;
         public string run_id;
         public string level_id;
         public int score;
@@ -27,14 +39,65 @@ public static class GameResultLog
         public bool passed;
         public float total_answer_seconds;
         public string completed_at;   // ISO 8601 UTC
+        public List<Answer> answers = new List<Answer>();   // empty for runs queued before the server score check
     }
+
+    /// <summary>Arguments of the submit_game_result database function (names match its parameters).</summary>
+    [Serializable]
+    public class SubmitRequest
+    {
+        public string p_run_id;
+        public string p_level_id;
+        public List<Answer> p_answers;
+        public string p_completed_at;
+    }
+
+    /// <summary>What submit_game_result returns: the result the server calculated.</summary>
+    [Serializable]
+    public class ServerResult
+    {
+        public int score;
+        public int max_score;
+        public int stars;
+        public bool passed;
+        public int correct_answers;
+        public int total_questions;
+    }
+
+    public static string Verdict(MessageVerdict v) => v == MessageVerdict.Scam ? "scam" : "legit";
+
+    /// <summary>The run's answers in the order they were given, with each follow-up re-check.</summary>
+    public static List<Answer> AnswersFrom(ScoringSystem scoring)
+    {
+        var list = new List<Answer>();
+        foreach (var r in scoring.Results)
+        {
+            if (r.message == null) continue;
+            bool rechecked = scoring.TryGetRecovery(r.message.id, out var again, out bool hint);
+            list.Add(new Answer
+            {
+                id = r.message.id,
+                verdict = Verdict(r.chosen),
+                seconds = r.seconds,   // exactly what the game scored with, so the server gets the same points
+                recovery_verdict = rechecked ? Verdict(again) : "",
+                recovery_hint = rechecked && hint,
+            });
+        }
+        return list;
+    }
+
+    public static string SubmitJson(Row row) => JsonUtility.ToJson(new SubmitRequest
+    {
+        p_run_id = row.run_id, p_level_id = row.level_id, p_answers = row.answers, p_completed_at = row.completed_at
+    });
 
     [Serializable] class Pending { public List<Row> rows = new List<Row>(); }
 
     static string KeyFor(string profile) => string.IsNullOrEmpty(profile) ? KeyPrefix : KeyPrefix + "_" + profile;
 
     /// <summary>Queues a finished run for the active save profile.</summary>
-    public static void Add(string levelId, int score, int maxScore, int stars, int correct, int total, bool passed, float answerSeconds)
+    public static void Add(string levelId, int score, int maxScore, int stars, int correct, int total, bool passed, float answerSeconds,
+                           List<Answer> answers)
     {
         var p = Read(LocalDataManager.ProfileId);
         p.rows.Add(new Row
@@ -49,6 +112,7 @@ public static class GameResultLog
             passed = passed,
             total_answer_seconds = Mathf.Max(0f, answerSeconds),
             completed_at = DateTime.UtcNow.ToString("o"),
+            answers = answers ?? new List<Answer>(),
         });
         if (p.rows.Count > MaxPending) p.rows.RemoveRange(0, p.rows.Count - MaxPending);
         Write(LocalDataManager.ProfileId, p);

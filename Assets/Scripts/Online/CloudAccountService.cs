@@ -438,14 +438,8 @@ public class CloudAccountService : MonoBehaviour
             if (!SamePlayer(uid)) { abandoned = true; return; }
             LocalDataManager.MarkSynced(revision);
 
-            // 4) Finished runs (history). run_id makes a retried upload harmless.
-            var pending = new List<GameResultLog.Row>(GameResultLog.PendingFor(uid));
-            if (pending.Count > 0)
-            {
-                foreach (var p in pending) p.user_id = uid;
-                await client.UpsertAsync("game_results", SupabaseClient.ToJsonArray(pending), "user_id,run_id", ignoreDuplicates: true);
-                GameResultLog.MarkUploaded(uid, pending);
-            }
+            // 4) Finished runs (history), each scored by the server from its answers. run_id makes a retried upload harmless.
+            await SubmitResultsAsync(uid);
             LastSyncError = null;
         }
         catch (Exception e)
@@ -462,6 +456,46 @@ public class CloudAccountService : MonoBehaviour
 
         // The player changed mid-sync: sync the new player's own save instead (never the old one's data).
         if (abandoned && SignedIn) _ = SyncAsync();
+    }
+
+    /// <summary>
+    /// Sends each queued run's answers to submit_game_result, which recalculates and stores the result with the
+    /// server's own answer key (the game can't write a score directly). A run the server rejects (e.g. queued by an
+    /// older version without answers, or for a room the server doesn't know) is dropped instead of retried forever;
+    /// a network or sign-in problem leaves the remaining runs queued for the next sync.
+    /// </summary>
+    async Task SubmitResultsAsync(string uid)
+    {
+        var pending = new List<GameResultLog.Row>(GameResultLog.PendingFor(uid));
+        var done = new List<GameResultLog.Row>();
+        try
+        {
+            foreach (var row in pending)
+            {
+                if (row.answers == null || row.answers.Count == 0)
+                {
+                    Debug.Log($"CloudAccountService: run {row.run_id} has no answers (queued by an older version); not uploaded.");
+                    done.Add(row);
+                    continue;
+                }
+                try
+                {
+                    string json = await client.RpcAsync("submit_game_result", GameResultLog.SubmitJson(row));
+                    var server = JsonUtility.FromJson<GameResultLog.ServerResult>(json);
+                    if (server != null && server.score != row.score)
+                        Debug.LogWarning($"CloudAccountService: {row.level_id} scored {row.score} in the game but {server.score} on the server; the server's score is stored.");
+                }
+                catch (SupabaseException e) when (e.Status == 400 && !e.IsNetwork)
+                {
+                    Debug.LogWarning($"CloudAccountService: the server rejected run {row.run_id} ({e.Message}); it won't be retried.");
+                }
+                done.Add(row);
+            }
+        }
+        finally
+        {
+            if (done.Count > 0) GameResultLog.MarkUploaded(uid, done);
+        }
     }
 
     static LocalDataManager.LevelProgress ToLocal(LevelRow r) => new LocalDataManager.LevelProgress

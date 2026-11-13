@@ -179,6 +179,9 @@ public class SupabaseClient
 
     public Task DeleteAsync(string pathAndQuery) => SendAsync("DELETE", "/rest/v1/" + pathAndQuery, null, prefer: "return=minimal");
 
+    /// <summary>Calls a database function (POST /rest/v1/rpc/{function}) with named arguments. Returns its JSON result.</summary>
+    public Task<string> RpcAsync(string function, string jsonArguments) => SendAsync("POST", "/rest/v1/rpc/" + function, jsonArguments);
+
     /// <summary>Reads a JSON array into a list (JsonUtility needs an object at the top level).</summary>
     public static List<T> ParseArray<T>(string jsonArray)
     {

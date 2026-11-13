@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 /// <summary>
 /// Coordinates saving and loading a player's room progress, so the game flow (GameManager) doesn't talk to the
 /// storage classes directly.
@@ -26,12 +28,12 @@ public static class ProgressController
     /// unlocks the next room when the unlock score was met. Unlocking depends on the score only, never on stars.
     /// </summary>
     public static SaveOutcome SaveRun(LevelDefinition level, int score, int maxScore, int stars, bool metUnlockScore,
-                                      int correct, float answerSeconds)
+                                      int correct, float answerSeconds, List<GameResultLog.Answer> answers)
     {
         bool hasNext = !string.IsNullOrEmpty(level.nextLevelId);
         var outcome = new SaveOutcome { nextWasUnlocked = hasNext && IsUnlocked(level.nextLevelId) };
 
-        GameResultLog.Add(level.levelId, score, maxScore, stars, correct, level.MessageCount, metUnlockScore, answerSeconds);
+        GameResultLog.Add(level.levelId, score, maxScore, stars, correct, level.MessageCount, metUnlockScore, answerSeconds, answers);
         outcome.progress = LocalDataManager.RecordResult(level.levelId, score, stars, metUnlockScore);
         if (metUnlockScore && hasNext) LocalDataManager.Unlock(level.nextLevelId);
 
