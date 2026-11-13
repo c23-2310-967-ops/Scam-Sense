@@ -11,7 +11,8 @@ before, so nobody has to re-test everything by hand.
 - **Command line (Unity closed):** `powershell -ExecutionPolicy Bypass -File Assets/Tests/run-tests.ps1`
 
 Save your scene first: the scene tests open each scene in turn (read-only) and reopen yours afterwards.
-The tests never press Play, never save anything and never touch PlayerPrefs or the online account.
+The tests never press Play and never touch the online account. Only `SecurityNegativeTests` writes to the editor's
+PlayerPrefs, under test-only profile names that it deletes afterwards (the player's own saves are left alone).
 
 ## What is tested
 
@@ -21,6 +22,7 @@ The tests never press Play, never save anything and never touch PlayerPrefs or t
 | `Editor/LevelDataTests.cs` | Every room is in the catalog and the build, messages have an id, body, explanation and (for emails) a subject, ids are unique, each room mixes scams and real messages, star and unlock scores are reachable |
 | `Editor/SceneIntegrityTests.cs` | In every scene: no missing scripts, no objects without a mesh or material, every computer has a screen, every chair has seat and exit points |
 | `Editor/UILayoutTests.cs` | Crowded panels do not draw text lines over each other (the email-screen bug), UI panels keep their soft depth, the interaction highlight shader loads |
+| `Editor/SecurityNegativeTests.cs` | Invalid sign-up input is rejected before any request, a corrupt save starts empty without a crash, a sync to an unreachable server keeps progress and the queued run, and (run on its own with `Assets/Resources/SupabaseSettings.json` set aside) a missing settings file leaves the game playable offline |
 | `Editor/ReleaseTests.cs` | The version is MAJOR.MINOR.PATCH, release notes exist for that version, the build target is Windows 64-bit |
 
 ## Adding a test
