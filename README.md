@@ -6,7 +6,7 @@
 ![C#](https://img.shields.io/badge/C%23-scripting-512BD4)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
 ![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?logo=supabase)
-![Tests](https://img.shields.io/badge/tests-55%20automated-brightgreen)
+![Tests](https://img.shields.io/badge/tests-65%20automated-brightgreen)
 ![Status](https://img.shields.io/badge/status-in%20development-orange)
 [![Release](https://img.shields.io/badge/release-v0.1.0%20(pre--release)-blue)](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0)
 
@@ -207,7 +207,7 @@ The game targets **Windows PC** (Unity Standalone, 64-bit). The default window i
 | Input | Keyboard and mouse | Keyboard and mouse |
 | Internet | Not required (offline play) | Needed only for online accounts and cloud sync |
 
-The minimum follows Unity 6's Windows player requirements. The recommended row is based on the team's test laptop (Ryzen 5 4500U, integrated Radeon graphics, Direct3D 11), which averaged about 12.6 ms per frame in Room 1 at 1600×900 on Ultra quality (see [Docs/Performance.md](Docs/Performance.md)). It has not been benchmarked on other hardware.
+The minimum follows Unity 6's Windows player requirements. The recommended row is based on the team's test laptop (Ryzen 5 4500U, integrated Radeon graphics, Direct3D 11), which averaged 11.4–13.1 ms per frame (about 76–88 FPS) in Room 1 and 6.5–8.2 ms in Rooms 2–5, at 1600×900 on Very High quality with VSync off, and used under 600 MB of memory (benchmark build, 14 Nov 2026; see [Docs/Performance.md](Docs/Performance.md)). It has not been benchmarked on other hardware.
 
 **To develop the project:** Unity Hub, Unity Editor 6000.0.38f1 with Windows Build Support, Git, and a Windows 10/11 64-bit PC with 8 GB RAM or more.
 
@@ -336,7 +336,7 @@ Room scene ── GameManager ── BriefingUI                    │
 |---|---|
 | Technology | Supabase (Postgres + Auth), called over HTTPS with `UnityWebRequest` |
 | Authentication | **Guest** (Supabase anonymous sign-in: a real, temporary user), **email + password** accounts with a display name, and **play offline** |
-| Security | **Row Level Security** on every table: each player can read and write only their own rows. The game uses only the public (publishable) key, from a git-ignored file. |
+| Security | **Row Level Security** on every table: each player can read and write only their own rows. The game uses only the public (publishable) key, from a git-ignored file. Finished runs are **scored by the server** from the player's answers, so the game can't upload a made-up score. |
 | Offline | Finished runs are queued on the PC and uploaded when the player is online again. |
 
 **Tables** (schema in `supabase/migrations/`)
@@ -346,15 +346,19 @@ Room scene ── GameManager ── BriefingUI                    │
 | `profiles` | One row per player: display name and the time of the last progress reset |
 | `level_progress` | One row per player per room: unlocked, completed, passed, best and last score and stars, XP, times completed |
 | `achievements` | Achievements a player has unlocked, and when |
-| `game_results` | History of finished runs: score, max score, stars, correct answers, passed, total answer time (duplicate uploads are rejected) |
+| `game_results` | History of finished runs: score, max score, stars, correct answers, passed, total answer time and the scored answers (duplicate uploads are rejected). Written only by the database function `submit_game_result`. |
 
-**Leaderboard:** not implemented. Each player can only read their own results, and scores are sent by the game client, so the data suits progress tracking rather than a competitive leaderboard.
+**Server score check:** the game sends each run's answers to `submit_game_result`, which recalculates the result with the server's own copy of the rules and answer key (`scoring.compute_result`, the same formula as `ScoringSystem.cs`) and stores that. Direct inserts into `game_results` are closed. The answer key is exported from the Level assets with **Tools → Scam Sense → Export Server Scoring Key**, and `ServerScoringTests` fail if it falls out of step.
+
+> **Before releasing this:** apply `supabase/migrations/20261104020000_server_score_check.sql` and `20261104024122_scoring_key.sql` to the Supabase project first. Until then the live database still accepts scores sent by the game (confirmed by a test on 14 Nov 2026). Once they are applied, v0.1.0 can no longer upload run history, so this ships as **0.2.0**.
+
+**Leaderboard:** not implemented. Each player can only read their own results. Run history is scored by the server, but best scores in `level_progress` still come from the game, so they should be derived from server-scored runs before any leaderboard is added.
 
 Credentials are never stored in the repository. See [Docs/SupabaseAccounts.md](Docs/SupabaseAccounts.md) for the setup and the security model.
 
 ## Testing
 
-The project has **55 automated edit-mode tests** in `Assets/Tests`, run after every finished feature to catch regressions.
+The project has **65 automated edit-mode tests** in `Assets/Tests`, plus one that runs on its own, run after every finished feature to catch regressions.
 
 | How | Steps |
 |---|---|
@@ -369,8 +373,10 @@ The project has **55 automated edit-mode tests** in `Assets/Tests`, run after ev
 | `SceneIntegrityTests.cs` | In every scene: no missing scripts, no objects without a mesh or material, every computer has a screen, every chair can be sat on |
 | `UILayoutTests.cs` | Crowded panels don't draw text over each other; UI panels keep their soft depth; the highlight shader loads |
 | `ReleaseTests.cs` | The version is `MAJOR.MINOR.PATCH`, release notes exist for it, and the build target is Windows 64-bit |
+| `ServerScoringTests.cs` | The exported server answer key matches the Level assets; answers are sent in the shape `submit_game_result` expects |
+| `SecurityNegativeTests.cs` | Invalid sign-up input is rejected before any request; a corrupt save starts empty without a crash and the next run saves and reads back; a sync to an unreachable server keeps progress and the queued run; a missing Supabase settings file leaves the game playable offline (run on its own with the file set aside) |
 
-The tests never enter Play Mode and never touch saved progress or the online account. Save/load is still checked by hand (see [Assets/Tests/README.md](Assets/Tests/README.md)).
+The tests never enter Play Mode and never contact the online account. Only `SecurityNegativeTests` writes saves, under test-only profiles in the editor that it deletes afterwards. Full save/load through the menus is still checked by hand (see [Assets/Tests/README.md](Assets/Tests/README.md)).
 
 **Manual checks before a release** (on the packaged build, see [Docs/RELEASE_PROCESS.md](Docs/RELEASE_PROCESS.md)): play each room from the menu, answer right and wrong, use **REVIEW EVIDENCE**, confirm unlocking in Level Selection, restart the game to and confirm progress was saved.
 
@@ -389,14 +395,14 @@ Every release is built from the reviewed `main` with **Tools → Scam Sense → 
 | Status | Features |
 |---|---|
 | ✅ **Completed and functional** | Five playable rooms with briefings, messages and feedback · phone and computer message reading · clickable email investigation · case files, evidence stations and the final case · level-based scoring, reading timer, penalties and recovery · case grade, stars and score-based unlocking · career ranks and achievements · main menu, settings, Level Selection and Reset Progress · local save · soft-realism visuals, mood lighting and interaction highlight · loading screen and transitions · automated regression tests · versioned Windows release (v0.1.0) |
-| 🛠️ **In development** | Supabase accounts: guest play and sign-in passed the v0.1.0 release tests; sign-up and cloud sync across PCs still need full end-to-end testing |
+| 🛠️ **In development** | Supabase accounts: guest play and sign-in passed the v0.1.0 release tests; sign-up and cloud sync across PCs still need full end-to-end testing · server score check: built and tested in the game, database migrations not yet applied (planned for 0.2.0) |
 | 📋 **Planned** | More scam cases and scenarios · voice acting and background music for the rooms |
 
 ### Known limitations
 - **Windows only.** v0.1.0 is a development pre-release, not the final capstone version.
 - **Not code-signed:** Windows SmartScreen may warn the first time the game is run.
 - The window title and save location still use the working name **"Capstone"**; this will change before 1.0.0, together with a plan for existing saves.
-- **Save/load** isn't covered by the automated tests yet (it writes straight to PlayerPrefs).
+- **Save/load** is only partly covered by the automated tests (a corrupt save, and a save read back); saving through the menus is still checked by hand.
 - **Some third-party asset sources are unconfirmed:** the phone and ink pen models, two desk images and the menu music. See [Docs/ASSET_INVENTORY.md](Docs/ASSET_INVENTORY.md).
 
 ## Future Improvements
@@ -405,8 +411,8 @@ Every release is built from the reviewed `main` with **Tools → Scam Sense → 
 - **Accessibility:** adjustable text size, colour-blind-friendly highlights, subtitles for sounds, and remappable keys.
 - **Filipino language option** for local players.
 - **Teacher / class mode:** a class code and a dashboard where an instructor sees each student's progress and common mistakes.
-- **Trusted scoring:** validate results on the server (for example with a Supabase Edge Function) before adding any leaderboard.
-- **Save/load tests:** move PlayerPrefs access behind a small storage interface so progress saving can be tested automatically.
+- **Trusted best scores:** run history is now scored by the server; derive `level_progress` best scores from those runs too before adding any leaderboard.
+- **More save/load tests:** move PlayerPrefs access behind a small storage interface so the whole progress flow can be tested automatically.
 - **Performance:** baked lighting for the larger rooms to reduce the GPU cost of many realtime lights.
 - **Background music and voice-over** for briefings and feedback.
 
