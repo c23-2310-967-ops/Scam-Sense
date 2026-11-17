@@ -221,7 +221,7 @@ The latest build is **[v0.1.0](https://github.com/c23-2310-967-ops/Scam-Sense/re
 4. If Windows shows *"Windows protected your PC"*, click **More info → Run anyway**. The game isn't code-signed yet.
 5. Choose **PLAY**. Room 1 is always open; each later room unlocks when you reach the previous room's passing score.
 
-The ZIP also contains `README.txt` (controls and requirements), `RELEASE_NOTES.txt` and `BUILD_INFO.txt`, which names the exact source commit. The version is shown in the top-right corner of the main menu. Progress is saved on the PC, and online accounts need an internet connection.
+The ZIP also contains `README.txt` (controls and requirements), `RELEASE_NOTES.txt` and `BUILD_INFO.txt`, which names the exact source commit. The version is shown in the bottom-right corner of the main menu (top-right in v0.1.0). Progress is saved on the PC, and online accounts need an internet connection.
 
 **SHA-256 of `ScamSense-v0.1.0.zip`:** `170b2d85a5bed1a8727a45316c2fffdbfa2a505e2aa8a0a7f552c90c62c277f1`
 

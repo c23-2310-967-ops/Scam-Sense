@@ -163,7 +163,9 @@ public class MainMenuUI : MonoBehaviour
     {
         if (root == null || root.Find("Version") != null) return;
         var v = UIKit.Text(root, "Version", "Version " + Application.version, 18, new Color(1, 1, 1, 0.55f), TextAlignmentOptions.TopRight);
-        UIKit.Place(v.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-120, -40), new Vector2(400, 26));
+        // Bottom-right, just above the footer note: the top-right corner belongs to the account status chip.
+        v.alignment = TextAlignmentOptions.BottomRight;
+        UIKit.Place(v.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-80, 46), new Vector2(400, 26));
         v.raycastTarget = false;
     }
 
