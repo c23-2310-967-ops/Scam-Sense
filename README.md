@@ -8,13 +8,13 @@
 ![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?logo=supabase)
 ![Tests](https://img.shields.io/badge/tests-55%20automated-brightgreen)
 ![Status](https://img.shields.io/badge/status-in%20development-orange)
-[![Release](https://img.shields.io/badge/release-v0.1.0%20(pre--release)-blue)](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0)
+[![Release](https://img.shields.io/badge/release-v0.1.1%20(pre--release)-blue)](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.1)
 
 ![Level 1 - The First Case](Assets/Art/LevelPreviews/level_1_preview.png)
 
 You are a cybercrime investigator. Texts, emails, work chats and web pages arrive while you explore five 3D rooms, from a family home to a university computer lab. Inspect each one, find the warning signs, and decide: **SCAM** or **LEGITIMATE**. Every answer explains *why*, so players learn the habits that keep them safe online.
 
-**▶ Download:** [Scam Sense v0.1.0 for Windows](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0) (development pre-release). See [Download and Play](#download-and-play).
+**▶ Download:** [Scam Sense v0.1.1 for Windows](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.1) (development pre-release). See [Download and Play](#download-and-play).
 
 ## Table of Contents
 1. [About the Game](#about-the-game)
@@ -213,17 +213,17 @@ The minimum follows Unity 6's Windows player requirements. The recommended row i
 
 ## Download and Play
 
-The latest build is **[v0.1.0](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0)**, released 31 Oct 2026. It is a development pre-release, the first controlled build of the game.
+The latest build is **[v0.1.1](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.1)**, released 17 Nov 2026. It is a development pre-release: a patch of v0.1.0 with a new game icon, a title splash before the main menu and small menu fixes. Gameplay and saves are unchanged.
 
-1. Download **`ScamSense-v0.1.0.zip`** (56 MB) from the [release page](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0).
+1. Download **`ScamSense-v0.1.1.zip`** (56 MB) from the [release page](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.1).
 2. Extract the whole ZIP to a folder. Don't run the game from inside the ZIP.
-3. Open `ScamSense-v0.1.0` and double-click **`ScamSense.exe`**. Nothing needs to be installed.
+3. Open `ScamSense-v0.1.1` and double-click **`ScamSense.exe`**. Nothing needs to be installed.
 4. If Windows shows *"Windows protected your PC"*, click **More info → Run anyway**. The game isn't code-signed yet.
 5. Choose **PLAY**. Room 1 is always open; each later room unlocks when you reach the previous room's passing score.
 
-The ZIP also contains `README.txt` (controls and requirements), `RELEASE_NOTES.txt` and `BUILD_INFO.txt`, which names the exact source commit. The version is shown in the top-right corner of the main menu. Progress is saved on the PC, and online accounts need an internet connection.
+The ZIP also contains `README.txt` (controls and requirements), `RELEASE_NOTES.txt` and `BUILD_INFO.txt`, which names the exact source commit. The version is shown in the bottom-right corner of the main menu (top-right in v0.1.0). Progress is saved on the PC, and online accounts need an internet connection.
 
-**SHA-256 of `ScamSense-v0.1.0.zip`:** `170b2d85a5bed1a8727a45316c2fffdbfa2a505e2aa8a0a7f552c90c62c277f1`
+**SHA-256 of `ScamSense-v0.1.1.zip`:** `f95639060b13230a25623a7c4ffbd01fcbe9b70c5937b1a473cfd42a78f5af93`
 
 ## Installation and Setup
 
@@ -380,9 +380,10 @@ Versions use **MAJOR.MINOR.PATCH**: a bug fix raises PATCH (0.1.0 → 0.1.1), a 
 
 | Version | Date | Type | Source | Download |
 |---|---|---|---|---|
-| **0.1.0** | 31 Oct 2026 | Development (pre-release) | tag `v0.1.0`, commit `1510aed` | [Release page](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0) · [Release notes](Docs/Releases/RELEASE_NOTES_v0.1.0.txt) |
+| **0.1.1** | 17 Nov 2026 | Development (pre-release), patch | tag `v0.1.1`, commit `a51c8ad` | [Release page](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.1) · [Release notes](Docs/Releases/RELEASE_NOTES_v0.1.1.txt) |
+| 0.1.0 | 31 Oct 2026 | Development (pre-release) | tag `v0.1.0`, commit `1510aed` | [Release page](https://github.com/c23-2310-967-ops/Scam-Sense/releases/tag/v0.1.0) · [Release notes](Docs/Releases/RELEASE_NOTES_v0.1.0.txt) |
 
-Every release is built from the reviewed `main` with **Tools → Scam Sense → Build Release**, tested as a packaged build (not in the editor), tagged in Git and published on GitHub Releases. The steps are in [Docs/RELEASE_PROCESS.md](Docs/RELEASE_PROCESS.md). The packaged v0.1.0 build passed all release tests (launch, version shown, Room 1 play-through, save and load, every room, guest play and sign-in, close) on two Windows PCs.
+Every release is built from the reviewed `main` with **Tools → Scam Sense → Build Release**, tested as a packaged build (not in the editor), tagged in Git and published on GitHub Releases. The steps are in [Docs/RELEASE_PROCESS.md](Docs/RELEASE_PROCESS.md). The packaged v0.1.0 build passed all release tests (launch, version shown, Room 1 play-through, save and load, every room, guest play and sign-in, close) on two Windows PCs. v0.1.1 was built from the reviewed `release/v0.1.1` branch (commit `a51c8ad`) and smoke tested from its ZIP: launch, title splash, main menu with saved progress, starting Room 1, and close.
 
 ## Development Status
 
@@ -393,7 +394,7 @@ Every release is built from the reviewed `main` with **Tools → Scam Sense → 
 | 📋 **Planned** | More scam cases and scenarios · voice acting and background music for the rooms |
 
 ### Known limitations
-- **Windows only.** v0.1.0 is a development pre-release, not the final capstone version.
+- **Windows only.** v0.1.1 is a development pre-release, not the final capstone version.
 - **Not code-signed:** Windows SmartScreen may warn the first time the game is run.
 - The window title and save location still use the working name **"Capstone"**; this will change before 1.0.0, together with a plan for existing saves.
 - **Save/load** isn't covered by the automated tests yet (it writes straight to PlayerPrefs).
@@ -470,4 +471,4 @@ This project was created as a capstone for academic purposes. **No license has b
 
 ---
 
-**Project information:** BSIT capstone · Unity 6 (6000.0.38f1) · C# · Windows · latest release v0.1.0 (development)
+**Project information:** BSIT capstone · Unity 6 (6000.0.38f1) · C# · Windows · latest release v0.1.1 (development)

@@ -1,0 +1,41 @@
+SCAM SENSE: THINK BEFORE YOU CLICK - RELEASE NOTES
+
+Project:        Scam Sense: Think Before You Click (BSIT Capstone)
+Version:        0.1.1
+Release Date:   (set when the build is released)
+Release Type:   Development (patch: presentation updates and minor fixes)
+Platform:       Windows 10/11, 64-bit
+Source:         GitHub c23-2310-967-ops/Scam-Sense, Git tag v0.1.1
+                (the exact commit hash is in BUILD_INFO.txt)
+Built with:     Unity 6000.0.38f1
+Previous:       0.1.0 (2026-10-31). Gameplay, saves and accounts are unchanged;
+                existing progress carries over.
+
+
+CHANGED IN THIS VERSION
+- New game icon: a cyan shield with "SS" on the game's dark navy, shown on
+  ScamSense.exe and the taskbar
+- New title splash: the SCAM SENSE / THINK BEFORE YOU CLICK title is shown
+  for about 6 seconds on the game's navy background before the main menu
+  (Unity's "Made with Unity" line stays below it)
+- Main menu: the version number moved to the bottom-right corner, above the
+  footer note, so it no longer overlaps the account status in the top-right
+  corner when signed in
+
+
+FIXED
+- The main menu no longer logs three "NewCaseTransition ... is not assigned"
+  warnings on every launch (the unused component was removed from the menu)
+
+
+KNOWN ISSUES
+- The window title and the save location still use the project's working name
+  "Capstone" (HKEY_CURRENT_USER\Software\DefaultCompany\Capstone).
+- Online accounts: sign-up and cloud sync across PCs have not been fully tested
+  end to end inside the game. Offline play does not need them.
+- Results uploaded to the cloud are still scored by the game, not the server
+  (the server score check is planned for 0.2.0).
+- The game is not code-signed, so Windows SmartScreen may warn on first run.
+- The sources of a few third-party assets (phone and pen models, two desk
+  images, menu music) are still being confirmed.
+- Windows only: the game uses keyboard and mouse controls.

@@ -50094,7 +50094,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2026937422}
   - component: {fileID: 2026937421}
-  - component: {fileID: 2026937423}
   - component: {fileID: 2026937424}
   - component: {fileID: 2026937425}
   - component: {fileID: 2026937426}
@@ -50135,49 +50134,6 @@ Transform:
   - {fileID: 1853796554}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2026937423
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2026937420}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bbcc0541609331d40a658e05e461ce04, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gameSceneName: Game
-  sceneRoot: {fileID: 0}
-  menuButtons: {fileID: 0}
-  folder: {fileID: 0}
-  caseOpenedStamp: {fileID: 0}
-  fadeOverlay: {fileID: 0}
-  folderHiddenOffset: {x: 0, y: -1300}
-  folderSlideTime: 0.6
-  pauseBeforeStamp: 0.25
-  pauseAfterStamp: 0.7
-  fadeTime: 0.9
-  holdBlackTime: 0.25
-  menuMusic: {fileID: 350655256}
-  pushInScale: 1.08
-  stampAngle: -12
-  stampStartScale: 3
-  shakeStrength: 14
-  shakeTime: 0.22
-  folderOvershoot: 1.4
-  folderTilt: 6
-  fadeOutMenuButtons: 1
-  folderCover: {fileID: 0}
-  folderPapers: {fileID: 0}
-  pauseBeforeOpen: 0.2
-  coverOpenTime: 0.45
-  coverOpenScaleX: 0
-  paperRise: 40
-  openClip: {fileID: 0}
-  sfx: {fileID: 0}
-  slideClip: {fileID: 0}
-  stampClip: {fileID: 0}
 --- !u!114 &2026937424
 MonoBehaviour:
   m_ObjectHideFlags: 0
