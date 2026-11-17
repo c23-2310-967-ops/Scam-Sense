@@ -95,7 +95,8 @@ Only features that are implemented in the current project are listed.
 | **Interaction highlight** | The object you can press `E` on (computer, chair, door, case item) gets a soft, pulsing cyan outline. |
 | **Mood lighting** | The room dims and cools briefly after a wrong answer and gives a warm pulse after a correct one. |
 | **Soft-realism look** | Natural wood, fabric and metal materials, and UI panels and buttons with soft depth and smooth animation. |
-| **Main menu** | Play / Continue, Level Selection with room previews, Career, Settings (audio, display, quality, mouse sensitivity), How to Play, About, Reset Progress, and Quit with confirmation, over an animated 3D backdrop that cycles through the rooms. |
+| **Title splash and icon** | The game opens with a SCAM SENSE / THINK BEFORE YOU CLICK title splash (about 6 seconds) before the main menu, and has its own icon: a cyan shield with "SS" on dark navy. Both are in `Assets/Branding/` and set in Player Settings. |
+| **Main menu** | Play / Continue, Level Selection with room previews, Career, Settings (audio, display, quality, mouse sensitivity), How to Play, About, Reset Progress, and Quit with confirmation, over an animated 3D backdrop that cycles through the rooms. The version number is shown in the bottom-right corner. |
 | **Loading and transitions** | A loading screen that shows the room being opened with tips, plus fades, screen flicker and glitch effects. |
 | **Audio** | Notification, answer, star, unlock and click sounds, a room tone and menu music, with separate music and effects volume. Sound effects are generated in code when no clip is assigned. |
 
@@ -278,6 +279,7 @@ Scam-Sense/
 │   ├── Tests/             # Automated tests (Editor/) and the command-line test runner
 │   ├── Editor/            # Editor tools (room builders, level content, previews, visual style)
 │   ├── Resources/         # Runtime-loaded assets (career config, UI sprites, fonts, shaders)
+│   ├── Branding/          # Game icon and title splash logo (used in Player Settings)
 │   ├── Art/LevelPreviews/ # Room preview images
 │   ├── Input/             # Input System actions
 │   ├── Models/            # 3D models by room: Room1/, Room2/, Room5/, Shared/, Unused/
@@ -389,7 +391,7 @@ Every release is built from the reviewed `main` with **Tools → Scam Sense → 
 
 | Status | Features |
 |---|---|
-| ✅ **Completed and functional** | Five playable rooms with briefings, messages and feedback · phone and computer message reading · clickable email investigation · case files, evidence stations and the final case · level-based scoring, reading timer, penalties and recovery · case grade, stars and score-based unlocking · career ranks and achievements · main menu, settings, Level Selection and Reset Progress · local save · soft-realism visuals, mood lighting and interaction highlight · loading screen and transitions · automated regression tests · versioned Windows release (v0.1.0) |
+| ✅ **Completed and functional** | Five playable rooms with briefings, messages and feedback · phone and computer message reading · clickable email investigation · case files, evidence stations and the final case · level-based scoring, reading timer, penalties and recovery · case grade, stars and score-based unlocking · career ranks and achievements · main menu, settings, Level Selection and Reset Progress · local save · soft-realism visuals, mood lighting and interaction highlight · loading screen and transitions · automated regression tests · title splash and game icon · versioned Windows releases (v0.1.0, v0.1.1) |
 | 🛠️ **In development** | Supabase accounts: guest play and sign-in passed the v0.1.0 release tests; sign-up and cloud sync across PCs still need full end-to-end testing |
 | 📋 **Planned** | More scam cases and scenarios · voice acting and background music for the rooms |
 
