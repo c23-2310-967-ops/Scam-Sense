@@ -19,17 +19,20 @@ MonoBehaviour:
   description: "Your first day on the case. Texts and emails arrive while you explore
     the house \u2014 decide which are scams."
   previewImage: {fileID: 21300000, guid: 3c2461ec3d7cb3f4195d1800bbe3a169, type: 3}
-  briefingTitle: CASE BRIEFING
-  briefingText: 'Welcome to your first case. This room has six questions: four case
-    questions with four answer choices and two messages or web pages to judge as
-    SCAM or LEGITIMATE. They arrive in a different order on every attempt, and the
-    answer choices are shuffled too, so read each one carefully instead of remembering
-    positions.'
+  briefingTitle: WELCOME, INVESTIGATOR
+  briefingText: 'You just joined the Cybercrime Investigation Unit. Scammers send
+    fake texts, emails and posts to steal money, passwords and personal details,
+    and your job is to catch them.
+
+
+    This first room is your training case. A
+    guide will show you how to investigate, use hints and answer. Six questions are
+    waiting, and they arrive in a different order every time you play.'
   caseNotes:
   - You have not ordered anything this month.
   objectives:
+  - Follow the guide on your first question.
   - Answer all six questions in this room.
-  - Read the whole situation before you choose.
   - Score 380 or more to unlock the next room.
   messages:
   - id: E01
@@ -54,8 +57,32 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: page
+      field: 3
+      match: fake "school portal" page
+      label: The page
+      finding: It only looks like the school portal. Whatever Ana typed went straight
+        to the scammer.
+      linkAddress: 
+      clueId: fake
+    - id: access
+      field: 3
+      match: read her grades, messages and personal details
+      label: What the scammer can do
+      finding: The scammer can now look at Ana's private information. Was anything
+        changed or locked - or only seen?
+      linkAddress: 
+      clueId: seen
+    evidence:
+    - id: fake
+      title: Fake login page
+      whyItMatters: Fake pages copy real ones to collect what you type.
+      supportsVerdict: 1
+    - id: seen
+      title: Private details exposed
+      whyItMatters: Someone who isn't allowed can now read Ana's information.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -73,6 +100,8 @@ MonoBehaviour:
       who shouldn''t see your data now can.'
     curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 3:
       Fundamentals of Information Security (CIA Triad)"
+    hint: 'Think about what happened to Ana''s information: was it changed, locked
+      away, or seen by someone who shouldn''t see it?'
   - id: E02
     channel: 0
     sender: +63 917 555 0142
@@ -93,14 +122,72 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: Sender
+      finding: An ordinary mobile number, not a named courier. Real delivery companies
+        text from their own name or a short code.
+      linkAddress: 
+      clueId: number
+    - id: claim
+      field: 3
+      match: Your package is ON HOLD
+      label: The claim
+      finding: Your case notes say you haven't ordered anything this month - so which
+        package?
+      linkAddress: 
+      clueId: noorder
+    - id: fee
+      field: 3
+      match: "Pay the \u20B129 redelivery fee"
+      label: The request
+      finding: 'A small fee is bait: the real goal is your card or e-wallet details.'
+      linkAddress: 
+      clueId: fee
+    - id: deadline
+      field: 3
+      match: within 12 hours
+      label: Deadline
+      finding: A short deadline pushes you to act before you think.
+      linkAddress: 
+      clueId: urgent
+    - id: link
+      field: 4
+      match: 
+      label: Link
+      finding: swiftparcel-redeliver.example is not an official courier site, and
+        it starts with http (not secure).
+      linkAddress: http://swiftparcel-redeliver.example/pay
+      clueId: link
+    evidence:
+    - id: number
+      title: Ordinary mobile number
+      whyItMatters: Couriers don't text from random mobile numbers.
+      supportsVerdict: 1
+    - id: noorder
+      title: No order to deliver
+      whyItMatters: You haven't ordered anything, so there is no real package.
+      supportsVerdict: 1
+    - id: fee
+      title: Asks for a payment
+      whyItMatters: Small fees are used to steal card and e-wallet details.
+      supportsVerdict: 1
+    - id: urgent
+      title: Pressure to act fast
+      whyItMatters: Scams rush you so you don't stop to check.
+      supportsVerdict: 1
+    - id: link
+      title: Unofficial, insecure link
+      whyItMatters: The link isn't the courier's site and isn't secure.
+      supportsVerdict: 1
     consequence:
       kind: 0
       alertTitle: 
       alertBody: 
       overlookedClue: 
-      followUp: 1
+      followUp: 0
       recheckDetails: []
     choices: []
     correctChoice: 0
@@ -108,6 +195,8 @@ MonoBehaviour:
       payment details, not \u20B129."
     curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 16:
       Information Security Best Practices (user awareness)"
+    hint: 'Compare the text with your case notes: were you expecting a package? Then
+      check who sent it and where the link goes.'
   - id: E03
     channel: 5
     sender: Case Review
@@ -135,8 +224,51 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: address
+      field: 3
+      match: helpdesk@uphs1-binan.example
+      label: Sender address
+      finding: 'Look closely: uphs1 uses the number 1 instead of the letter l. It''s
+        a lookalike of the school''s real domain.'
+      linkAddress: 
+      clueId: lookalike
+    - id: subject
+      field: 3
+      match: Mailbox 98% full
+      label: Subject
+      finding: Full mailboxes really happen. On its own this isn't a warning sign
+        - look at what the email asks you to do.
+      linkAddress: 
+      clueId: 
+    - id: deadline
+      field: 3
+      match: DELETED in 24 hours
+      label: Threat
+      finding: A scary deadline pushes you to act fast without checking.
+      linkAddress: 
+      clueId: urgent
+    - id: request
+      field: 3
+      match: sign in to verify your account
+      label: What it asks
+      finding: It wants your password through a link. Real IT staff never ask you
+        to 'verify' your password by email.
+      linkAddress: 
+      clueId: creds
+    evidence:
+    - id: lookalike
+      title: Lookalike sender domain
+      whyItMatters: uphs1 is not uphsl - a fake address made to look real.
+      supportsVerdict: 1
+    - id: urgent
+      title: Scary deadline
+      whyItMatters: Threats and short deadlines are pressure tactics.
+      supportsVerdict: 1
+    - id: creds
+      title: Asks you to sign in through a link
+      whyItMatters: That's how fake pages collect passwords.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -154,6 +286,8 @@ MonoBehaviour:
       a fake deadline plus ''sign in here'' means phishing.'
     curriculumRef: "Computer Security (BIT1225) \u2014 Introduction to Computer Security:
       \"types of security threats\u2026 in both personal and organizational contexts\""
+    hint: Check the sender's address letter by letter, then ask yourself what the
+      email wants you to do.
   - id: E04
     channel: 5
     sender: Case Review
@@ -175,8 +309,43 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: claim
+      field: 3
+      match: This is ExampleBank's fraud department
+      label: Who they say they are
+      finding: Anyone can claim to be your bank on the phone. You didn't call them
+        - they called you.
+      linkAddress: 
+      clueId: claim
+    - id: urgent
+      field: 3
+      match: right now
+      label: Pressure
+      finding: Creating panic stops you from thinking clearly.
+      linkAddress: 
+      clueId: urgent
+    - id: otp
+      field: 3
+      match: Read it to me
+      label: The request
+      finding: That code is your one-time password (OTP). Whoever has it can approve
+        logins and payments as you.
+      linkAddress: 
+      clueId: otp
+    evidence:
+    - id: claim
+      title: Unverified caller
+      whyItMatters: A caller's name or claim proves nothing.
+      supportsVerdict: 1
+    - id: urgent
+      title: Panic and urgency
+      whyItMatters: Urgency is used to stop you from checking.
+      supportsVerdict: 1
+    - id: otp
+      title: Asks for your OTP
+      whyItMatters: No real bank ever asks you to read out a one-time code.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -194,6 +363,8 @@ MonoBehaviour:
       number on your card.
     curriculumRef: "Computer Security (BIT1225) \u2014 Authentication and Access
       Control"
+    hint: Who should ever see your one-time code? And how could you check that the
+      caller is really your bank?
   - id: E05
     channel: 5
     sender: Case Review
@@ -215,8 +386,42 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: stranger
+      field: 3
+      match: A stranger in a gaming chat
+      label: Sender
+      finding: You don't know this person, and the offer came out of nowhere.
+      linkAddress: 
+      clueId: stranger
+    - id: file
+      field: 3
+      match: FreeSkins_Generator.exe
+      label: The file
+      finding: .exe files are programs that run on your computer. Free 'generators'
+        are a common way to spread malware.
+      linkAddress: 
+      clueId: exe
+    - id: av
+      field: 3
+      match: Turn off your antivirus first
+      label: The request
+      finding: A real tool never needs your protection switched off. Malware does.
+      linkAddress: 
+      clueId: disable
+    evidence:
+    - id: stranger
+      title: Unknown sender
+      whyItMatters: Files from strangers can't be trusted.
+      supportsVerdict: 1
+    - id: exe
+      title: A program file
+      whyItMatters: Running an .exe gives it control of your computer.
+      supportsVerdict: 1
+    - id: disable
+      title: Asks you to disable antivirus
+      whyItMatters: That request exists to get malware past your protection.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -234,6 +439,7 @@ MonoBehaviour:
       to get past it.
     curriculumRef: "Computer Security (BIT1225) \u2014 Malware and Threats: \"preventing,
       detecting, and removing malware, including\u2026 anti-malware tools\""
+    hint: Why would a safe program need your antivirus switched off?
   - id: E06
     channel: 2
     sender: Viral post
@@ -255,14 +461,61 @@ MonoBehaviour:
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: Who posted it
+      finding: A viral post from someone you don't know. It's made to be shared widely.
+      linkAddress: 
+      clueId: 
+    - id: comment
+      field: 3
+      match: Comment your
+      label: Where you answer
+      finding: Comments are public. Anyone - including scammers - can read them.
+      linkAddress: 
+      clueId: public
+    - id: pet
+      field: 3
+      match: first pet's name
+      label: It asks for
+      finding: A very common answer to account security questions.
+      linkAddress: 
+      clueId: secq
+    - id: street
+      field: 3
+      match: street you grew up on
+      label: It asks for
+      finding: Another classic security-question answer.
+      linkAddress: 
+      clueId: secq
+    - id: month
+      field: 3
+      match: birth month
+      label: It asks for
+      finding: Part of your birthday, which is often used to confirm who you are.
+      linkAddress: 
+      clueId: personal
+    evidence:
+    - id: public
+      title: Public answers
+      whyItMatters: Anything posted in comments is visible to everyone.
+      supportsVerdict: 1
+    - id: secq
+      title: Security-question answers
+      whyItMatters: These answers are used to reset passwords.
+      supportsVerdict: 1
+    - id: personal
+      title: Personal details
+      whyItMatters: Birthdays help scammers pretend to be you.
+      supportsVerdict: 1
     consequence:
       kind: 0
       alertTitle: 
       alertBody: 
       overlookedClue: 
-      followUp: 1
+      followUp: 0
       recheckDetails: []
     choices: []
     correctChoice: 0
@@ -270,6 +523,8 @@ MonoBehaviour:
       Don't post them.
     curriculumRef: "Social and Professional Issues (BIT2105) \u2014 Weeks 10\u201311:
       Ethics for IT Users (\"responsible use of\u2026 social media\")"
+    hint: Look at the three things the post asks for. Where else are those exact
+      answers used?
   inboxExtras:
   - id: old_library
     channel: 1
@@ -301,6 +556,7 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
   - id: old_team
     channel: 1
     sender: Sam (Volunteer Team)
@@ -331,6 +587,7 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
   - id: old_receipt
     channel: 1
     sender: Example Delivery
@@ -361,6 +618,7 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
   caseFiles:
   - title: Case Notes
     body: "\u2022 You have not ordered anything this month."
@@ -417,3 +675,5 @@ MonoBehaviour:
   performanceHigh: 
   performanceModerate: 
   performanceLow: 
+  tutorial: 1
+  tutorialFirstQuestion: E03

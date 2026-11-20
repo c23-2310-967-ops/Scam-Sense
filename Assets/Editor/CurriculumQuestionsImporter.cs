@@ -17,12 +17,18 @@ public static class CurriculumQuestionsImporter
     public const string JsonPath = "Assets/Editor/CurriculumQuestions.json";
     public const int QuestionsPerRoom = 6;
 
+    [Serializable] public class InspectData { public string id, field, match, label, finding, linkAddress, clueId; }
+    [Serializable] public class EvidenceData { public string id, title, whyItMatters; public bool supportsVerdict; }
     [Serializable] public class QuestionData
     {
         public string id, questionType, difficulty, curriculumRef, explanation, feedback, learningObjective;
         public int number, correctChoice;
         public string[] choices;
         public string verdict, channel, sender, senderDetail, subject, body, link, scenarioContext;
+        // Level 1 tutorial only (empty elsewhere): HINT text and underlined clue details
+        public string hint;
+        public InspectData[] inspectables;
+        public EvidenceData[] evidence;
     }
     [Serializable] public class RoomData
     {
@@ -30,6 +36,10 @@ public static class CurriculumQuestionsImporter
         public string levelAsset, intro;
         public string[] caseNotes, lessons;
         public QuestionData[] questions;
+        // Level 1 tutorial only
+        public bool tutorial;
+        public string firstQuestion, briefingTitle, briefing;
+        public string[] objectives;
     }
     [Serializable] public class FileData { public string source; public RoomData[] rooms; }
 
@@ -42,12 +52,19 @@ public static class CurriculumQuestionsImporter
     }
 
     [MenuItem("Tools/Scam Sense/Curriculum/Load Questions into Rooms")]
-    public static void LoadIntoRooms()
+    public static void LoadIntoRooms() => LoadRooms(null);
+
+    /// <summary>Rewrites only Level 1 (the tutorial room). Levels 2-5 are not opened or re-saved.</summary>
+    [MenuItem("Tools/Scam Sense/Curriculum/Load Level 1 (Tutorial) Only")]
+    public static void LoadLevel1Only() => LoadRooms(1);
+
+    static void LoadRooms(int? onlyRoom)
     {
         var data = Load();
         int total = 0;
         foreach (var room in data.rooms)
         {
+            if (onlyRoom.HasValue && room.room != onlyRoom.Value) continue;
             var level = AssetDatabase.LoadAssetAtPath<LevelDefinition>(room.levelAsset);
             if (level == null) { Debug.LogError($"Curriculum import: {room.levelAsset} not found"); continue; }
             Undo.RecordObject(level, "Load curriculum questions");
@@ -68,7 +85,9 @@ public static class CurriculumQuestionsImporter
             throw new InvalidDataException($"Room {room.room} must have exactly {QuestionsPerRoom} questions");
 
         level.messages = new List<ScamMessage>();
-        foreach (var q in room.questions) level.messages.Add(ToMessage(q));
+        foreach (var q in room.questions) level.messages.Add(ToMessage(q, room.tutorial));
+        level.tutorial = room.tutorial;
+        level.tutorialFirstQuestion = room.tutorial ? room.firstQuestion ?? "" : "";
 
         // Scores from the room's own rules: 3 / 4 / 6 correct answers (allowing the penalties of the misses).
         var s = level.scoring ?? new LevelScoring();
@@ -94,6 +113,15 @@ public static class CurriculumQuestionsImporter
             last ? $"Score {level.minScoreToUnlockNext} or more to complete the investigation."
                  : $"Score {level.minScoreToUnlockNext} or more to unlock the next room."
         };
+        // Tutorial room: its own intro briefing and objectives ({unlock} = the unlock score).
+        if (!string.IsNullOrEmpty(room.briefingTitle)) level.briefingTitle = room.briefingTitle;
+        if (!string.IsNullOrEmpty(room.briefing)) level.briefingText = room.briefing;
+        if (room.objectives != null && room.objectives.Length > 0)
+        {
+            level.objectives = new string[room.objectives.Length];
+            for (int i = 0; i < room.objectives.Length; i++)
+                level.objectives[i] = room.objectives[i].Replace("{unlock}", level.minScoreToUnlockNext.ToString());
+        }
         level.caseNotes = room.caseNotes ?? new string[0];
         level.lessons = room.lessons ?? new string[0];
         level.learningSummary = "";
@@ -114,12 +142,27 @@ public static class CurriculumQuestionsImporter
 
     static string Count(int n) => n switch { 1 => "one", 2 => "two", 3 => "three", 4 => "four", 5 => "five", _ => n.ToString() };
 
-    public static ScamMessage ToMessage(QuestionData q)
+    public static ScamMessage ToMessage(QuestionData q, bool tutorial = false)
     {
         var channel = (MessageChannel)Enum.Parse(typeof(MessageChannel), q.channel);
         bool choice = q.choices != null && q.choices.Length >= 2;
+        var inspectables = new List<MessageInspectable>();
+        if (q.inspectables != null)
+            foreach (var i in q.inspectables)
+                inspectables.Add(new MessageInspectable
+                {
+                    id = i.id, field = (InspectField)Enum.Parse(typeof(InspectField), i.field), match = i.match ?? "",
+                    label = i.label ?? "", finding = i.finding ?? "", linkAddress = i.linkAddress ?? "", clueId = i.clueId ?? ""
+                });
+        var evidence = new List<MessageEvidence>();
+        if (q.evidence != null)
+            foreach (var e in q.evidence)
+                evidence.Add(new MessageEvidence { id = e.id, title = e.title, whyItMatters = e.whyItMatters, supportsVerdict = e.supportsVerdict });
         return new ScamMessage
         {
+            hint = q.hint ?? "",
+            inspectables = inspectables,
+            evidence = evidence,
             id = q.id,
             channel = channel,
             sender = q.sender ?? "",
@@ -136,8 +179,13 @@ public static class CurriculumQuestionsImporter
             correctChoice = choice ? q.correctChoice : 0,
             trigger = channel == MessageChannel.SMS || channel == MessageChannel.Chat ? MessageTrigger.NearPhone
                     : MessageChannels.OnComputer(channel) ? MessageTrigger.NearComputer : MessageTrigger.TimeOnly,
-            // No clickable investigation data in the question bank, so no follow-up re-check; wrong answers get the explanation.
-            consequence = new WrongAnswerConsequence { kind = choice ? ConsequenceKind.FeedbackOnly : ConsequenceKind.Auto, followUp = FollowUpMode.None },
+            // Wrong answers get the explanation. The tutorial room's SCAM / LEGITIMATE messages also offer the existing
+            // follow-up re-check (inspect the key clues again, HINT, answer again for recovery points); choice questions don't.
+            consequence = new WrongAnswerConsequence
+            {
+                kind = choice ? ConsequenceKind.FeedbackOnly : ConsequenceKind.Auto,
+                followUp = tutorial && !choice ? FollowUpMode.Auto : FollowUpMode.None
+            },
         };
     }
 }

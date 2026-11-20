@@ -120,7 +120,10 @@ public class QuizManager : MonoBehaviour
         level = definition;
         index = 0;
         phase = Phase.Idle;
-        shuffle = level != null ? new QuestionShuffle(level.messages, level.levelId, new System.Random()) : null;
+        // Tutorial room only: its guided question is asked first (the rest and all choices stay shuffled).
+        int pin = level != null && level.tutorial && !string.IsNullOrEmpty(level.tutorialFirstQuestion)
+            ? level.messages.FindIndex(m => m != null && m.id == level.tutorialFirstQuestion) : -1;
+        shuffle = level != null ? new QuestionShuffle(level.messages, level.levelId, new System.Random(), pin) : null;
         if (scoring != null) { scoring.Configure(level); scoring.ResetRun(); }
         if (popup != null) popup.Hide();
         if (hud != null) hud.HideNotification();
@@ -149,6 +152,15 @@ public class QuizManager : MonoBehaviour
         }
         Schedule(level.firstMessageDelay);
         StateChanged?.Invoke();   // lets computer screens fill their inbox right away
+
+        // Step-by-step guide - only in a room marked as the tutorial (Level 1). Other rooms never create it.
+        var coach = GetComponent<TutorialCoach>();
+        if (level.tutorial)
+        {
+            if (coach == null) coach = gameObject.AddComponent<TutorialCoach>();
+            coach.Begin(this);
+        }
+        else if (coach != null) coach.Stop();
     }
 
     void Update()
@@ -337,6 +349,8 @@ public class QuizManager : MonoBehaviour
             OnContinue();
             return;
         }
+        // Investigated choice questions (Level 1 tutorial): evaluate the clues found, for the feedback's clue list.
+        if (investigation != null) investigation.Submit(Current, result.chosen);
         AfterFirstAnswer(result);
     }
 

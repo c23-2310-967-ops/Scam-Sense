@@ -123,6 +123,11 @@ public class ScamMessage
     [TextArea(1, 3)] public string feedback = "";
     [Tooltip("Course subject and lesson this question is based on (from the validated question bank).")]
     public string curriculumRef = "";
+    [Tooltip("Optional HINT text: points the player to what matters without giving the answer. Empty = no HINT button.")]
+    [TextArea(1, 3)] public string hint = "";
+
+    /// <summary>True if the HINT button is offered while this message is open.</summary>
+    public bool HasHint => !string.IsNullOrEmpty(hint);
 
     /// <summary>True if the player answers by picking one of <see cref="choices"/> instead of a verdict.</summary>
     public bool HasChoices => choices != null && choices.Length >= 2;

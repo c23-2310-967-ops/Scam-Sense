@@ -17,8 +17,32 @@ using UnityEngine.UI;
 /// created automatically in front of the screen if left empty.
 /// </summary>
 [DefaultExecutionOrder(-90)]
-public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigationDock, IRecheckPresenter, IWarningTarget, IHighlightable
+public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigationDock, IRecheckPresenter, IWarningTarget, IHighlightable, ITutorialTargets
 {
+    private HintControl hintCtl;
+
+    /// <summary>Screen areas the Level 1 guide can frame on this computer (message pane, HINT, verdict buttons, feedback).</summary>
+    public bool TryGetTutorialRect(TutorialFocus focus, out Rect rect)
+    {
+        rect = default;
+        if (shown == null || pane == null || !pane.gameObject.activeInHierarchy) return false;
+        switch (focus)
+        {
+            case TutorialFocus.Message:
+                return MessageInvestigation.ScreenRect(pane, out rect);
+            case TutorialFocus.Hint:
+                return hintCtl != null && hintCtl.Button.gameObject.activeInHierarchy &&
+                       MessageInvestigation.ScreenRect((RectTransform)hintCtl.Button.transform, out rect);
+            case TutorialFocus.Answers:
+                if (!scamButton.gameObject.activeInHierarchy || !MessageInvestigation.ScreenRect((RectTransform)scamButton.transform, out var a)
+                    || !MessageInvestigation.ScreenRect((RectTransform)legitButton.transform, out var b)) return false;
+                rect = Rect.MinMaxRect(Mathf.Min(a.xMin, b.xMin), Mathf.Min(a.yMin, b.yMin), Mathf.Max(a.xMax, b.xMax), Mathf.Max(a.yMax, b.yMax));
+                return true;
+            case TutorialFocus.Feedback:
+                return feedbackBox.gameObject.activeInHierarchy && MessageInvestigation.ScreenRect(feedbackBox, out rect);
+        }
+        return false;
+    }
     [Header("Screen")]
     [Tooltip("The monitor model (with Screen Submesh set) or a thin object covering the display area.")]
     [SerializeField] private Transform screenSurface;
@@ -278,6 +302,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         UIKit.SetInteractable(scamButton, true);
         UIKit.SetInteractable(legitButton, true);
         UIKit.SetInteractable(exitButton, false);
+        hintCtl.Show(msg);
         SetTimer(0f, quiz != null && quiz.Scoring.HasTimePressure ? quiz.Scoring.ReadingAllowance(msg) : 0f,
                  quiz != null ? quiz.Scoring.PointsFor(msg, true, 0f) : 0);
     }
@@ -794,6 +819,8 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         question.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
         detailsToggle = UIKit.HudButton(qRow, "DETAILS", () => SetDetailsView(!showingDetails), UIKit.HudVariant.Secondary, 20);
         UIKit.Size(detailsToggle, 200, 46);
+        // HINT (messages with a hint only - the Level 1 tutorial); hidden for every other message.
+        hintCtl = HintControl.Build(qRow, decisionBar, () => quiz != null ? quiz.Scoring : null, 46f, 20f, 170f);
         var timerRow = UIKit.Rect("TimerRow", decisionBar);
         UIKit.Horizontal(timerRow, 10).childForceExpandHeight = false;
         timerText = UIKit.Text(timerRow, "Timer", "", 21, UIKit.TextSecondary);

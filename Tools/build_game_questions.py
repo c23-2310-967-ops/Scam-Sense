@@ -73,6 +73,114 @@ VERDICT_ITEMS = {
                 context="The canteen's \"Scan to pay with PayLite\" poster looks normal, but up close the QR code is a sticker placed on top of the printed one."),
 }
 
+# ---- Level 1 tutorial: underlined clue details, hints, guided first question and an intro briefing.
+# Only room 1 gets these. Match phrases must appear exactly in the question's field text (checked below).
+def clue(id, field, match, label, finding, clue_id="", link=""):
+    return {"id": id, "field": field, "match": match, "label": label, "finding": finding, "linkAddress": link, "clueId": clue_id}
+
+def ev(id, title, why, key=True):
+    return {"id": id, "title": title, "whyItMatters": why, "supportsVerdict": key}
+
+TUTORIAL = {
+    "E01": dict(
+        hint="Think about what happened to Ana's information: was it changed, locked away, or seen by someone who shouldn't see it?",
+        inspectables=[
+            clue("page", "Body", 'fake "school portal" page', "The page",
+                 "It only looks like the school portal. Whatever Ana typed went straight to the scammer.", "fake"),
+            clue("access", "Body", "read her grades, messages and personal details", "What the scammer can do",
+                 "The scammer can now look at Ana's private information. Was anything changed or locked - or only seen?", "seen"),
+        ],
+        evidence=[ev("fake", "Fake login page", "Fake pages copy real ones to collect what you type."),
+                  ev("seen", "Private details exposed", "Someone who isn't allowed can now read Ana's information.")]),
+    "E02": dict(
+        hint="Compare the text with your case notes: were you expecting a package? Then check who sent it and where the link goes.",
+        inspectables=[
+            clue("sender", "Sender", "", "Sender",
+                 "An ordinary mobile number, not a named courier. Real delivery companies text from their own name or a short code.", "number"),
+            clue("claim", "Body", "Your package is ON HOLD", "The claim",
+                 "Your case notes say you haven't ordered anything this month - so which package?", "noorder"),
+            clue("fee", "Body", "Pay the ₱29 redelivery fee", "The request",
+                 "A small fee is bait: the real goal is your card or e-wallet details.", "fee"),
+            clue("deadline", "Body", "within 12 hours", "Deadline",
+                 "A short deadline pushes you to act before you think.", "urgent"),
+            clue("link", "Link", "", "Link",
+                 "swiftparcel-redeliver.example is not an official courier site, and it starts with http (not secure).", "link",
+                 "http://swiftparcel-redeliver.example/pay"),
+        ],
+        evidence=[ev("number", "Ordinary mobile number", "Couriers don't text from random mobile numbers."),
+                  ev("noorder", "No order to deliver", "You haven't ordered anything, so there is no real package."),
+                  ev("fee", "Asks for a payment", "Small fees are used to steal card and e-wallet details."),
+                  ev("urgent", "Pressure to act fast", "Scams rush you so you don't stop to check."),
+                  ev("link", "Unofficial, insecure link", "The link isn't the courier's site and isn't secure.")]),
+    "E03": dict(
+        hint="Check the sender's address letter by letter, then ask yourself what the email wants you to do.",
+        inspectables=[
+            clue("address", "Body", "helpdesk@uphs1-binan.example", "Sender address",
+                 "Look closely: uphs1 uses the number 1 instead of the letter l. It's a lookalike of the school's real domain.", "lookalike"),
+            clue("subject", "Body", "Mailbox 98% full", "Subject",
+                 "Full mailboxes really happen. On its own this isn't a warning sign - look at what the email asks you to do."),
+            clue("deadline", "Body", "DELETED in 24 hours", "Threat",
+                 "A scary deadline pushes you to act fast without checking.", "urgent"),
+            clue("request", "Body", "sign in to verify your account", "What it asks",
+                 "It wants your password through a link. Real IT staff never ask you to 'verify' your password by email.", "creds"),
+        ],
+        evidence=[ev("lookalike", "Lookalike sender domain", "uphs1 is not uphsl - a fake address made to look real."),
+                  ev("urgent", "Scary deadline", "Threats and short deadlines are pressure tactics."),
+                  ev("creds", "Asks you to sign in through a link", "That's how fake pages collect passwords.")]),
+    "E04": dict(
+        hint="Who should ever see your one-time code? And how could you check that the caller is really your bank?",
+        inspectables=[
+            clue("claim", "Body", "This is ExampleBank's fraud department", "Who they say they are",
+                 "Anyone can claim to be your bank on the phone. You didn't call them - they called you.", "claim"),
+            clue("urgent", "Body", "right now", "Pressure",
+                 "Creating panic stops you from thinking clearly.", "urgent"),
+            clue("otp", "Body", "Read it to me", "The request",
+                 "That code is your one-time password (OTP). Whoever has it can approve logins and payments as you.", "otp"),
+        ],
+        evidence=[ev("claim", "Unverified caller", "A caller's name or claim proves nothing."),
+                  ev("urgent", "Panic and urgency", "Urgency is used to stop you from checking."),
+                  ev("otp", "Asks for your OTP", "No real bank ever asks you to read out a one-time code.")]),
+    "E05": dict(
+        hint="Why would a safe program need your antivirus switched off?",
+        inspectables=[
+            clue("stranger", "Body", "A stranger in a gaming chat", "Sender",
+                 "You don't know this person, and the offer came out of nowhere.", "stranger"),
+            clue("file", "Body", "FreeSkins_Generator.exe", "The file",
+                 ".exe files are programs that run on your computer. Free 'generators' are a common way to spread malware.", "exe"),
+            clue("av", "Body", "Turn off your antivirus first", "The request",
+                 "A real tool never needs your protection switched off. Malware does.", "disable"),
+        ],
+        evidence=[ev("stranger", "Unknown sender", "Files from strangers can't be trusted."),
+                  ev("exe", "A program file", "Running an .exe gives it control of your computer."),
+                  ev("disable", "Asks you to disable antivirus", "That request exists to get malware past your protection.")]),
+    "E06": dict(
+        hint="Look at the three things the post asks for. Where else are those exact answers used?",
+        inspectables=[
+            clue("sender", "Sender", "", "Who posted it",
+                 "A viral post from someone you don't know. It's made to be shared widely."),
+            clue("comment", "Body", "Comment your", "Where you answer",
+                 "Comments are public. Anyone - including scammers - can read them.", "public"),
+            clue("pet", "Body", "first pet's name", "It asks for",
+                 "A very common answer to account security questions.", "secq"),
+            clue("street", "Body", "street you grew up on", "It asks for",
+                 "Another classic security-question answer.", "secq"),
+            clue("month", "Body", "birth month", "It asks for",
+                 "Part of your birthday, which is often used to confirm who you are.", "personal"),
+        ],
+        evidence=[ev("public", "Public answers", "Anything posted in comments is visible to everyone."),
+                  ev("secq", "Security-question answers", "These answers are used to reset passwords."),
+                  ev("personal", "Personal details", "Birthdays help scammers pretend to be you.")]),
+}
+
+LEVEL1 = dict(
+    tutorial=True, firstQuestion="E03", briefingTitle="WELCOME, INVESTIGATOR",
+    briefing="You just joined the Cybercrime Investigation Unit. Scammers send fake texts, emails and posts to steal money, "
+             "passwords and personal details, and your job is to catch them.\n\n"
+             "This first room is your training case. A guide will show you how to investigate, use hints and answer. "
+             "Six questions are waiting, and they arrive in a different order every time you play.",
+    objectives=["Follow the guide on your first question.", "Answer all six questions in this room.",
+                "Score {unlock} or more to unlock the next room."])
+
 ROOMS = [
     ("Assets/Levels/Level1_TheFirstCase.asset", "Welcome to your first case."),
     ("Assets/Levels/Level2_TheInvestigation.asset", "Your investigation continues."),
@@ -116,9 +224,26 @@ for r_i, (asset, intro) in enumerate(ROOMS):
             # when the bank also gives the answer text ("C. Confidentiality"), it must match that choice
             if len(correct) > 2:
                 assert plain(parts[item["correctChoice"]][2:]).strip().startswith(correct[3:].strip()[:20]), (qid, correct)
+        item.update(hint="", inspectables=[], evidence=[])
+        if r_i == 0 and qid in TUTORIAL:
+            t = TUTORIAL[qid]
+            fields = {"Sender": item["sender"], "SenderDetail": item["senderDetail"], "Subject": item["subject"],
+                      "Body": item["body"], "Link": item["link"]}
+            for c in t["inspectables"]:
+                assert c["match"] == "" or c["match"] in fields[c["field"]], (qid, c["id"], "match phrase not in the text")
+                assert c["clueId"] == "" or any(e["id"] == c["clueId"] for e in t["evidence"]), (qid, c["id"])
+            for e in t["evidence"]:
+                assert any(c["clueId"] == e["id"] for c in t["inspectables"]), (qid, e["id"], "clue can never be found")
+            item.update(hint=t["hint"], inspectables=t["inspectables"], evidence=t["evidence"])
         room["lessons"].append(item["learningObjective"])
         room["questions"].append(item)
     assert len(room["questions"]) == 6
+    if r_i == 0:
+        assert all(q["hint"] and q["inspectables"] for q in room["questions"]), "every Level 1 question needs a hint and clues"
+        assert any(q["id"] == LEVEL1["firstQuestion"] for q in room["questions"])
+        room.update(LEVEL1)
+    else:
+        room.update(tutorial=False, firstQuestion="", briefingTitle="", briefing="", objectives=[])
     out["rooms"].append(room)
 
 ids = [q["id"] for r in out["rooms"] for q in r["questions"]]

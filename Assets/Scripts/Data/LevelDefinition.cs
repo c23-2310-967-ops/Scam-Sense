@@ -156,6 +156,13 @@ public class LevelDefinition : ScriptableObject
     public string performanceModerate = "";
     public string performanceLow = "";
 
+    [Header("Tutorial (Level 1 only)")]
+    [Tooltip("Runs the step-by-step guide (TutorialCoach) in this room: investigate, hint, answer, feedback. Off for every other room.")]
+    public bool tutorial;
+    [Tooltip("Tutorial rooms only: the message id asked first (a beginner-friendly one with underlined clues and a hint). " +
+             "The other questions and all answer choices are still shuffled.")]
+    public string tutorialFirstQuestion = "";
+
     public int MessageCount => messages != null ? messages.Count : 0;
 
     void OnValidate()

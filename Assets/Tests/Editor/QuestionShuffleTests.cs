@@ -70,6 +70,30 @@ public class QuestionShuffleTests
     }
 
     [Test]
+    public void PinnedFirstQuestion_ComesFirst_AndTheRestStayShuffled()
+    {
+        var room = Room();
+        var rng = new System.Random(9);
+        var seenSecond = new HashSet<int>();
+        for (int attempt = 0; attempt < 60; attempt++)
+        {
+            var order = new QuestionShuffle(room, "room_pin", rng, pinFirst: 2).MessageOrder;
+            Assert.AreEqual(2, order[0], "the guided question must be asked first");
+            CollectionAssert.AreEquivalent(Enumerable.Range(0, room.Count), order, "a question was skipped or repeated");
+            seenSecond.Add(order[1]);
+        }
+        Assert.Greater(seenSecond.Count, 2, "the other questions should still be shuffled");
+    }
+
+    [Test]
+    public void NoPin_IsUnchanged()
+    {
+        var a = new QuestionShuffle(Room(), null, new System.Random(4)).MessageOrder.ToArray();
+        var b = new QuestionShuffle(Room(), null, new System.Random(4), pinFirst: -1).MessageOrder.ToArray();
+        CollectionAssert.AreEqual(a, b);
+    }
+
+    [Test]
     public void ChoiceOrder_IsAPermutationAndFixedForTheAttempt()
     {
         var room = Room();

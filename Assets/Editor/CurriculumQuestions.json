@@ -40,7 +40,42 @@
      "subject": "Multiple Choice",
      "body": "Ana typed her student login into a fake \"school portal\" page. The scammer can now read her grades, messages and personal details. <b>Which part of the CIA Triad was broken?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "Think about what happened to Ana's information: was it changed, locked away, or seen by someone who shouldn't see it?",
+     "inspectables": [
+      {
+       "id": "page",
+       "field": "Body",
+       "match": "fake \"school portal\" page",
+       "label": "The page",
+       "finding": "It only looks like the school portal. Whatever Ana typed went straight to the scammer.",
+       "linkAddress": "",
+       "clueId": "fake"
+      },
+      {
+       "id": "access",
+       "field": "Body",
+       "match": "read her grades, messages and personal details",
+       "label": "What the scammer can do",
+       "finding": "The scammer can now look at Ana's private information. Was anything changed or locked - or only seen?",
+       "linkAddress": "",
+       "clueId": "seen"
+      }
+     ],
+     "evidence": [
+      {
+       "id": "fake",
+       "title": "Fake login page",
+       "whyItMatters": "Fake pages copy real ones to collect what you type.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "seen",
+       "title": "Private details exposed",
+       "whyItMatters": "Someone who isn't allowed can now read Ana's information.",
+       "supportsVerdict": true
+      }
+     ]
     },
     {
      "id": "E02",
@@ -60,7 +95,87 @@
      "subject": "",
      "body": "SwiftParcel: Your package is ON HOLD due to an incomplete address. Pay the ₱29 redelivery fee within 12 hours or it will be returned:",
      "link": "http://swiftparcel-redeliver.example/pay",
-     "scenarioContext": "You have not ordered anything this month."
+     "scenarioContext": "You have not ordered anything this month.",
+     "hint": "Compare the text with your case notes: were you expecting a package? Then check who sent it and where the link goes.",
+     "inspectables": [
+      {
+       "id": "sender",
+       "field": "Sender",
+       "match": "",
+       "label": "Sender",
+       "finding": "An ordinary mobile number, not a named courier. Real delivery companies text from their own name or a short code.",
+       "linkAddress": "",
+       "clueId": "number"
+      },
+      {
+       "id": "claim",
+       "field": "Body",
+       "match": "Your package is ON HOLD",
+       "label": "The claim",
+       "finding": "Your case notes say you haven't ordered anything this month - so which package?",
+       "linkAddress": "",
+       "clueId": "noorder"
+      },
+      {
+       "id": "fee",
+       "field": "Body",
+       "match": "Pay the ₱29 redelivery fee",
+       "label": "The request",
+       "finding": "A small fee is bait: the real goal is your card or e-wallet details.",
+       "linkAddress": "",
+       "clueId": "fee"
+      },
+      {
+       "id": "deadline",
+       "field": "Body",
+       "match": "within 12 hours",
+       "label": "Deadline",
+       "finding": "A short deadline pushes you to act before you think.",
+       "linkAddress": "",
+       "clueId": "urgent"
+      },
+      {
+       "id": "link",
+       "field": "Link",
+       "match": "",
+       "label": "Link",
+       "finding": "swiftparcel-redeliver.example is not an official courier site, and it starts with http (not secure).",
+       "linkAddress": "http://swiftparcel-redeliver.example/pay",
+       "clueId": "link"
+      }
+     ],
+     "evidence": [
+      {
+       "id": "number",
+       "title": "Ordinary mobile number",
+       "whyItMatters": "Couriers don't text from random mobile numbers.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "noorder",
+       "title": "No order to deliver",
+       "whyItMatters": "You haven't ordered anything, so there is no real package.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "fee",
+       "title": "Asks for a payment",
+       "whyItMatters": "Small fees are used to steal card and e-wallet details.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "urgent",
+       "title": "Pressure to act fast",
+       "whyItMatters": "Scams rush you so you don't stop to check.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "link",
+       "title": "Unofficial, insecure link",
+       "whyItMatters": "The link isn't the courier's site and isn't secure.",
+       "supportsVerdict": true
+      }
+     ]
     },
     {
      "id": "E03",
@@ -85,7 +200,66 @@
      "subject": "Identify the Threat",
      "body": "<b>Email from:</b> Campus IT Helpdesk <noparse><</noparse>helpdesk@uphs1-binan.example<noparse>></noparse>\n<b>Subject:</b> Mailbox 98% full: verify now\n\"Your school mailbox will be DELETED in 24 hours. Click below and sign in to verify your account.\" <b>What kind of threat is this?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "Check the sender's address letter by letter, then ask yourself what the email wants you to do.",
+     "inspectables": [
+      {
+       "id": "address",
+       "field": "Body",
+       "match": "helpdesk@uphs1-binan.example",
+       "label": "Sender address",
+       "finding": "Look closely: uphs1 uses the number 1 instead of the letter l. It's a lookalike of the school's real domain.",
+       "linkAddress": "",
+       "clueId": "lookalike"
+      },
+      {
+       "id": "subject",
+       "field": "Body",
+       "match": "Mailbox 98% full",
+       "label": "Subject",
+       "finding": "Full mailboxes really happen. On its own this isn't a warning sign - look at what the email asks you to do.",
+       "linkAddress": "",
+       "clueId": ""
+      },
+      {
+       "id": "deadline",
+       "field": "Body",
+       "match": "DELETED in 24 hours",
+       "label": "Threat",
+       "finding": "A scary deadline pushes you to act fast without checking.",
+       "linkAddress": "",
+       "clueId": "urgent"
+      },
+      {
+       "id": "request",
+       "field": "Body",
+       "match": "sign in to verify your account",
+       "label": "What it asks",
+       "finding": "It wants your password through a link. Real IT staff never ask you to 'verify' your password by email.",
+       "linkAddress": "",
+       "clueId": "creds"
+      }
+     ],
+     "evidence": [
+      {
+       "id": "lookalike",
+       "title": "Lookalike sender domain",
+       "whyItMatters": "uphs1 is not uphsl - a fake address made to look real.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "urgent",
+       "title": "Scary deadline",
+       "whyItMatters": "Threats and short deadlines are pressure tactics.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "creds",
+       "title": "Asks you to sign in through a link",
+       "whyItMatters": "That's how fake pages collect passwords.",
+       "supportsVerdict": true
+      }
+     ]
     },
     {
      "id": "E04",
@@ -110,7 +284,57 @@
      "subject": "What Should You Do?",
      "body": "A caller says: \"This is ExampleBank's fraud department. Someone is using your card right now. We just sent you a 6-digit code. Read it to me so we can block the transaction.\"",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "Who should ever see your one-time code? And how could you check that the caller is really your bank?",
+     "inspectables": [
+      {
+       "id": "claim",
+       "field": "Body",
+       "match": "This is ExampleBank's fraud department",
+       "label": "Who they say they are",
+       "finding": "Anyone can claim to be your bank on the phone. You didn't call them - they called you.",
+       "linkAddress": "",
+       "clueId": "claim"
+      },
+      {
+       "id": "urgent",
+       "field": "Body",
+       "match": "right now",
+       "label": "Pressure",
+       "finding": "Creating panic stops you from thinking clearly.",
+       "linkAddress": "",
+       "clueId": "urgent"
+      },
+      {
+       "id": "otp",
+       "field": "Body",
+       "match": "Read it to me",
+       "label": "The request",
+       "finding": "That code is your one-time password (OTP). Whoever has it can approve logins and payments as you.",
+       "linkAddress": "",
+       "clueId": "otp"
+      }
+     ],
+     "evidence": [
+      {
+       "id": "claim",
+       "title": "Unverified caller",
+       "whyItMatters": "A caller's name or claim proves nothing.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "urgent",
+       "title": "Panic and urgency",
+       "whyItMatters": "Urgency is used to stop you from checking.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "otp",
+       "title": "Asks for your OTP",
+       "whyItMatters": "No real bank ever asks you to read out a one-time code.",
+       "supportsVerdict": true
+      }
+     ]
     },
     {
      "id": "E05",
@@ -135,7 +359,57 @@
      "subject": "Scenario-Based",
      "body": "A stranger in a gaming chat sends you <b>FreeSkins_Generator.exe</b> and says: \"Turn off your antivirus first. It gives a false alarm on this tool.\"",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "Why would a safe program need your antivirus switched off?",
+     "inspectables": [
+      {
+       "id": "stranger",
+       "field": "Body",
+       "match": "A stranger in a gaming chat",
+       "label": "Sender",
+       "finding": "You don't know this person, and the offer came out of nowhere.",
+       "linkAddress": "",
+       "clueId": "stranger"
+      },
+      {
+       "id": "file",
+       "field": "Body",
+       "match": "FreeSkins_Generator.exe",
+       "label": "The file",
+       "finding": ".exe files are programs that run on your computer. Free 'generators' are a common way to spread malware.",
+       "linkAddress": "",
+       "clueId": "exe"
+      },
+      {
+       "id": "av",
+       "field": "Body",
+       "match": "Turn off your antivirus first",
+       "label": "The request",
+       "finding": "A real tool never needs your protection switched off. Malware does.",
+       "linkAddress": "",
+       "clueId": "disable"
+      }
+     ],
+     "evidence": [
+      {
+       "id": "stranger",
+       "title": "Unknown sender",
+       "whyItMatters": "Files from strangers can't be trusted.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "exe",
+       "title": "A program file",
+       "whyItMatters": "Running an .exe gives it control of your computer.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "disable",
+       "title": "Asks you to disable antivirus",
+       "whyItMatters": "That request exists to get malware past your protection.",
+       "supportsVerdict": true
+      }
+     ]
     },
     {
      "id": "E06",
@@ -155,8 +429,85 @@
      "subject": "FIND YOUR STAR NAME",
      "body": "Comment your first pet's name + the street you grew up on + your birth month!",
      "link": "",
-     "scenarioContext": "Is this harmless fun or a scam? LEGITIMATE = harmless fun, SCAM = data harvesting."
+     "scenarioContext": "Is this harmless fun or a scam? LEGITIMATE = harmless fun, SCAM = data harvesting.",
+     "hint": "Look at the three things the post asks for. Where else are those exact answers used?",
+     "inspectables": [
+      {
+       "id": "sender",
+       "field": "Sender",
+       "match": "",
+       "label": "Who posted it",
+       "finding": "A viral post from someone you don't know. It's made to be shared widely.",
+       "linkAddress": "",
+       "clueId": ""
+      },
+      {
+       "id": "comment",
+       "field": "Body",
+       "match": "Comment your",
+       "label": "Where you answer",
+       "finding": "Comments are public. Anyone - including scammers - can read them.",
+       "linkAddress": "",
+       "clueId": "public"
+      },
+      {
+       "id": "pet",
+       "field": "Body",
+       "match": "first pet's name",
+       "label": "It asks for",
+       "finding": "A very common answer to account security questions.",
+       "linkAddress": "",
+       "clueId": "secq"
+      },
+      {
+       "id": "street",
+       "field": "Body",
+       "match": "street you grew up on",
+       "label": "It asks for",
+       "finding": "Another classic security-question answer.",
+       "linkAddress": "",
+       "clueId": "secq"
+      },
+      {
+       "id": "month",
+       "field": "Body",
+       "match": "birth month",
+       "label": "It asks for",
+       "finding": "Part of your birthday, which is often used to confirm who you are.",
+       "linkAddress": "",
+       "clueId": "personal"
+      }
+     ],
+     "evidence": [
+      {
+       "id": "public",
+       "title": "Public answers",
+       "whyItMatters": "Anything posted in comments is visible to everyone.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "secq",
+       "title": "Security-question answers",
+       "whyItMatters": "These answers are used to reset passwords.",
+       "supportsVerdict": true
+      },
+      {
+       "id": "personal",
+       "title": "Personal details",
+       "whyItMatters": "Birthdays help scammers pretend to be you.",
+       "supportsVerdict": true
+      }
+     ]
     }
+   ],
+   "tutorial": true,
+   "firstQuestion": "E03",
+   "briefingTitle": "WELCOME, INVESTIGATOR",
+   "briefing": "You just joined the Cybercrime Investigation Unit. Scammers send fake texts, emails and posts to steal money, passwords and personal details, and your job is to catch them.\n\nThis first room is your training case. A guide will show you how to investigate, use hints and answer. Six questions are waiting, and they arrive in a different order every time you play.",
+   "objectives": [
+    "Follow the guide on your first question.",
+    "Answer all six questions in this room.",
+    "Score {unlock} or more to unlock the next room."
    ]
   },
   {
@@ -199,7 +550,10 @@
      "subject": "Multiple Choice",
      "body": "A raffle booth at the mall asks you to fill in a form to join. <b>Which of these is the biggest privacy warning sign?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "E08",
@@ -224,7 +578,10 @@
      "subject": "Multiple Choice",
      "body": "<b>Which of your accounts deserves the strongest protection, because a scammer who controls it can take over many of your other accounts?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "E09",
@@ -244,7 +601,10 @@
      "subject": "SYSTEM SECURITY ALERT",
      "body": "Your computer is INFECTED and LOCKED. Call Certified Support at 1-800-555-0199 now. DO NOT restart your computer.",
      "link": "",
-     "scenarioContext": "While browsing, a full-screen red page appeared and started beeping."
+     "scenarioContext": "While browsing, a full-screen red page appeared and started beeping.",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "E10",
@@ -269,7 +629,10 @@
      "subject": "What Should You Do?",
      "body": "You paid ₱1,500 to an online seller through PayLite. The seller then blocked you and never shipped. <b>What should you do first?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "M01",
@@ -289,7 +652,10 @@
      "subject": "Password reset request",
      "body": "We received a request to reset your password. This link expires in 15 minutes. If you didn't request this, you can ignore this email.",
      "link": "https://novacloud.example/reset?t=8f3k…",
-     "scenarioContext": "One minute before this email arrived, you clicked \"Forgot password\" on NovaCloud yourself. Trusted domain (case files): novacloud.example"
+     "scenarioContext": "One minute before this email arrived, you clicked \"Forgot password\" on NovaCloud yourself. Trusted domain (case files): novacloud.example",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "M02",
@@ -314,9 +680,17 @@
      "subject": "Identify the Threat",
      "body": "A message links to: <b>https://examplebank.example.account-verify.example/login</b>. <b>Which is true?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     }
-   ]
+   ],
+   "tutorial": false,
+   "firstQuestion": "",
+   "briefingTitle": "",
+   "briefing": "",
+   "objectives": []
   },
   {
    "room": 3,
@@ -357,7 +731,10 @@
      "subject": "Multiple Choice",
      "body": "A login page shows a padlock and starts with <b>https://</b>. <b>What does the padlock actually prove?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "M04",
@@ -382,7 +759,10 @@
      "subject": "Identify the Threat",
      "body": "<b>SMS from an unknown number:</b> \"Ma, si Migs 'to. Nasira phone ko, bagong number ko 'to. Pa-send naman ₱3,000 sa PayLite 0917 555 0188, emergency lang. Wag ka muna tumawag, wala pa akong load.\" <b>What attack is this?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "M05",
@@ -407,7 +787,10 @@
      "subject": "What Should You Do?",
      "body": "During your OJT, you typed your work password into a page you opened from an email. A minute later, you notice the address was wrong.",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "M06",
@@ -432,7 +815,10 @@
      "subject": "Multiple Choice",
      "body": "A classmate's school account password was stolen through phishing. <b>Which control is most likely to stop the attacker from logging in?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "M07",
@@ -457,7 +843,10 @@
      "subject": "Scenario-Based",
      "body": "At a café you see two networks: <b>Kape_FreeWiFi</b> and <b>Kape_Free_WiFi</b>. After you connect to one, a page says: \"Log in with your SocialBook email and password to get internet access.\"",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "M08",
@@ -477,9 +866,17 @@
      "subject": "",
      "body": "ExampleBank: Your account will be suspended TODAY. Update your details at",
      "link": "examplebank-ph.example/update",
-     "scenarioContext": "Trusted domain (case files): examplebank.example"
+     "scenarioContext": "Trusted domain (case files): examplebank.example",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     }
-   ]
+   ],
+   "tutorial": false,
+   "firstQuestion": "",
+   "briefingTitle": "",
+   "briefing": "",
+   "objectives": []
   },
   {
    "room": 4,
@@ -518,7 +915,10 @@
      "subject": "Scenario-Based",
      "body": "You're a student assistant at the IT help desk. A caller says: \"This is Dean Reyes. I'm locked out and presenting in five minutes. Reset my password and send it to my personal email, deanreyes.personal@freemail.example. Hurry!\"",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "M10",
@@ -543,7 +943,10 @@
      "subject": "Identify the Threat",
      "body": "An email titled \"Revised grading sheet\" has <b>Grades_Final.docm</b> attached. When opened, a yellow bar says: \"Content is disabled. Click <b>ENABLE CONTENT</b> to view the grades.\" <b>What's going on?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "H01",
@@ -568,7 +971,10 @@
      "subject": "Identify the Threat",
      "body": "You're your student org's treasurer. <b>Email from:</b> \"Prof. L. Santos\" <noparse><</noparse>lsantos.adviser@freemail.example<noparse>></noparse>\n\"Hi! As we discussed at Tuesday's meeting, please send the venue deposit for the <b>Sept 14 Acquaintance Party</b> to our new account before 3 PM today. Thanks!\"\n<b>Case file:</b> The meeting, the date and the event were all posted on the org's public page. The adviser's school address is lsantos@uphsl-binan.example.",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "H02",
@@ -593,7 +999,10 @@
      "subject": "Scenario-Based",
      "body": "You open a \"shared document\" link. It takes you to the <b>real</b> NovaCloud sign-in page (novacloud.example). After you sign in, a screen appears:\n\"<b>DocuView Plus</b> (unverified publisher) wants to: • Read, send and delete your mail • Access your files at any time • Keep access when you're not using it\"",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "H03",
@@ -618,7 +1027,10 @@
      "subject": "What Should You Do?",
      "body": "An email comes from the finance director's <b>real</b> address in an existing thread, and it <b>passes</b> all email authentication checks: \"Our supplier changed banks. Please pay today's invoice (₱480,000) to the new account below. I'm in meetings all day, so don't call, just reply here.\"",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "H04",
@@ -643,9 +1055,17 @@
      "subject": "Multiple Choice",
      "body": "After a phishing wave on campus, IT lists four findings. <b>Which should be fixed first?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     }
-   ]
+   ],
+   "tutorial": false,
+   "firstQuestion": "",
+   "briefingTitle": "",
+   "briefing": "",
+   "objectives": []
   },
   {
    "room": 5,
@@ -687,7 +1107,10 @@
      "subject": "Scenario-Based",
      "body": "A friend was scammed through a chat app and wants to file a report. <b>Which way of handling the evidence is best?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "H06",
@@ -712,7 +1135,10 @@
      "subject": "Identify the Threat",
      "body": "Email header excerpt:\nFrom: \"Registrar's Office\" <noparse><</noparse>registrar@uphsl-binan.example<noparse>></noparse>\nReply-To: registrar.office.ph@freemail.example\nReturn-Path: <noparse><</noparse>bounce@mailer-xyz.example<noparse>></noparse>\nAuthentication-Results: spf=fail; dkim=none; dmarc=fail\nSubject: FINAL reminder: unpaid tuition, account on hold\n<b>What is the strongest evidence that this is spoofed?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "H07",
@@ -732,7 +1158,10 @@
      "subject": "Scholarship Grant 2027",
      "body": "Please provide: full name, student number, birthdate, mother's maiden name, front and back of your ID, a selfie holding your ID, and your PayLite MPIN \"for fast release of funds\".\n\nThere is no privacy notice. The only contact is a mobile number.",
      "link": "",
-     "scenarioContext": "A \"Scholarship Grant 2027\" form is shared in a student group. It uses the school logo."
+     "scenarioContext": "A \"Scholarship Grant 2027\" form is shared in a student group. It uses the school logo.",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "H08",
@@ -757,7 +1186,10 @@
      "subject": "What Should You Do?",
      "body": "After you open an email attachment on a lab PC, your files start changing to <b>.locked</b> and a note demands cryptocurrency. <b>What do you do first?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "H09",
@@ -777,7 +1209,10 @@
      "subject": "Scan to pay with PayLite",
      "body": "Enter your mobile number and MPIN to pay.",
      "link": "paylite-merchant-pay.example/canteen",
-     "scenarioContext": "The canteen's \"Scan to pay with PayLite\" poster looks normal, but up close the QR code is a sticker placed on top of the printed one."
+     "scenarioContext": "The canteen's \"Scan to pay with PayLite\" poster looks normal, but up close the QR code is a sticker placed on top of the printed one.",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     },
     {
      "id": "H10",
@@ -802,9 +1237,17 @@
      "subject": "Scenario-Based",
      "body": "You find a fake school login page. Its admin page is publicly open and shows a list of <b>student passwords</b> it has captured. <b>What is the ethical action?</b>",
      "link": "",
-     "scenarioContext": ""
+     "scenarioContext": "",
+     "hint": "",
+     "inspectables": [],
+     "evidence": []
     }
-   ]
+   ],
+   "tutorial": false,
+   "firstQuestion": "",
+   "briefingTitle": "",
+   "briefing": "",
+   "objectives": []
   }
  ]
 }

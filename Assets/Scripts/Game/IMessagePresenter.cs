@@ -50,6 +50,15 @@ public interface IChoicePresenter
     event Action<int> ChoiceChosen;
 }
 
+/// <summary>What the Level 1 guide (TutorialCoach) points at on a presenter.</summary>
+public enum TutorialFocus { Message, Hint, Answers, Feedback }
+
+/// <summary>Optional: screen areas (pixels) the tutorial guide can frame. False if that part isn't showing.</summary>
+public interface ITutorialTargets
+{
+    bool TryGetTutorialRect(TutorialFocus focus, out UnityEngine.Rect screenRect);
+}
+
 /// <summary>Optional: the part of a presenter that briefly flashes red after a wrong answer.</summary>
 public interface IWarningTarget
 {

@@ -11,9 +11,41 @@ using UnityEngine.UI;
 /// this attempt's shuffled order - which turns into the feedback card after answering.
 /// Builds itself at runtime. QuizManager drives it through IMessagePresenter (and IChoicePresenter).
 /// </summary>
-public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter, IPresenterTiming, IInvestigationDock, IRecheckPresenter, IWarningTarget
+public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter, IPresenterTiming, IInvestigationDock, IRecheckPresenter, IWarningTarget, ITutorialTargets
 {
     public event Action<int> ChoiceChosen;
+    private HintControl hintCtl;
+
+    // ---------- Tutorial targets (Level 1 guide) ----------
+
+    public bool TryGetTutorialRect(TutorialFocus focus, out Rect rect)
+    {
+        rect = default;
+        if (!IsOpen) return false;
+        switch (focus)
+        {
+            case TutorialFocus.Message:
+                var left = phone != null && phone.gameObject.activeInHierarchy ? phone
+                         : questionWindow != null && questionWindow.gameObject.activeInHierarchy ? questionWindow
+                         : emailWindow != null && emailWindow.gameObject.activeInHierarchy ? emailWindow : null;
+                return left != null && MessageInvestigation.ScreenRect(left, out rect);
+            case TutorialFocus.Hint:
+                return hintCtl != null && hintCtl.Button.gameObject.activeInHierarchy &&
+                       MessageInvestigation.ScreenRect((RectTransform)hintCtl.Button.transform, out rect);
+            case TutorialFocus.Answers:
+                bool any = false;
+                foreach (var b in shownChoices.Length > 0 ? choiceButtons : new[] { scamButton, legitButton })
+                {
+                    if (b == null || !b.gameObject.activeInHierarchy || !MessageInvestigation.ScreenRect((RectTransform)b.transform, out var r)) continue;
+                    rect = any ? Rect.MinMaxRect(Mathf.Min(rect.xMin, r.xMin), Mathf.Min(rect.yMin, r.yMin), Mathf.Max(rect.xMax, r.xMax), Mathf.Max(rect.yMax, r.yMax)) : r;
+                    any = true;
+                }
+                return any;
+            case TutorialFocus.Feedback:
+                return feedbackGroup != null && feedbackGroup.activeInHierarchy && MessageInvestigation.ScreenRect(decisionCard, out rect);
+        }
+        return false;
+    }
 
     // Choice questions
     private RectTransform questionWindow;
@@ -43,7 +75,9 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
         var left = phone != null && phone.gameObject.activeInHierarchy ? phone : emailWindow != null && emailWindow.gameObject.activeInHierarchy ? emailWindow
                  : questionWindow != null && questionWindow.gameObject.activeInHierarchy ? questionWindow : null;
         if (left == null || !MessageInvestigation.ScreenRect(left, out var l) || !MessageInvestigation.ScreenRect(decisionCard, out var d)) return false;
-        area = Rect.MinMaxRect(l.xMax + 20f, d.yMin, d.xMin - 20f, d.yMax);
+        // Case questions: the gap beside the card is narrow, so the finding card goes under the question sheet.
+        if (left == questionWindow) area = Rect.MinMaxRect(l.xMin, 16f, l.xMax, l.yMin - 16f);
+        else area = Rect.MinMaxRect(l.xMax + 20f, d.yMin, d.xMin - 20f, d.yMax);
         return area.width > 0f && area.height > 0f;
     }
 
@@ -150,6 +184,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
         hintText.gameObject.SetActive(true);
         detailsButton.gameObject.SetActive(!string.IsNullOrEmpty(details));
         UIKit.SetLabel(detailsButton, "SHOW DETAILS");
+        hintCtl.Show(msg);   // HINT only for messages that carry one (Level 1 tutorial)
         feedbackGroup.SetActive(false);
         UIKit.SetInteractable(scamButton, true);
         UIKit.SetInteractable(legitButton, true);
@@ -174,8 +209,10 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
         phone.gameObject.SetActive(false);
         emailWindow.gameObject.SetActive(false);
         questionWindow.gameObject.SetActive(true);
+        StyleCaseReview(msg);   // Level 1: report style; other rooms: unchanged light sheet
         questionKicker.text = string.IsNullOrEmpty(msg.subject) ? "CASE QUESTION" : msg.subject.ToUpperInvariant();
-        questionBody.text = msg.body;
+        // Underlined clues when the question is investigated (Level 1 tutorial); plain rich text otherwise.
+        MessageInvestigation.Bind(questionBody, () => MessageInvestigation.MarkRich(msg, InspectField.Body, msg.body));
 
         channelHeader.text = "Case question";
         questionPrompt.text = "Choose the best answer.";
@@ -206,9 +243,13 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
             UIKit.SetInteractable(choiceButtons[pos], true);
         }
 
+        hintCtl.Show(msg);
+
         var sc = quiz != null ? quiz.Scoring : null;
         SetTimer(0f, sc != null && sc.HasTimePressure ? sc.ReadingAllowance(msg) : 0f, sc != null ? sc.PointsFor(msg, true, 0f) : 0);
         RestoreDesktopLayout();
+        // Investigated questions sit at the top so the finding card has room under the question sheet.
+        if (MessageInvestigation.Investigates(msg)) row.childAlignment = TextAnchor.UpperCenter;
         root.gameObject.SetActive(true);
         StartCoroutine(PopIn());
     }
@@ -334,6 +375,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
         whyHeader.text = r.isCorrect ? "WHY IT'S RIGHT" : "WHAT TO LOOK FOR";
         feedbackAnimator.Open();
         verdictIcon.Play();
+        ShowCaseReport(r);   // Level 1 only: the Case Review turns into a short case report
         if (r.IsChoice)
         {
             // Letters are the ones the player saw this attempt (choices are shuffled per attempt).
@@ -458,26 +500,140 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
 
         questionWindow = UIKit.Rect("QuestionWindow", parent);
         questionWindow.sizeDelta = new Vector2(900, 0);
-        UIKit.AddImage(questionWindow, new Color32(0xF8, 0xFA, 0xFC, 255), rounded: true);
+        qwImage = UIKit.AddImage(questionWindow, new Color32(0xF8, 0xFA, 0xFC, 255), rounded: true);
+        qwOutline = questionWindow.gameObject.AddComponent<Outline>();
+        qwOutline.effectDistance = new Vector2(2f, -2f);
+        qwOutline.enabled = false;   // Level 1 report style only
         UIKit.Vertical(questionWindow, 0, 0);
         UIKit.FitHeight(questionWindow);
 
         var bar = UIKit.Rect("TitleBar", questionWindow);
-        UIKit.AddImage(bar, UIKit.PanelRaised, rounded: true);
+        qwBar = UIKit.AddImage(bar, UIKit.PanelRaised, rounded: true);
         UIKit.Size(bar, -1, 54);
-        var barText = UIKit.Text(bar, "Title", "Case Review  ·  Question", 21, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
-        UIKit.Stretch(barText.rectTransform);
+        qwBarText = UIKit.Text(bar, "Title", "Case Review  ·  Question", 21, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
+        UIKit.Stretch(qwBarText.rectTransform);
 
         var body = UIKit.Rect("Body", questionWindow);
         UIKit.Vertical(body, 38, 16);
         questionKicker = UIKit.Text(body, "Kicker", "", 22, new Color32(0x0E, 0x74, 0x90, 255), bold: true);
         questionKicker.characterSpacing = 3f;
         var div = UIKit.Rect("Divider", body);
-        UIKit.AddImage(div, new Color32(0xCB, 0xD5, 0xE1, 255));
+        qwDivider = UIKit.AddImage(div, new Color32(0xCB, 0xD5, 0xE1, 255));
         UIKit.Size(div, -1, 2);
+        qwCaseHeader = UIKit.Header(body, "The case");
+        qwCaseHeader.gameObject.SetActive(false);
         questionBody = UIKit.Text(body, "Scenario", "", 27, ink);
         questionBody.lineSpacing = 10f;
-        UIKit.Text(body, "Footer", "Training scenario · all names, numbers and links are fictional.", 19, new Color32(0x64, 0x74, 0x8B, 255)).fontStyle = FontStyles.Italic;
+
+        // Case report (Level 1): shown after answering - verdict, clues to notice, what you learned.
+        qwReport = UIKit.Rect("Report", body);
+        UIKit.Vertical(qwReport, 0, 12).childForceExpandHeight = false;
+        var vb = UIKit.Rect("Verdict", qwReport);
+        qwVerdictBox = UIKit.Callout(vb, UIKit.PopupTone.Success);
+        var vv = UIKit.Vertical(vb, 16, 4);
+        vv.padding.left = vv.padding.right = 20;
+        qwVerdict = UIKit.Text(vb, "VerdictText", "", 24, UIKit.TextPrimary);
+        qwVerdict.lineSpacing = 4f;
+        UIKit.Header(qwReport, "Clues to notice");
+        qwClues = UIKit.Text(qwReport, "Clues", "", 22, UIKit.TextPrimary);
+        qwClues.lineSpacing = 6f;
+        UIKit.Header(qwReport, "What you learned");
+        qwLesson = UIKit.Text(qwReport, "Lesson", "", 22, UIKit.TextPrimary);
+        qwReport.gameObject.SetActive(false);
+
+        qwFooter = UIKit.Text(body, "Footer", "Training scenario · all names, numbers and links are fictional.", 19, new Color32(0x64, 0x74, 0x8B, 255));
+        qwFooter.fontStyle = FontStyles.Italic;
+    }
+
+    // ---------- Case Review style (Level 1 tutorial only) ----------
+
+    private Image qwImage, qwBar, qwDivider, qwVerdictBox;
+    private Outline qwOutline;
+    private TMP_Text qwBarText, qwCaseHeader, qwVerdict, qwClues, qwLesson, qwFooter;
+    private RectTransform qwReport;
+
+    /// <summary>True while the tutorial room (Level 1) is played - the only room with the Case Review report style.</summary>
+    bool ReportStyle => quiz != null && quiz.Level != null && quiz.Level.tutorial;
+
+    /// <summary>
+    /// Level 1: a dark, high-contrast investigation-report look for the case-question sheet. Other rooms keep the
+    /// original light sheet exactly as before.
+    /// </summary>
+    void StyleCaseReview(ScamMessage msg)
+    {
+        bool report = ReportStyle;
+        qwReport.gameObject.SetActive(false);
+        qwCaseHeader.gameObject.SetActive(report);
+        qwOutline.enabled = report;
+        if (report)
+        {
+            int n = quiz.Scoring != null ? quiz.Scoring.Results.Count + 1 : 1, total = quiz.Level.MessageCount;
+            qwImage.color = new Color32(0x0F, 0x1A, 0x2E, 255);
+            qwOutline.effectColor = UIKit.Border;
+            qwBar.color = new Color32(0x0B, 0x2A, 0x45, 255);
+            qwBarText.text = $"<color={UIKit.HexAccent}>CASE REVIEW</color>   ·   QUESTION {Mathf.Min(n, total)} OF {total}";
+            qwBarText.characterSpacing = 2f;
+            questionKicker.color = UIKit.Accent;
+            questionKicker.fontSize = 24;
+            qwDivider.color = UIKit.Border;
+            questionBody.color = UIKit.TextPrimary;
+            questionBody.fontSize = 28;
+            qwFooter.color = UIKit.TextSecondary;
+        }
+        else
+        {
+            qwImage.color = new Color32(0xF8, 0xFA, 0xFC, 255);
+            qwBar.color = UIKit.PanelRaised;
+            qwBarText.text = "Case Review  ·  Question";
+            qwBarText.characterSpacing = 0f;
+            questionKicker.color = new Color32(0x0E, 0x74, 0x90, 255);
+            questionKicker.fontSize = 22;
+            qwDivider.color = new Color32(0xCB, 0xD5, 0xE1, 255);
+            questionBody.color = new Color32(0x0F, 0x17, 0x2A, 255);
+            questionBody.fontSize = 27;
+            qwFooter.color = new Color32(0x64, 0x74, 0x8B, 255);
+        }
+    }
+
+    /// <summary>Level 1: after answering, the Case Review becomes a short case report next to the feedback.</summary>
+    void ShowCaseReport(ScoringSystem.AnswerResult r)
+    {
+        if (!ReportStyle || !questionWindow.gameObject.activeInHierarchy || r.message == null) return;
+        var m = r.message;
+        var tone = r.isCorrect ? UIKit.PopupTone.Success : UIKit.PopupTone.Error;
+        questionKicker.text = $"CASE REPORT   ·   {(string.IsNullOrEmpty(m.subject) ? "CASE QUESTION" : m.subject.ToUpperInvariant())}";
+        questionBody.fontSize = 23;   // the case stays readable; the report below gets the room
+
+        string correct = m.HasChoices ? m.ChoiceText(m.correctChoice) : UIKit.VerdictWord(m.correctVerdict);
+        string yours = r.IsChoice ? m.ChoiceText(r.chosenChoice) : UIKit.VerdictWord(r.chosen);
+        qwVerdict.text = $"<color={UIKit.ToneHex(tone)}><b>{(r.isCorrect ? "✓  SOLVED" : "×  NOT QUITE")}</b></color>\n" +
+                         $"Correct answer: <b>{correct}</b>" + (r.isCorrect ? "" : $"\n<color={UIKit.HexSecondary}>You answered: {yours}</color>");
+        UIKit.TintCallout(qwVerdictBox, tone);
+
+        // Clues to notice: the key clues, marked found / missed when the case was investigated.
+        var sb = new System.Text.StringBuilder();
+        var eval = MessageInvestigation.Active != null && MessageInvestigation.Active.Session != null && MessageInvestigation.Active.Session.Message == m
+            ? MessageInvestigation.Active.Session.Evaluation : null;
+        if (m.evidence != null)
+            foreach (var c in m.evidence)
+            {
+                if (!c.supportsVerdict) continue;
+                bool found = eval != null && eval.found.Contains(c);
+                sb.Append(found ? $"<color={UIKit.HexSafe}>✓</color>  " : $"<color={UIKit.HexWarning}>•</color>  ")
+                  .Append($"<b>{c.title}</b>  <color={UIKit.HexSecondary}>- {c.whyItMatters}</color>")
+                  .Append(found ? "" : $"  <color={UIKit.HexWarning}><size=85%>(missed)</size></color>").Append('\n');
+            }
+        qwClues.text = sb.Length > 0 ? sb.ToString().TrimEnd() : m.explanation;
+
+        int i = quiz.Level.messages.IndexOf(m);
+        var lessons = quiz.Level.lessons;
+        qwLesson.text = lessons != null && i >= 0 && i < lessons.Length ? lessons[i] : (string.IsNullOrEmpty(m.feedback) ? "" : m.feedback);
+        qwReport.gameObject.SetActive(true);
+        qwOutline.effectColor = new Color(UIKit.ToneColor(tone).r, UIKit.ToneColor(tone).g, UIKit.ToneColor(tone).b, 0.8f);
+        // The sheet just grew: re-run the row layout now so it grows downward from the top, never off screen.
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(questionWindow);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(content);
     }
 
     void BuildPhone(RectTransform parent)
@@ -624,6 +780,9 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
         detailsBox.gameObject.SetActive(false);
         detailsMoreHint = UIKit.Text(d, "MoreHint", "Scroll the details for more", 18, UIKit.TextSecondary, TextAlignmentOptions.Right);
         detailsMoreHint.gameObject.SetActive(false);
+
+        // HINT (messages with a hint only): button + amber hint box, both hidden otherwise.
+        hintCtl = HintControl.Build(d, d, () => quiz != null ? quiz.Scoring : null);
 
         var timerRow = UIKit.Rect("TimerRow", d);
         UIKit.AddImage(timerRow, UIKit.Background, rounded: true);

@@ -54,10 +54,28 @@ public class MessageInvestigation : MonoBehaviour
     // ---------- Lifecycle (called by QuizManager) ----------
 
     /// <summary>
-    /// Only emails are investigated. Texts and chats stay plain read-and-answer (their data in the
-    /// Level assets is kept but unused; widen this check to bring it back).
+    /// Emails with investigation data are investigated in every room. Other channels (texts, web pages and case
+    /// questions) are investigated only in the tutorial room, where the guide teaches underlined clues - so no
+    /// other room changes behaviour, whatever data its messages carry.
     /// </summary>
-    public static bool Investigates(ScamMessage msg) => msg != null && msg.HasInvestigation && msg.channel == MessageChannel.Email;
+    public static bool Investigates(ScamMessage msg)
+    {
+        if (msg == null || !msg.HasInvestigation || msg.channel == MessageChannel.Case) return false;
+        if (msg.channel == MessageChannel.Email) return true;
+        var quiz = QuizLevel;
+        return quiz != null && quiz.tutorial && quiz.messages.Contains(msg);
+    }
+
+    /// <summary>The level being played (null outside a level).</summary>
+    static LevelDefinition QuizLevel
+    {
+        get
+        {
+            if (cachedQuiz == null) cachedQuiz = FindFirstObjectByType<QuizManager>();
+            return cachedQuiz != null ? cachedQuiz.Level : null;
+        }
+    }
+    static QuizManager cachedQuiz;
 
     /// <summary>A message is being opened. Call before the presenter shows it, so its texts bind as clickable.</summary>
     public void Begin(ScamMessage msg, IInvestigationDock dockArea = null)
@@ -222,6 +240,52 @@ public class MessageInvestigation : MonoBehaviour
         }
         sb.Append(Literal(text.Substring(i)));
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Like <see cref="Mark"/>, for a field that is already rich text (case-question scenarios use &lt;b&gt; and
+    /// &lt;noparse&gt;): the text is kept as written and only the inspectable phrases become underlined links.
+    /// Match phrases must be plain words (not across tags); a match inside a tag is skipped.
+    /// </summary>
+    public static string MarkRich(ScamMessage msg, InspectField field, string richText)
+    {
+        if (string.IsNullOrEmpty(richText)) return "";
+        var a = Active;
+        var s = a != null && a.session != null && a.session.Message == msg ? a.session : null;
+        if (s == null) return richText;
+
+        var spans = new List<(int start, int length, MessageInspectable part)>();
+        foreach (var p in msg.inspectables)
+        {
+            if (p.field != field || string.IsNullOrEmpty(p.match)) continue;
+            int start = richText.IndexOf(p.match, StringComparison.Ordinal);
+            if (start < 0 || InsideTag(richText, start)) continue;
+            if (spans.Exists(o => start < o.start + o.length && o.start < start + p.match.Length)) continue;
+            spans.Add((start, p.match.Length, p));
+        }
+        spans.Sort((x, y) => x.start.CompareTo(y.start));
+
+        var sb = new StringBuilder();
+        int i = 0;
+        foreach (var (start, length, part) in spans)
+        {
+            sb.Append(richText, i, start - i);
+            bool seen = s.WasInspected(part.id);
+            bool clue = seen && !string.IsNullOrEmpty(part.clueId);
+            string color = !seen ? HexLink : clue ? HexClue : HexSeen;
+            sb.Append($"<link=\"{part.id}\"><color={color}><u>{richText.Substring(start, length)}</u></color></link>");
+            if (seen) sb.Append(clue ? $"<color={HexClue}><size=75%> ★</size></color>" : "<color=#94A3B8><size=75%> ✓</size></color>");
+            i = start + length;
+        }
+        sb.Append(richText, i, richText.Length - i);
+        return sb.ToString();
+    }
+
+    /// <summary>True if position <paramref name="at"/> is inside a "&lt;...&gt;" tag.</summary>
+    static bool InsideTag(string s, int at)
+    {
+        int open = s.LastIndexOf('<', at), close = s.LastIndexOf('>', at);
+        return open > close && s.IndexOf('>', at) >= 0 && !s.Substring(open).StartsWith("<noparse><</noparse>");
     }
 
     static string Literal(string s) => string.IsNullOrEmpty(s) ? "" : "<noparse>" + s.Replace("</noparse>", "") + "</noparse>";

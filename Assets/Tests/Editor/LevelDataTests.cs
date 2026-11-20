@@ -152,6 +152,43 @@ public class LevelDataTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    // ---------- Level 1 tutorial (must never leak into other rooms) ----------
+
+    [Test]
+    public void OnlyLevel1_IsTheTutorial()
+    {
+        foreach (var level in Levels())
+        {
+            bool first = level.levelId == "level_1";
+            Assert.AreEqual(first, level.tutorial, $"{level.name}: only Level 1 may run the tutorial");
+            if (first) continue;
+            Assert.IsEmpty(level.tutorialFirstQuestion ?? "", $"{level.name}: a guided first question belongs to Level 1 only");
+            foreach (var m in level.messages)
+            {
+                Assert.IsFalse(m.HasHint, $"{level.name} / {m.id}: HINT is a Level 1 tutorial feature");
+                Assert.IsFalse(m.HasInvestigation && m.channel != MessageChannel.Email,
+                    $"{level.name} / {m.id}: underlined clues outside emails are a Level 1 tutorial feature");
+            }
+        }
+    }
+
+    [Test]
+    public void Level1_EveryQuestionHasAHintAndValidClues()
+    {
+        var level = Levels().Single(l => l.levelId == "level_1");
+        Assert.IsTrue(level.messages.Any(m => m.id == level.tutorialFirstQuestion), "the guided first question is missing from Level 1");
+        var problems = new List<string>();
+        foreach (var m in level.messages)
+        {
+            if (!m.HasHint) problems.Add($"{m.id}: no hint");
+            if (!m.HasInvestigation) problems.Add($"{m.id}: no underlined clues");
+            problems.AddRange(InvestigationSession.Validate(m).Select(p => $"{m.id}: {p}"));
+            if (m.HasChoices && m.HasHint && m.choices.Any(c => m.hint.IndexOf(c, System.StringComparison.OrdinalIgnoreCase) >= 0))
+                problems.Add($"{m.id}: the hint quotes an answer choice");
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
     [Test]
     public void StarAndUnlockScores_AreReachable()
     {

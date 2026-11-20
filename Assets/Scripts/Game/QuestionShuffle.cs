@@ -16,15 +16,17 @@ public class QuestionShuffle
     /// <summary>The last order used per room, so a new attempt never repeats it (when more than one order exists).</summary>
     static readonly Dictionary<string, int[]> lastOrderByRoom = new Dictionary<string, int[]>();
 
-    public QuestionShuffle(IList<ScamMessage> messages, string roomKey, Random rng)
+    /// <param name="pinFirst">Index of a message to always ask first (the tutorial room's guided question), or -1.
+    /// The other messages are still shuffled.</param>
+    public QuestionShuffle(IList<ScamMessage> messages, string roomKey, Random rng, int pinFirst = -1)
     {
         int n = messages != null ? messages.Count : 0;
-        messageOrder = Permutation(n, rng);
+        messageOrder = Order(n, rng, pinFirst);
         // A new attempt gets a new order: reshuffle (a few times at most) if it matches the room's previous attempt.
         if (!string.IsNullOrEmpty(roomKey) && n > 1)
         {
             for (int tries = 0; tries < 8 && lastOrderByRoom.TryGetValue(roomKey, out var last) && SameOrder(last, messageOrder); tries++)
-                messageOrder = Permutation(n, rng);
+                messageOrder = Order(n, rng, pinFirst);
             lastOrderByRoom[roomKey] = (int[])messageOrder.Clone();
         }
 
@@ -46,6 +48,17 @@ public class QuestionShuffle
         if (!string.IsNullOrEmpty(m.id) && choiceOrders.TryGetValue(m.id, out var order) && order.Length == m.choices.Length)
             return order;
         return Permutation(m.choices.Length, null);
+    }
+
+    /// <summary>A shuffled order; with a valid <paramref name="pinFirst"/>, that index comes first and the rest are shuffled.</summary>
+    static int[] Order(int n, Random rng, int pinFirst)
+    {
+        var order = Permutation(n, rng);
+        if (pinFirst < 0 || pinFirst >= n) return order;
+        int at = Array.IndexOf(order, pinFirst);
+        for (int i = at; i > 0; i--) order[i] = order[i - 1];   // keep the others' shuffled order
+        order[0] = pinFirst;
+        return order;
     }
 
     /// <summary>0..n-1 shuffled with Fisher-Yates. A null rng returns the identity order.</summary>
