@@ -8,8 +8,9 @@ using UnityEngine;
 ///   Website - a captured web page, reviewed on a computer like an email
 ///   Case    - a multi-evidence final case, submitted at a FinalCaseTerminal
 ///   Chat    - a work-chat conversation, read on the phone like a text message
+///   Question - a curriculum case question with answer choices, answered on the message pop-up
 /// </summary>
-public enum MessageChannel { SMS, Email, Website, Case, Chat }
+public enum MessageChannel { SMS, Email, Website, Case, Chat, Question }
 
 public static class MessageChannels
 {
@@ -19,7 +20,7 @@ public static class MessageChannels
     /// <summary>"email", "text message", "web page", "case" - for feedback sentences.</summary>
     public static string Noun(MessageChannel c) =>
         c == MessageChannel.SMS ? "text message" : c == MessageChannel.Website ? "web page" : c == MessageChannel.Case ? "case"
-        : c == MessageChannel.Chat ? "chat message" : "email";
+        : c == MessageChannel.Chat ? "chat message" : c == MessageChannel.Question ? "question" : "email";
 
     /// <summary>Read on the phone (text messages and chats).</summary>
     public static bool OnPhone(MessageChannel c) => c == MessageChannel.SMS || c == MessageChannel.Chat;
@@ -111,6 +112,24 @@ public class ScamMessage
 
     [Header("Wrong answer (optional): what a mistake on this message sets off")]
     public WrongAnswerConsequence consequence = new WrongAnswerConsequence();
+
+    [Header("Curriculum question (optional)")]
+    [Tooltip("Answer choices in their original order (no \"A.\" prefixes). Two or more = a choice question: the player " +
+             "picks one instead of SCAM / LEGITIMATE, and the order is shuffled at the start of every attempt.")]
+    public string[] choices;
+    [Tooltip("Index into choices (original order) of the correct answer.")]
+    public int correctChoice;
+    [Tooltip("Short feedback line shown above the explanation after answering.")]
+    [TextArea(1, 3)] public string feedback = "";
+    [Tooltip("Course subject and lesson this question is based on (from the validated question bank).")]
+    public string curriculumRef = "";
+
+    /// <summary>True if the player answers by picking one of <see cref="choices"/> instead of a verdict.</summary>
+    public bool HasChoices => choices != null && choices.Length >= 2;
+
+    /// <summary>Text of a choice by its original index, or "" if out of range.</summary>
+    public string ChoiceText(int originalIndex) =>
+        HasChoices && originalIndex >= 0 && originalIndex < choices.Length ? choices[originalIndex] : "";
 
     /// <summary>True if the message has details to inspect.</summary>
     public bool HasInvestigation => inspectables != null && inspectables.Count > 0;

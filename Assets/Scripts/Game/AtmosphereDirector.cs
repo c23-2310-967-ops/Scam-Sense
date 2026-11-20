@@ -81,7 +81,8 @@ public class AtmosphereDirector : MonoBehaviour
         }
         else
         {
-            bool missedScam = r.message != null && r.message.correctVerdict == MessageVerdict.Scam;
+            // A wrong choice question counts like a false alarm (smaller jolt); only a trusted scam raises it fully.
+            bool missedScam = r.message != null && !r.IsChoice && r.message.correctVerdict == MessageVerdict.Scam;
             tension = Mathf.Min(1f, tension + (missedScam ? MissedScamTension : FalseAlarmTension));
             warm = 0f;
         }

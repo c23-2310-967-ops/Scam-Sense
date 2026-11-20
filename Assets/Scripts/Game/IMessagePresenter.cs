@@ -40,6 +40,16 @@ public interface IRecheckPresenter
     void SetRecheck(bool answersEnabled, string status);
 }
 
+/// <summary>
+/// Optional: a presenter that can show a choice question (ScamMessage.HasChoices). It shows the choices in the order
+/// QuizManager gives it (shuffled per attempt) and reports the picked choice by its ORIGINAL index, so the answer
+/// check never depends on the order on screen.
+/// </summary>
+public interface IChoicePresenter
+{
+    event Action<int> ChoiceChosen;
+}
+
 /// <summary>Optional: the part of a presenter that briefly flashes red after a wrong answer.</summary>
 public interface IWarningTarget
 {

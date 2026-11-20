@@ -31,6 +31,10 @@ public class ScoringSystem : MonoBehaviour
         /// <summary>A follow-up answer after a mistake (points = recovery points), not a first answer.</summary>
         public bool recovery;
         public bool hintUsed;
+        /// <summary>Choice questions: original index of the choice picked (-1 for a SCAM / LEGITIMATE answer).</summary>
+        public int chosenChoice;
+        /// <summary>True if this was an answer to a choice question.</summary>
+        public bool IsChoice => message != null && message.HasChoices && chosenChoice >= 0;
     }
 
     /// <summary>The level's rules (Level 1 defaults until <see cref="Configure"/> is called).</summary>
@@ -169,18 +173,37 @@ public class ScoringSystem : MonoBehaviour
     /// <summary>
     /// Scores one answer. Returns false (and scores nothing) if this message was already answered.
     /// </summary>
-    public bool TryRecord(ScamMessage message, MessageVerdict chosen, float seconds, out AnswerResult result)
+    public bool TryRecord(ScamMessage message, MessageVerdict chosen, float seconds, out AnswerResult result) =>
+        Record(message, chosen, chosen == (message != null ? message.correctVerdict : chosen), -1, seconds, out result);
+
+    /// <summary>
+    /// Scores the answer to a choice question. <paramref name="originalChoice"/> is the index in
+    /// <see cref="ScamMessage.choices"/> (original order), so the shown (shuffled) order never affects checking.
+    /// Returns false (and scores nothing) if the message has no choices, the index is invalid or it was already answered.
+    /// </summary>
+    public bool TryRecordChoice(ScamMessage message, int originalChoice, float seconds, out AnswerResult result)
+    {
+        result = default;
+        if (message == null || !message.HasChoices || originalChoice < 0 || originalChoice >= message.choices.Length) return false;
+        bool correct = originalChoice == message.correctChoice;
+        // The verdict fields are kept consistent for code that only reads them.
+        var verdict = correct ? message.correctVerdict
+                    : message.correctVerdict == MessageVerdict.Scam ? MessageVerdict.Legitimate : MessageVerdict.Scam;
+        return Record(message, verdict, correct, originalChoice, seconds, out result);
+    }
+
+    bool Record(ScamMessage message, MessageVerdict chosen, bool correct, int choice, float seconds, out AnswerResult result)
     {
         result = default;
         if (message == null || answeredIds.Contains(message.id)) return false;
 
         seconds = Mathf.Max(0f, seconds);
-        bool correct = chosen == message.correctVerdict;
         int points = PointsFor(message, correct, seconds, out int bonus, out int timePenalty, out float allowance);
         result = new AnswerResult
         {
             message = message,
             chosen = chosen,
+            chosenChoice = choice,
             isCorrect = correct,
             seconds = seconds,
             allowance = allowance,
@@ -196,7 +219,11 @@ public class ScoringSystem : MonoBehaviour
             // Small and once per message: one mistake costs a little, it doesn't sink the case.
             result.penalty = Config.wrongPenalty;
             PenaltyPoints += result.penalty;
-            if (message.correctVerdict == MessageVerdict.Scam) MissedRisks++; else FalseAlarms++;
+            // Missed scams / false alarms are verdict mistakes; a wrong choice is neither.
+            if (choice < 0)
+            {
+                if (message.correctVerdict == MessageVerdict.Scam) MissedRisks++; else FalseAlarms++;
+            }
         }
         results.Add(result);
         TotalAnswerTime += seconds;
@@ -235,7 +262,7 @@ public class ScoringSystem : MonoBehaviour
         bool correct = chosen == message.correctVerdict;
         result = new AnswerResult
         {
-            message = message, chosen = chosen, isCorrect = correct, seconds = Mathf.Max(0f, seconds),
+            message = message, chosen = chosen, chosenChoice = -1, isCorrect = correct, seconds = Mathf.Max(0f, seconds),
             points = correct ? RecoveryPointsFor(hintUsed) : 0, recovery = true, hintUsed = hintUsed
         };
         if (correct)

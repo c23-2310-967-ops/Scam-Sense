@@ -84,11 +84,72 @@ public class LevelDataTests
     {
         foreach (var level in Levels())
         {
+            // Only for rooms judged purely SCAM / LEGITIMATE: in a room with choice questions, answering SCAM
+            // every time cannot win anyway.
+            if (level.messages.Any(m => m.HasChoices)) continue;
             var cased = level.messages.Where(m => m.channel != MessageChannel.Case).ToList();
             if (cased.Count < 2) continue;
             Assert.IsTrue(cased.Any(m => m.correctVerdict == MessageVerdict.Scam), $"{level.name}: no scam messages");
             Assert.IsTrue(cased.Any(m => m.correctVerdict == MessageVerdict.Legitimate), $"{level.name}: no legitimate messages - answering SCAM every time would win");
         }
+    }
+
+    // ---------- Curriculum questions (5 rooms x 6 questions) ----------
+
+    [Test]
+    public void EveryRoom_HasSixQuestions()
+    {
+        foreach (var level in Levels())
+            Assert.AreEqual(CurriculumQuestionsImporter.QuestionsPerRoom, level.MessageCount, $"{level.name} must have exactly six questions");
+    }
+
+    [Test]
+    public void ThirtyQuestions_EachInExactlyOneRoom()
+    {
+        var ids = Levels().SelectMany(l => l.messages.Select(m => m.id)).ToList();
+        Assert.AreEqual(30, ids.Count, "The five rooms must hold 30 questions in total");
+        var dupes = ids.GroupBy(i => i).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+        Assert.IsEmpty(dupes, "A question appears in more than one room: " + string.Join(", ", dupes));
+    }
+
+    [Test]
+    public void Rooms_MatchTheValidatedQuestionBank()
+    {
+        var data = CurriculumQuestionsImporter.Load();
+        Assert.AreEqual(5, data.rooms.Length, "The question data must define five rooms");
+        foreach (var room in data.rooms)
+        {
+            var level = AssetDatabase.LoadAssetAtPath<LevelDefinition>(room.levelAsset);
+            Assert.IsNotNull(level, room.levelAsset + " is missing");
+            CollectionAssert.AreEqual(room.questions.Select(q => q.id).ToList(), level.messages.Select(m => m.id).ToList(),
+                $"{level.name} is out of date with {CurriculumQuestionsImporter.JsonPath} - run Tools > Scam Sense > Curriculum > Load Questions into Rooms");
+            for (int i = 0; i < room.questions.Length; i++)
+            {
+                var q = room.questions[i]; var m = level.messages[i];
+                Assert.AreEqual(q.body, m.body, $"{level.name} / {m.id}: question text differs from the question bank");
+                Assert.AreEqual(q.correctChoice, m.correctChoice, $"{level.name} / {m.id}: correct answer differs from the question bank");
+                CollectionAssert.AreEqual(q.choices ?? new string[0], m.choices ?? new string[0], $"{level.name} / {m.id}: choices differ from the question bank");
+            }
+        }
+    }
+
+    [Test]
+    public void ChoiceQuestions_AreWellFormed()
+    {
+        var problems = new List<string>();
+        foreach (var level in Levels())
+            foreach (var m in level.messages.Where(m => m.HasChoices))
+            {
+                string where = $"{level.name} / {m.id}";
+                if (m.choices.Length != 4) problems.Add($"{where}: {m.choices.Length} choices (expected 4)");
+                if (m.correctChoice < 0 || m.correctChoice >= m.choices.Length) problems.Add($"{where}: correct choice {m.correctChoice} is out of range");
+                if (m.choices.Any(string.IsNullOrWhiteSpace)) problems.Add($"{where}: an empty choice");
+                if (m.choices.Distinct().Count() != m.choices.Length) problems.Add($"{where}: two identical choices");
+                // Letters are added on screen by position (the order is shuffled), so the data must not carry them.
+                if (m.choices.Any(c => System.Text.RegularExpressions.Regex.IsMatch(c, @"^\s*[A-D][.)]\s"))) problems.Add($"{where}: a choice starts with a letter label");
+                if (m.channel != MessageChannel.Question) problems.Add($"{where}: choice questions use the Question channel");
+            }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
     [Test]

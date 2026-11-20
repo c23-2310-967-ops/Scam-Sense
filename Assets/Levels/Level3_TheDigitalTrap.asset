@@ -20,163 +20,259 @@ MonoBehaviour:
     one with the evidence before you decide.
   previewImage: {fileID: 21300000, guid: de67521957d88cb478527ddaa3a59230, type: 3}
   briefingTitle: "LEVEL 3 \u2014 THE DIGITAL TRAP"
-  briefingText: Welcome to the next stage of your investigation. These messages are
-    more convincing, and some contain only subtle warning signs. Examine the sender,
-    verify the context, and investigate suspicious requests before making your decision.
+  briefingText: 'The traps are getting more convincing. This room has six questions:
+    five case questions with four answer choices and one message or web page to judge
+    as SCAM or LEGITIMATE. They arrive in a different order on every attempt, and
+    the answer choices are shuffled too, so read each one carefully instead of remembering
+    positions.'
   caseNotes:
-  - This morning you signed in on a new workstation, OPS-WS3.
-  - You ordered a wireless headset (order ED-48213). Delivery is due tomorrow.
-  - You requested a password change for your Example Cloud Service account.
-  - The case-files computer by the west wall lists trusted contacts, orders, account
-    activity and the IT policy.
+  - 'Trusted domain (case files): examplebank.example'
   objectives:
-  - Investigate six messages.
-  - Classify each message as SCAM or LEGITIMATE.
-  - Examine suspicious details before answering.
-  - Complete the investigation to unlock the next room.
+  - Answer all six questions in this room.
+  - Read the whole situation before you choose.
+  - Score 720 or more to unlock the next room.
   messages:
-  - id: l3_signin_alert
-    channel: 1
-    sender: Example Cloud Security
-    senderDetail: security-alerts@examplecloud.example
-    subject: Unusual Sign-In Activity
-    body: We noticed a sign-in to your account from a new device. If this was you,
-      no action is needed. If you do not recognize this activity, open the official
-      application and review your recent sign-ins.
-    link: 
-    correctVerdict: 1
-    scenarioContext: The notification comes from the fictional cloud service used
-      by the player. Its sender information matches the trusted service details provided
-      in the investigation environment.
-    explanation: Security alerts can be legitimate. The message provides a safe way
-      to investigate the activity through the official application and does not pressure
-      you to disclose your password.
-    trigger: 1
-    requestedAction: Nothing if the sign-in was you; otherwise review recent sign-ins
-      in the official app.
-    linkNote: No link. It tells you to open the official application yourself.
-    clues:
-    - Reports a sign-in from a new device.
-    - Does not ask for a password, code or payment.
-    - Compare the sender's domain and the sign-in with the case files.
-    inspectables: []
-    evidence: []
-  - id: l3_lookalike_bank
-    channel: 1
-    sender: Example Bank Security
-    senderDetail: security@examplebank-protect.example
-    subject: 'Action Required: Account Protection'
-    body: Our monitoring system detected unusual activity. To prevent temporary restrictions,
-      confirm your account information through our verification page immediately.
-    link: examplebank-protect.example/verify
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: The sender's domain does not match the verified bank domain, and
-      the message pressures you to act quickly. Do not use the supplied link. Contact
-      the bank through its official application or a verified website.
-    trigger: 2
-    requestedAction: Confirm your account information on a verification page, immediately.
-    linkNote: examplebank-protect.example/verify (training placeholder, never opened).
-    clues:
-    - The display name says Example Bank Security.
-    - Warns of restrictions unless you act immediately.
-    - Compare the full sender domain with the Trusted Contacts file.
-    inspectables: []
-    evidence: []
-  - id: l3_it_password
-    channel: 1
-    sender: IT Support Desk
-    senderDetail: it.support@yourcompany.example
-    subject: Required Security Verification
-    body: We are updating our security records. Please reply with your current password
-      so we can confirm your account and avoid interruption to your access.
+  - id: M03
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Multiple Choice
+    body: A login page shows a padlock and starts with <b>https://</b>. <b>What does
+      the padlock actually prove?</b>
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: Legitimate support teams should not ask you to disclose your password
-      by email. Verify the request through an established IT support channel and
-      never send credentials in a message.
-    trigger: 1
-    requestedAction: Reply to this email with your current password.
-    linkNote: No link. The reply goes back to the sender.
-    clues:
-    - The address shows the company domain - addresses can be spoofed.
-    - Warns that your access may be interrupted.
-    - Check what the IT Security Policy says about passwords.
+    explanation: HTTPS (TLS) protects data <i>in transit</i> so others on the network
+      can't read or change it. Certificates are easy for anyone to get for their
+      own domain, so scam sites often have padlocks too. The padlock tells you the
+      connection is private, not who you're talking to. You still have to check the
+      domain.
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
     inspectables: []
     evidence: []
-  - id: l3_delivery_sms
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - The site is owned by the real company
+    - Data between you and <i>this</i> site is encrypted, but the site itself could
+      still be fake
+    - The site has been checked by the government
+    - The site cannot contain malware
+    correctChoice: 1
+    feedback: The padlock means <b>encrypted</b>, not <b>trustworthy</b>. Fake sites
+      have padlocks too. Check the domain.
+    curriculumRef: "Advanced Cybersecurity Strategies (BIT4233). Supporting: Computer
+      Security (BIT1225), Cryptography \u2014 Modern Cryptography (\"secure data
+      in transit and at rest\")"
+  - id: M04
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Identify the Threat
+    body: "<b>SMS from an unknown number:</b> \"Ma, si Migs 'to. Nasira phone ko,
+      bagong number ko 'to. Pa-send naman \u20B13,000 sa PayLite 0917 555 0188, emergency
+      lang. Wag ka muna tumawag, wala pa akong load.\" <b>What attack is this?</b>"
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 'The sender claims to be family on a "new number", invents an emergency,
+      asks for money, and <b>blocks you from checking</b> ("don''t call yet"). That
+      is social engineering: it exploits trust and urgency rather than technology.
+      To check, call Migs''s <i>old</i> number or ask something only the real Migs
+      would know.'
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables: []
+    evidence: []
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Impersonation ("new number" family emergency) social engineering
+    - Malware infection
+    - A data breach
+    - A promotional spam message
+    correctChoice: 0
+    feedback: 'Impersonation. New number + emergency + ''don''t call'' means: <b>call
+      the old number first.</b>'
+    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Weeks 10\u201311:
+      Cybersecurity Threats and Attack Landscape"
+  - id: M05
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: What Should You Do?
+    body: During your OJT, you typed your work password into a page you opened from
+      an email. A minute later, you notice the address was wrong.
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 'Fast reporting limits the damage: IT can lock sessions, block the
+      site and warn others. Changing the password quickly makes the stolen one useless.
+      Hiding the mistake is unprofessional and gives the attacker time. Forwarding
+      spreads the dangerous link. Deleting it removes evidence IT needs.'
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables: []
+    evidence: []
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Say nothing, since nothing bad has happened yet
+    - Forward the email to coworkers to ask if they got it too
+    - Delete the email so no one finds out
+    - Change the password through the official site right away, report to IT with
+      the email, and watch for login or MFA prompts you didn't start
+    correctChoice: 3
+    feedback: Report it. Mistakes happen, and <b>hiding them</b> is what makes them
+      serious.
+    curriculumRef: "Social and Professional Issues (BIT2105). Supporting: IAS Week
+      16 (incident reporting procedures) \u2014 Weeks 13\u201314: Security Incidents
+      (\"recommend appropriate preventive and corrective measures\")"
+  - id: M06
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Multiple Choice
+    body: A classmate's school account password was stolen through phishing. <b>Which
+      control is most likely to stop the attacker from logging in?</b>
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 'MFA is a <b>technical control</b>: the attacker needs a second
+      factor (an app prompt, code or security key) as well as the password. The other
+      choices don''t affect a remote login. MFA is not perfect: only approve prompts
+      that you started yourself.'
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables: []
+    evidence: []
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - A stronger Wi-Fi password at home
+    - A privacy screen protector
+    - Multi-factor authentication (MFA) on the account
+    - Clearing the browser history
+    correctChoice: 2
+    feedback: MFA. A stolen password alone isn't enough, <b>if you never approve
+      a prompt you didn't start.</b>
+    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 15:
+      Security Controls and Protection Mechanisms (\"administrative, technical, and
+      physical controls\")"
+  - id: M07
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Scenario-Based
+    body: "At a caf\xE9 you see two networks: <b>Kape_FreeWiFi</b> and <b>Kape_Free_WiFi</b>.
+      After you connect to one, a page says: \"Log in with your SocialBook email
+      and password to get internet access.\""
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: Two networks with almost the same name suggests a fake "evil twin"
+      hotspot. A network page has no reason to ask for a <i>different</i> site's
+      password. That is credential harvesting. <b>A VPN wouldn't help here:</b> it
+      encrypts your traffic, but it can't protect a password you type into a fake
+      page yourself. Turning off the firewall removes protection.
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables: []
+    evidence: []
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Don't enter it. Ask the staff for the real network name, and use mobile data
+      for anything sensitive
+    - "Enter it, since caf\xE9s often ask you to log in"
+    - Try both networks until one works without a login
+    - Turn off your firewall so the network connects faster
+    correctChoice: 0
+    feedback: Fake hotspot. No Wi-Fi network needs your <b>social media password</b>.
+      Ask staff, or use mobile data.
+    curriculumRef: "Computer Security (BIT1225) \u2014 Network Security (\"firewalls,
+      intrusion detection/prevention systems (IDS/IPS), and VPNs\")"
+  - id: M08
     channel: 0
-    sender: Example Delivery
-    senderDetail: Saved contact
+    sender: ExampleBank
+    senderDetail: In the same thread as your real ExampleBank messages
     subject: 
-    body: Your delivery is scheduled for tomorrow. Your order reference is included
-      in your official order history. Open the delivery app you normally use to view
-      the latest status.
-    link: 
-    correctVerdict: 1
-    scenarioContext: The player previously placed an order in the simulated environment.
-      The reference number matches the order shown in the trusted order history.
-    explanation: The message matches a transaction you initiated, and its information
-      is consistent with the order record. Checking through the official delivery
-      app is safer than relying on an unfamiliar link.
-    trigger: 1
-    requestedAction: Check the delivery status in the delivery app you already use.
-    linkNote: No link.
-    clues:
-    - Notification preview shows order reference ED-48213.
-    - Sent from a saved contact.
-    - Compare the reference with the Orders file.
-    inspectables: []
-    evidence: []
-  - id: l3_exec_giftcards
-    channel: 1
-    sender: Operations Director
-    senderDetail: ops.director@yourcompany-exec.example
-    subject: "Confidential \u2014 Urgent Request"
-    body: I need you to purchase several digital gift vouchers for a client meeting.
-      Please keep this confidential and send the redemption codes as soon as possible.
-      I am currently unavailable for a call.
-    link: 
+    body: 'ExampleBank: Your account will be suspended TODAY. Update your details
+      at'
+    link: examplebank-ph.example/update
     correctVerdict: 0
-    scenarioContext: 
-    explanation: The request combines urgency, secrecy, an unusual payment method,
-      and avoidance of normal verification. Confirm unusual financial requests through
-      a separate, trusted communication channel.
-    trigger: 2
-    requestedAction: Buy digital gift vouchers and email the redemption codes.
-    linkNote: No link.
-    clues:
-    - Signed with a job title only.
-    - Asks you to keep it confidential and says a call isn't possible.
-    - Compare the domain with your company's domain.
+    scenarioContext: 'Trusted domain (case files): examplebank.example'
+    explanation: 'Text sender names (sender IDs) can be faked, and a faked one lands
+      in the same thread as the real sender''s messages. Where the message appears
+      doesn''t prove where it came from. The evidence is in the content: examplebank-ph.example
+      isn''t the trusted domain, and it threatens a same-day suspension. Many banks
+      have also announced that they no longer send clickable links by text.'
+    trigger: 3
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
     inspectables: []
     evidence: []
-  - id: l3_password_confirm
-    channel: 1
-    sender: Example Cloud Service
-    senderDetail: no-reply@examplecloud.example
-    subject: Password Change Confirmation
-    body: The password change you requested has been completed. If you made this
-      change, no further action is needed. If you did not request it, open the official
-      application and review your account security.
-    link: 
-    correctVerdict: 1
-    scenarioContext: The player requested a password change in the simulated investigation
-      setup.
-    explanation: The notification matches an action you initiated and provides a
-      safe method to review your account. If the change were unexpected, you should
-      investigate through the official application.
-    trigger: 2
-    requestedAction: Nothing if you made the change; otherwise review security in
-      the official app.
-    linkNote: No link.
-    clues:
-    - Confirms a password change.
-    - Suggests opening the official application yourself.
-    - Compare with the Account Activity file.
-    inspectables: []
-    evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: 'Scam. Sender names can be <b>faked</b>, so the thread proves nothing.
+      Check the link: it''s not examplebank.example.'
+    curriculumRef: "Cyber Forensics (BIT2226) \u2014 Mobile Device Forensics"
   inboxExtras:
   - id: l3_old_welcome
     channel: 1
@@ -191,11 +287,24 @@ MonoBehaviour:
     scenarioContext: 
     explanation: 
     trigger: 0
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues: []
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: 
+    curriculumRef: 
   - id: l3_old_statement
     channel: 1
     sender: Example Bank
@@ -208,11 +317,24 @@ MonoBehaviour:
     scenarioContext: 
     explanation: 
     trigger: 0
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues: []
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: 
+    curriculumRef: 
   - id: l3_old_order
     channel: 1
     sender: Example Delivery
@@ -225,51 +347,45 @@ MonoBehaviour:
     scenarioContext: 
     explanation: 
     trigger: 0
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues: []
     inspectables: []
     evidence: []
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: 
+    curriculumRef: 
   caseFiles:
-  - title: Trusted Contacts
-    body: "Verified sender domains (from your onboarding pack):\n\u2022  Example
-      Bank \u2014 <b>examplebank.example</b>\n\u2022  Example Cloud Service / Example
-      Cloud Security \u2014 <b>examplecloud.example</b>\n\u2022  Example Delivery
-      \u2014 <b>exampledelivery.example</b>, texts from the saved contact \"Example
-      Delivery\"\n\u2022  Your company \u2014 <b>yourcompany.example</b> (all staff,
-      including IT and directors)\n\nCompare the whole domain after the @, letter
-      by letter. A display name can say anything."
-  - title: Orders
-    body: "Your recent orders and transactions:\n\u2022  <b>ED-48213</b> \u2014 Wireless
-      headset \u2014 Example Delivery \u2014 out for delivery, arriving tomorrow\n\u2022 
-      ED-47790 \u2014 Phone case \u2014 Example Delivery \u2014 delivered last week\n\u2022 
-      Example Bank \u2014 no pending payments, no open support requests\n\u2022 
-      Company purchasing \u2014 no voucher or gift card purchases on record"
-  - title: Account Activity
-    body: "Example Cloud Service \u2014 today:\n\u2022  08:15  Sign-in from a new
-      device: <b>OPS-WS3</b> (this operations workstation)\n\u2022  08:42  Password
-      change requested by you\n\u2022  08:43  Password change completed\n\nExample
-      Bank \u2014 today:\n\u2022  No sign-ins or account changes"
-  - title: IT Policy
-    body: "IT Security Policy (fictional):\n\u2022  IT Support will never ask for
-      your password \u2014 not by email, phone or chat.\n\u2022  Password resets
-      happen only in the self-service portal you already use.\n\u2022  Any purchase
-      or payment needs approval in the finance system, never by email alone.\n\u2022 
-      Gift cards and vouchers are not a payment method for company business.\n\u2022 
-      Report suspicious messages to the security team with the Report button."
-  - title: Notes
-    body: "Investigator notes \u2014 Case 03:\n\u2022  The Operations Director is
-      travelling today but can be reached on the company chat and phone.\n\u2022 
-      Earlier lookalike domains added a word or a hyphen next to a real brand name.\n\u2022 
-      A real alert tells you to use the official app; a fake one sends you to its
-      own page.\n\u2022  Ask yourself: did I start this? Does it match my records?"
+  - title: Case Notes
+    body: "\u2022 Trusted domain (case files): examplebank.example"
+  - title: How This Room Works
+    body: 'Six questions are waiting in this room. They arrive one at a time, in
+      a different order on every attempt.
+
+
+      Case questions have four answer
+      choices, shuffled each attempt. Pick the safest and most accurate one.
+
+
+      Messages
+      and web pages are judged as SCAM or LEGITIMATE.
+
+
+      Score 720 or more to
+      unlock the next room.'
   firstMessageDelay: 10
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 5
-  oneStarScore: 1
-  twoStarScore: 870
-  threeStarScore: 1040
-  minScoreToUnlockNext: 870
   scoring:
     basePoints: 200
     speedBonus: 20
@@ -286,20 +402,21 @@ MonoBehaviour:
     overtimePenaltyPerStep: 10
     maxTimePenalty: 50
     minCorrectPoints: 150
+  oneStarScore: 480
+  twoStarScore: 720
+  threeStarScore: 1200
+  minScoreToUnlockNext: 720
   nextLevelId: level_4
   nextSceneName: Room4_DigitalForensicsLab
   lessons:
-  - 'Security alerts can be real: judge them by what they ask and where they send
-    you.'
-  - Compare the full sender address with trusted records - display names are easy
-    to fake.
-  - No genuine support team needs your password, even from a familiar-looking address.
-  - 'Urgency, secrecy and gift cards together mean: verify through a separate channel.'
-  - Messages that match actions you started are more likely legitimate - still check
-    in the official app.
-  learningSummary: You compared messages against trusted records, spotted a lookalike
-    domain, a credential request and an executive impersonation, and recognised genuine
-    alerts that matched your own activity.
+  - Correct the common belief that a padlock means a site is safe.
+  - Recognize impersonation that relies on emotion and urgency, and verify through
+    a known channel.
+  - Report honestly and quickly after a security mistake.
+  - Pick the control that matches the threat.
+  - Spot fake hotspots and understand the limits of VPNs.
+  - Learn that what a phone displays is not proof of who sent a message.
+  learningSummary: 
   performanceHigh: Outstanding analysis! You weighed every clue against the evidence
     and made sharp decisions.
   performanceModerate: Solid investigation. Review the explanations - the subtle

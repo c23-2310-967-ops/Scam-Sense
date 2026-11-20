@@ -83,6 +83,8 @@ public class WrongAnswerConsequences : MonoBehaviour
     /// <summary>The reaction for a wrong answer. A genuine message never gets a fake security incident.</summary>
     public static Reaction ReactionFor(ScamMessage msg)
     {
+        // A choice question has no verdict to fake an incident from: it gets the explanation only.
+        if (msg.HasChoices) return Reaction.FeedbackOnly;
         var kind = msg.consequence != null ? msg.consequence.kind : ConsequenceKind.Auto;
         bool scam = msg.correctVerdict == MessageVerdict.Scam;
         switch (kind)
@@ -153,6 +155,7 @@ public class WrongAnswerConsequences : MonoBehaviour
         title.text = reaction == Reaction.SecurityIncident ? $"You trusted a scam {noun}"
                    : reaction == Reaction.AccuracyWarning ? $"A genuine {noun} was reported as a scam"
                    : reaction == Reaction.MissedClue ? "The case conclusion missed key evidence"
+                   : r.IsChoice ? "That was not the best answer"
                    : "That verdict was not right";
 
         // Simulated consequence (none for FeedbackOnly)
@@ -169,10 +172,17 @@ public class WrongAnswerConsequences : MonoBehaviour
         }
 
         whyHeader.text = "Why this answer was wrong";
-        whyText.text = $"You chose <b>{UIKit.VerdictWord(r.chosen)}</b>, but this {noun} is " +
-                       $"<color={(scam ? UIKit.HexDanger : UIKit.HexSafe)}><b>{UIKit.VerdictWord(m.correctVerdict)}</b></color>. {m.explanation}";
+        whyText.text = r.IsChoice
+            ? $"You chose <b>{m.ChoiceText(r.chosenChoice)}</b>. The best answer is <color={UIKit.HexSafe}><b>{m.ChoiceText(m.correctChoice)}</b></color>. {m.explanation}"
+            : $"You chose <b>{UIKit.VerdictWord(r.chosen)}</b>, but this {noun} is " +
+              $"<color={(scam ? UIKit.HexDanger : UIKit.HexSafe)}><b>{UIKit.VerdictWord(m.correctVerdict)}</b></color>. {m.explanation}";
 
-        if (reaction == Reaction.AccuracyWarning)
+        if (r.IsChoice)
+        {
+            clueHeader.text = "Remember";
+            clueText.text = string.IsNullOrEmpty(m.feedback) ? m.explanation : m.feedback;
+        }
+        else if (reaction == Reaction.AccuracyWarning)
         {
             clueHeader.text = "Details that support legitimacy";
             clueText.text = LegitimacyDetails(m, eval) +
@@ -375,16 +385,18 @@ public class WrongAnswerConsequences : MonoBehaviour
     public void UpdateHudStatus()
     {
         if (hud == null || scoring == null) return;
-        int risks = 0, alarms = 0, wrong = 0;
+        int risks = 0, alarms = 0, wrong = 0, missedAnswers = 0;
         foreach (var r in scoring.Results)
         {
             if (r.isCorrect || r.message == null) continue;
             wrong++;
             if (scoring.WasRecovered(r.message.id)) continue;
-            if (r.message.correctVerdict == MessageVerdict.Scam) risks++; else alarms++;
+            if (r.IsChoice) missedAnswers++;   // a wrong choice is neither a missed scam nor a false alarm
+            else if (r.message.correctVerdict == MessageVerdict.Scam) risks++; else alarms++;
         }
         string state = risks > 0 ? $"<color={UIKit.HexDanger}>{risks} security risk{(risks > 1 ? "s" : "")} missed</color>"
                      : alarms > 0 ? $"<color={UIKit.HexWarning}>{alarms} false alarm{(alarms > 1 ? "s" : "")}</color>"
+                     : missedAnswers > 0 ? $"<color={UIKit.HexWarning}>{missedAnswers} answer{(missedAnswers > 1 ? "s" : "")} to review</color>"
                      : wrong > 0 ? $"<color={UIKit.HexSafe}>Recovered - on track</color>"
                      : $"<color={UIKit.HexSafe}>On track</color>";
         hud.SetCaseStatus($"Case status   {state}   <color={UIKit.HexSecondary}>·   accuracy {scoring.CorrectCount}/{scoring.Results.Count}</color>");

@@ -317,7 +317,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
             answerText.text = $"You chose {UIKit.VerdictWord(r.chosen)}. This {MessageChannels.Noun(r.message.channel)} is <color={hex}><b>{word}</b></color>.";
         }
         pointsText.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {ScoringSystem.Clock(r.seconds)}";
-        explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
+        explanationText.text = UIKit.FeedbackLead(r.message) + r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
         scoreText.text = $"Score {score} / {maxScore}  ·  Reviewed {reviewed}/{total}";
         UIKit.SetLabel(backButton, reviewed >= total ? "Finish case" : "Back to inbox");
         UIKit.SetInteractable(backButton, true);

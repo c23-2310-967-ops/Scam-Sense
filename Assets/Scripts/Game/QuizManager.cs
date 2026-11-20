@@ -69,7 +69,16 @@ public class QuizManager : MonoBehaviour
     private IMessagePresenter current;
 
     private int Total => level != null ? level.MessageCount : 0;
-    private ScamMessage Current => level.messages[index];
+    // Questions are asked in this attempt's shuffled order (built once in Begin).
+    private ScamMessage Current => level.messages[shuffle != null && index < shuffle.MessageOrder.Count ? shuffle.MessageOrder[index] : index];
+    private QuestionShuffle shuffle;
+
+    /// <summary>
+    /// Original choice indices in the order a presenter shows them this attempt (position 0 = "A").
+    /// Empty for a message without choices.
+    /// </summary>
+    public System.Collections.Generic.IReadOnlyList<int> ChoiceOrder(ScamMessage m) =>
+        shuffle != null ? shuffle.ChoiceOrder(m) : QuestionShuffle.Permutation(m != null && m.HasChoices ? m.choices.Length : 0, null);
     private MessageInvestigation investigation;
     private WrongAnswerConsequences consequences;
     private float recheckTime;
@@ -102,12 +111,16 @@ public class QuizManager : MonoBehaviour
 
     // ---------- Lifecycle ----------
 
-    /// <summary>Starts (or restarts) the sequence from the first message with a clean score.</summary>
+    /// <summary>
+    /// Starts (or restarts) the sequence from the first message with a clean score. Every call is a new attempt:
+    /// the room's questions and each question's choices get a new shuffled order, fixed until the next attempt.
+    /// </summary>
     public void Begin(LevelDefinition definition)
     {
         level = definition;
         index = 0;
         phase = Phase.Idle;
+        shuffle = level != null ? new QuestionShuffle(level.messages, level.levelId, new System.Random()) : null;
         if (scoring != null) { scoring.Configure(level); scoring.ResetRun(); }
         if (popup != null) popup.Hide();
         if (hud != null) hud.HideNotification();
@@ -282,6 +295,7 @@ public class QuizManager : MonoBehaviour
         current = presenter;
         current.AnswerChosen += OnAnswer;
         current.ContinueClicked += OnContinue;
+        if (current is IChoicePresenter choicePresenter) choicePresenter.ChoiceChosen += OnChoice;
 
         if (hud != null) hud.HideNotification();
         InteractionPrompt.Clear(this);
@@ -296,6 +310,7 @@ public class QuizManager : MonoBehaviour
     {
         if (phase == Phase.Recheck) { OnRecheckAnswer(chosen); return; }
         if (phase != Phase.Reading) return;   // ignores late or repeated clicks
+        if (Current.HasChoices) return;       // choice questions are answered through OnChoice only
         phase = Phase.Feedback;
 
         if (!scoring.TryRecord(Current, chosen, responseTime, out var result))
@@ -307,6 +322,27 @@ public class QuizManager : MonoBehaviour
         }
 
         if (investigation != null) investigation.Submit(Current, chosen);   // evaluates the selected evidence once
+        AfterFirstAnswer(result);
+    }
+
+    /// <summary>A choice question was answered. <paramref name="originalChoice"/> is the index before shuffling.</summary>
+    void OnChoice(int originalChoice)
+    {
+        if (phase != Phase.Reading || !Current.HasChoices) return;   // ignores late or repeated clicks
+        phase = Phase.Feedback;
+
+        if (!scoring.TryRecordChoice(Current, originalChoice, responseTime, out var result))
+        {
+            Debug.LogError($"QuizManager: choice {originalChoice} for '{Current.id}' could not be scored (duplicate id or bad index).", this);
+            OnContinue();
+            return;
+        }
+        AfterFirstAnswer(result);
+    }
+
+    /// <summary>Feedback, progress and the wrong-answer reaction - shared by verdict and choice answers.</summary>
+    void AfterFirstAnswer(ScoringSystem.AnswerResult result)
+    {
         RecordEvidence();
         int max = scoring.MaxScoreFor(Total);
         if (levelAudio != null) levelAudio.PlayAnswer(result.isCorrect);
@@ -402,6 +438,7 @@ public class QuizManager : MonoBehaviour
         if (current == null) return;
         current.AnswerChosen -= OnAnswer;
         current.ContinueClicked -= OnContinue;
+        if (current is IChoicePresenter choicePresenter) choicePresenter.ChoiceChosen -= OnChoice;
         current = null;
     }
 
@@ -452,7 +489,8 @@ public class QuizManager : MonoBehaviour
 
         if (phase == Phase.Notified && !NeedsStation(Current))
             InteractionPrompt.Set(this, InteractionPrompt.KeyName(interactKey),
-                Current.channel == MessageChannel.Chat ? "Read new chat message" : Current.channel == MessageChannel.SMS ? "Read new text message" : "Read new email", priority: 3);
+                Current.channel == MessageChannel.Chat ? "Read new chat message" : Current.channel == MessageChannel.SMS ? "Read new text message"
+                : Current.channel == MessageChannel.Question ? "Open case question" : "Read new email", priority: 3);
         else
             InteractionPrompt.Set(this, "", device.idleLabel, priority: 1);
     }

@@ -164,8 +164,13 @@ public class InspectableObject : MonoBehaviour
         for (int i = 0; i < results.Count; i++)
         {
             var r = results[i];
-            string verdict = r.message.correctVerdict == MessageVerdict.Scam ? $"<color={UIKit.HexDanger}>SCAM</color>" : $"<color={UIKit.HexSafe}>LEGITIMATE</color>";
             string mark = r.isCorrect ? $"<color={UIKit.HexSafe}>✓</color>" : $"<color={UIKit.HexWarning}>×</color>";
+            if (r.IsChoice)
+            {
+                overview.AppendLine($"{mark}  <b>{i + 1}.</b> Question {Safe(r.message.id)}  ({Safe(r.message.subject)})");
+                continue;
+            }
+            string verdict = r.message.correctVerdict == MessageVerdict.Scam ? $"<color={UIKit.HexDanger}>SCAM</color>" : $"<color={UIKit.HexSafe}>LEGITIMATE</color>";
             overview.AppendLine($"{mark}  <b>{i + 1}.</b> {Safe(MessageChannels.Noun(r.message.channel))} from <b>{Safe(r.message.sender)}</b>  —  {verdict}");
         }
         overview.AppendLine("\nOpen the next pages for the clues behind each answer.");
@@ -176,15 +181,19 @@ public class InspectableObject : MonoBehaviour
             var r = results[i];
             var m = r.message;
             var sb = new StringBuilder();
-            sb.AppendLine($"<color={UIKit.HexSecondary}>From</color>  {Safe(m.sender)}{(string.IsNullOrEmpty(m.senderDetail) ? "" : "  ·  " + Safe(m.senderDetail))}");
-            if (!string.IsNullOrEmpty(m.subject)) sb.AppendLine($"<color={UIKit.HexSecondary}>Subject</color>  {Safe(m.subject)}");
+            if (r.IsChoice)
+                sb.AppendLine($"<color={UIKit.HexSecondary}>Question</color>  {Safe(m.id)}  ·  {Safe(m.subject)}");
+            else
+                sb.AppendLine($"<color={UIKit.HexSecondary}>From</color>  {Safe(m.sender)}{(string.IsNullOrEmpty(m.senderDetail) ? "" : "  ·  " + Safe(m.senderDetail))}");
+            if (!r.IsChoice && !string.IsNullOrEmpty(m.subject)) sb.AppendLine($"<color={UIKit.HexSecondary}>Subject</color>  {Safe(m.subject)}");
             if (!string.IsNullOrEmpty(m.link)) sb.AppendLine($"<color={UIKit.HexSecondary}>Link</color>  {Safe(m.link)}  <color={UIKit.HexSecondary}>(never opened)</color>");
-            string body = m.body ?? "";
+            string body = UIKit.StripRichText(m.body);
             if (body.Length > 260) body = body.Substring(0, 257) + "...";
             sb.AppendLine($"\n<i>\"{Safe(body)}\"</i>\n");
-            sb.AppendLine($"Your answer: <b>{UIKit.VerdictWord(r.chosen)}</b>   ·   Correct answer: <b>{UIKit.VerdictWord(m.correctVerdict)}</b>   {(r.isCorrect ? $"<color={UIKit.HexSafe}>✓ correct</color>" : $"<color={UIKit.HexWarning}>× not quite</color>")}");
+            sb.AppendLine($"{UIKit.AnswerSummary(r)}   {(r.isCorrect ? $"<color={UIKit.HexSafe}>✓ correct</color>" : $"<color={UIKit.HexWarning}>× not quite</color>")}");
             sb.AppendLine($"\n<color={UIKit.HexAccent}><b>Why</b></color>\n{m.explanation}");
-            result.Add(new DocumentReaderUI.Page($"{i + 1}. {MessageChannels.Noun(m.channel)} — {m.sender}", sb.ToString().TrimEnd()));
+            string title = r.IsChoice ? $"{i + 1}. Question {m.id}" : $"{i + 1}. {MessageChannels.Noun(m.channel)} — {m.sender}";
+            result.Add(new DocumentReaderUI.Page(title, sb.ToString().TrimEnd()));
         }
     }
 

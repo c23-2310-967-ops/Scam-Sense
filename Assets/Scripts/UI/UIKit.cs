@@ -687,7 +687,8 @@ public static class UIKit
         if (m == null) return "";
         var sb = new System.Text.StringBuilder();
         string channel = m.channel == MessageChannel.SMS ? "Text message" : m.channel == MessageChannel.Website ? "Web page (captured)"
-                       : m.channel == MessageChannel.Case ? "Multi-evidence case" : m.channel == MessageChannel.Chat ? "Work chat" : "Email";
+                       : m.channel == MessageChannel.Case ? "Multi-evidence case" : m.channel == MessageChannel.Chat ? "Work chat"
+                       : m.channel == MessageChannel.Question ? "Case question" : "Email";
         sb.Append($"<color={HexAccent}><b>SENDER</b></color>  {m.sender}");
         if (!string.IsNullOrEmpty(m.senderDetail)) sb.Append($"  <color={HexSecondary}>({m.senderDetail})</color>");
         sb.Append($"\n<color={HexAccent}><b>CHANNEL</b></color>  {channel}");
@@ -698,6 +699,8 @@ public static class UIKit
             sb.Append($"\n<color={HexAccent}><b>OBSERVATIONS</b></color>");
             foreach (var c in m.clues) if (!string.IsNullOrEmpty(c)) sb.Append($"\n•  {c}");
         }
+        if (!string.IsNullOrEmpty(m.scenarioContext))
+            sb.Append($"\n<color={HexAccent}><b>CASE NOTE</b></color>  {m.scenarioContext}");
         if (recentActivity != null && recentActivity.Length > 0)
         {
             sb.Append($"\n<color={HexAccent}><b>YOUR RECENT ACTIVITY</b></color>");
@@ -707,4 +710,30 @@ public static class UIKit
     }
 
     public static string VerdictWord(MessageVerdict v) => v == MessageVerdict.Scam ? "SCAM" : "LEGITIMATE";
+
+    /// <summary>
+    /// Rich text as plain text: tags removed, but angle brackets shown literally through &lt;noparse&gt; are kept
+    /// (e.g. "&lt;noparse&gt;&lt;&lt;/noparse&gt;name@site.example&lt;noparse&gt;&gt;&lt;/noparse&gt;" becomes "&lt;name@site.example&gt;").
+    /// </summary>
+    public static string StripRichText(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        s = s.Replace("<noparse><</noparse>", "\u0001").Replace("<noparse>></noparse>", "\u0002");
+        s = System.Text.RegularExpressions.Regex.Replace(s, "</?noparse>", "");
+        s = System.Text.RegularExpressions.Regex.Replace(s, "<[^<>]*>", "");
+        return s.Replace("\u0001", "<").Replace("\u0002", ">");
+    }
+
+    /// <summary>The message's short feedback line (italic, then a blank line), or "" if it has none.</summary>
+    public static string FeedbackLead(ScamMessage m) =>
+        m != null && !string.IsNullOrEmpty(m.feedback) ? $"<i>{m.feedback}</i>\n\n" : "";
+
+    /// <summary>"Your answer: X · Correct answer: Y" style text for a result, for verdict and choice questions alike.</summary>
+    public static string AnswerSummary(ScoringSystem.AnswerResult r)
+    {
+        if (r.message == null) return "";
+        if (r.IsChoice)
+            return $"Your answer: <b>{r.message.ChoiceText(r.chosenChoice)}</b>   ·   Best answer: <b>{r.message.ChoiceText(r.message.correctChoice)}</b>";
+        return $"Your answer: <b>{VerdictWord(r.chosen)}</b>   ·   Correct answer: <b>{VerdictWord(r.message.correctVerdict)}</b>";
+    }
 }

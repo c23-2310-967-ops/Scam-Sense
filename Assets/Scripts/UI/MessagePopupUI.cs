@@ -6,12 +6,25 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Full-screen message view used for text messages (and for emails if the scene has no ComputerTerminal).
-/// Left: a smartphone (SMS) or a mail window (Email). Right: the decision card with the response timer
-/// and SCAM / LEGITIMATE buttons, which turns into the feedback card after answering.
-/// Builds itself at runtime. QuizManager drives it through IMessagePresenter.
+/// Left: a smartphone (SMS), a mail window (Email) or a case-question sheet (choice questions). Right: the decision
+/// card with the response timer and SCAM / LEGITIMATE buttons - or, for a choice question, its answer buttons in
+/// this attempt's shuffled order - which turns into the feedback card after answering.
+/// Builds itself at runtime. QuizManager drives it through IMessagePresenter (and IChoicePresenter).
 /// </summary>
-public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming, IInvestigationDock, IRecheckPresenter, IWarningTarget
+public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter, IPresenterTiming, IInvestigationDock, IRecheckPresenter, IWarningTarget
 {
+    public event Action<int> ChoiceChosen;
+
+    // Choice questions
+    private RectTransform questionWindow;
+    private TMP_Text questionKicker, questionBody, questionPrompt;
+    private const int MaxChoices = 4;
+    private readonly Button[] choiceButtons = new Button[MaxChoices];
+    private readonly TMP_Text[] choiceLabels = new TMP_Text[MaxChoices];
+    private int[] shownChoices = new int[0];   // original choice index at each button position
+    private const float CardWidth = 580f, ChoiceCardWidth = 720f;
+    private const float ChoiceLabelWidth = ChoiceCardWidth - 44f - 36f - 48f - 24f;   // card padding + label margins
+
     [SerializeField] private int sortingOrder = 20;
     [Tooltip("Text messages are read on a first-person phone pulled out of the pocket (PocketPhone). " +
              "Off = the original full-screen phone view.")]
@@ -27,7 +40,8 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
     {
         area = default;
         if (!IsOpen || decisionCard == null || !decisionCard.gameObject.activeInHierarchy) return false;
-        var left = phone != null && phone.gameObject.activeInHierarchy ? phone : emailWindow != null && emailWindow.gameObject.activeInHierarchy ? emailWindow : null;
+        var left = phone != null && phone.gameObject.activeInHierarchy ? phone : emailWindow != null && emailWindow.gameObject.activeInHierarchy ? emailWindow
+                 : questionWindow != null && questionWindow.gameObject.activeInHierarchy ? questionWindow : null;
         if (left == null || !MessageInvestigation.ScreenRect(left, out var l) || !MessageInvestigation.ScreenRect(decisionCard, out var d)) return false;
         area = Rect.MinMaxRect(l.xMax + 20f, d.yMin, d.xMin - 20f, d.yMax);
         return area.width > 0f && area.height > 0f;
@@ -82,6 +96,14 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
 
     public void ShowMessage(ScamMessage msg)
     {
+        if (quiz == null) quiz = FindFirstObjectByType<QuizManager>();
+        if (msg.HasChoices)
+        {
+            ShowQuestion(msg);
+            return;
+        }
+        SetChoiceMode(false);
+
         bool sms = MessageChannels.OnPhone(msg.channel);   // text messages and chats use the phone layout
         phone.gameObject.SetActive(sms);
         emailWindow.gameObject.SetActive(!sms);
@@ -112,7 +134,6 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         decisionGroup.SetActive(true);
 
         // Details start collapsed for every new message.
-        if (quiz == null) quiz = FindFirstObjectByType<QuizManager>();
         string details = UIKit.MessageDetailsText(msg, quiz != null && quiz.Level != null ? quiz.Level.caseNotes : null);
         detailsText.text = details;
         // Fit the box to short details; cap it (and scroll) for long ones.
@@ -140,6 +161,84 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         RestoreDesktopLayout();
         root.gameObject.SetActive(true);
         StartCoroutine(PopIn());
+    }
+
+    // ---------- Choice questions ----------
+
+    /// <summary>A case question: the scenario on the left, its choices (in this attempt's order) on the card.</summary>
+    void ShowQuestion(ScamMessage msg)
+    {
+        phone.gameObject.SetActive(false);
+        emailWindow.gameObject.SetActive(false);
+        questionWindow.gameObject.SetActive(true);
+        questionKicker.text = string.IsNullOrEmpty(msg.subject) ? "CASE QUESTION" : msg.subject.ToUpperInvariant();
+        questionBody.text = msg.body;
+
+        channelHeader.text = "Case question";
+        questionPrompt.text = "Choose the best answer.";
+        hintText.text = "Read the whole situation first. More than one answer may sound reasonable - pick the safest and most accurate one.";
+        hintText.gameObject.SetActive(true);
+        detailsOpen = false;
+        detailsBox.gameObject.SetActive(false);
+        detailsMoreHint.gameObject.SetActive(false);
+        detailsButton.gameObject.SetActive(false);
+        feedbackGroup.SetActive(false);
+        decisionGroup.SetActive(true);
+        SetChoiceMode(true);
+
+        // Buttons follow this attempt's shuffled order; letters A-D are by position on screen.
+        var order = quiz != null ? quiz.ChoiceOrder(msg) : QuestionShuffle.Permutation(msg.choices.Length, null);
+        int count = Mathf.Min(MaxChoices, order.Count);
+        shownChoices = new int[count];
+        for (int pos = 0; pos < MaxChoices; pos++)
+        {
+            bool used = pos < count;
+            choiceButtons[pos].gameObject.SetActive(used);
+            if (!used) continue;
+            shownChoices[pos] = order[pos];
+            string label = $"<b>{ChoiceLetter(pos)}.</b>  {msg.ChoiceText(order[pos])}";
+            choiceLabels[pos].text = label;
+            float h = choiceLabels[pos].GetPreferredValues(label, ChoiceLabelWidth, 0f).y + 26f;
+            UIKit.Size(choiceButtons[pos], -1, Mathf.Max(64f, h));
+            UIKit.SetInteractable(choiceButtons[pos], true);
+        }
+
+        var sc = quiz != null ? quiz.Scoring : null;
+        SetTimer(0f, sc != null && sc.HasTimePressure ? sc.ReadingAllowance(msg) : 0f, sc != null ? sc.PointsFor(msg, true, 0f) : 0);
+        RestoreDesktopLayout();
+        root.gameObject.SetActive(true);
+        StartCoroutine(PopIn());
+    }
+
+    /// <summary>Switches the decision card between SCAM / LEGITIMATE and the choice buttons.</summary>
+    void SetChoiceMode(bool on)
+    {
+        questionWindow.gameObject.SetActive(on);
+        scamButton.gameObject.SetActive(!on);
+        legitButton.gameObject.SetActive(!on);
+        for (int i = 0; i < MaxChoices; i++) choiceButtons[i].gameObject.SetActive(false);
+        decisionCard.sizeDelta = new Vector2(on ? ChoiceCardWidth : CardWidth, decisionCard.sizeDelta.y);
+        if (!on)
+        {
+            questionPrompt.text = "Is this message a scam or legitimate?";
+            hintText.text = DefaultHint;
+            shownChoices = new int[0];
+        }
+    }
+
+    const string DefaultHint = "Check who sent it, whether it matches something you did, any pressure to act fast, and where links lead.";
+
+    public static char ChoiceLetter(int position) => (char)('A' + position);
+
+    /// <summary>Screen position (0 = A) of an original choice index this attempt, or -1.</summary>
+    int PositionOf(int originalIndex) => Array.IndexOf(shownChoices, originalIndex);
+
+    void ChooseChoice(int position)
+    {
+        if (position < 0 || position >= shownChoices.Length || !choiceButtons[position].interactable) return;
+        // Disable all at once so a double click can never submit twice.
+        for (int i = 0; i < MaxChoices; i++) UIKit.SetInteractable(choiceButtons[i], false);
+        ChoiceChosen?.Invoke(shownChoices[position]);
     }
 
     // ---------- Handheld phone ----------
@@ -222,22 +321,28 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         decisionGroup.SetActive(false);
         feedbackGroup.SetActive(true);
 
-        string word = UIKit.VerdictWord(r.message.correctVerdict);
-        string hex = r.message.correctVerdict == MessageVerdict.Scam ? UIKit.HexDanger : UIKit.HexSafe;
-        if (r.isCorrect)
+        verdictTitle.text = r.isCorrect ? $"<color={UIKit.HexSafe}>✓  CORRECT</color>" : $"<color={UIKit.HexWarning}>×  NOT QUITE</color>";
+        if (r.IsChoice)
         {
-            verdictTitle.text = $"<color={UIKit.HexSafe}>✓  CORRECT</color>";
-            answerLine.text = $"This message is <color={hex}><b>{word}</b></color>.";
+            // Letters are the ones the player saw this attempt (choices are shuffled per attempt).
+            var m = r.message;
+            string Shown(int original) => $"{ChoiceLetter(PositionOf(original))}. {m.ChoiceText(original)}";
+            answerLine.text = r.isCorrect
+                ? $"Your answer: <color={UIKit.HexSafe}><b>{Shown(m.correctChoice)}</b></color>"
+                : $"You chose <b>{Shown(r.chosenChoice)}</b>.\nThe best answer is <color={UIKit.HexSafe}><b>{Shown(m.correctChoice)}</b></color>";
         }
         else
         {
-            verdictTitle.text = $"<color={UIKit.HexWarning}>×  NOT QUITE</color>";
-            answerLine.text = $"You chose {UIKit.VerdictWord(r.chosen)}, but this message is <color={hex}><b>{word}</b></color>. Here is what to look for:";
+            string word = UIKit.VerdictWord(r.message.correctVerdict);
+            string hex = r.message.correctVerdict == MessageVerdict.Scam ? UIKit.HexDanger : UIKit.HexSafe;
+            answerLine.text = r.isCorrect
+                ? $"This message is <color={hex}><b>{word}</b></color>."
+                : $"You chose {UIKit.VerdictWord(r.chosen)}, but this message is <color={hex}><b>{word}</b></color>. Here is what to look for:";
         }
 
         pointsLine.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {ScoringSystem.Clock(r.seconds)}";
-        explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
-        scoreLine.text = $"Score <b>{score}</b> / {maxScore}   ·   Messages reviewed <b>{reviewed}/{total}</b>";
+        explanationText.text = UIKit.FeedbackLead(r.message) + r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
+        scoreLine.text = $"Score <b>{score}</b> / {maxScore}   ·   {(r.IsChoice ? "Questions answered" : "Messages reviewed")} <b>{reviewed}/{total}</b>";
         UIKit.SetLabel(continueButton, reviewed >= total ? "SEE RESULTS" : "CONTINUE");
         UIKit.SetInteractable(continueButton, true);
     }
@@ -329,7 +434,38 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
 
         BuildPhone(content);
         BuildEmail(content);
+        BuildQuestion(content);
         BuildDecisionCard(content);
+        questionWindow.gameObject.SetActive(false);
+    }
+
+    /// <summary>Case-question sheet: question type, the scenario text and a note that everything is fictional.</summary>
+    void BuildQuestion(RectTransform parent)
+    {
+        Color ink = new Color32(0x0F, 0x17, 0x2A, 255);
+
+        questionWindow = UIKit.Rect("QuestionWindow", parent);
+        questionWindow.sizeDelta = new Vector2(900, 0);
+        UIKit.AddImage(questionWindow, new Color32(0xF8, 0xFA, 0xFC, 255), rounded: true);
+        UIKit.Vertical(questionWindow, 0, 0);
+        UIKit.FitHeight(questionWindow);
+
+        var bar = UIKit.Rect("TitleBar", questionWindow);
+        UIKit.AddImage(bar, UIKit.PanelRaised, rounded: true);
+        UIKit.Size(bar, -1, 54);
+        var barText = UIKit.Text(bar, "Title", "Case Review  ·  Question", 21, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
+        UIKit.Stretch(barText.rectTransform);
+
+        var body = UIKit.Rect("Body", questionWindow);
+        UIKit.Vertical(body, 38, 16);
+        questionKicker = UIKit.Text(body, "Kicker", "", 22, new Color32(0x0E, 0x74, 0x90, 255), bold: true);
+        questionKicker.characterSpacing = 3f;
+        var div = UIKit.Rect("Divider", body);
+        UIKit.AddImage(div, new Color32(0xCB, 0xD5, 0xE1, 255));
+        UIKit.Size(div, -1, 2);
+        questionBody = UIKit.Text(body, "Scenario", "", 27, ink);
+        questionBody.lineSpacing = 10f;
+        UIKit.Text(body, "Footer", "Training scenario · all names, numbers and links are fictional.", 19, new Color32(0x64, 0x74, 0x8B, 255)).fontStyle = FontStyles.Italic;
     }
 
     void BuildPhone(RectTransform parent)
@@ -434,7 +570,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
     {
         var card = UIKit.Rect("DecisionCard", parent);
         decisionCard = card;
-        card.sizeDelta = new Vector2(580, 0);
+        card.sizeDelta = new Vector2(CardWidth, 0);
         UIKit.PanelImage(card);
         UIKit.Vertical(card, 0, 0);
         UIKit.FitHeight(card);
@@ -447,9 +583,8 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         decisionGroup = d.gameObject;
 
         channelHeader = UIKit.Header(d, "Incoming");
-        UIKit.Text(d, "Question", "Is this message a scam or legitimate?", 34, UIKit.TextPrimary, bold: true);
-        hintText = UIKit.Text(d, "Hint", "Check who sent it, whether it matches something you did, any pressure to act fast, and where links lead.",
-            UIKit.SizeSmall, UIKit.TextSecondary);
+        questionPrompt = UIKit.Text(d, "Question", "Is this message a scam or legitimate?", 34, UIKit.TextPrimary, bold: true);
+        hintText = UIKit.Text(d, "Hint", DefaultHint, UIKit.SizeSmall, UIKit.TextSecondary);
 
         // Investigation details (collapsed by default; opening them doesn't reveal the answer)
         detailsButton = UIKit.HudButton(d, "SHOW DETAILS", ToggleDetails, UIKit.HudVariant.Secondary, 22);
@@ -491,6 +626,25 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         UIKit.Size(scamButton, -1, 80);
         legitButton = UIKit.HudButton(d, "✓  LEGITIMATE", () => Choose(MessageVerdict.Legitimate), UIKit.HudVariant.Safe, 32);
         UIKit.Size(legitButton, -1, 80);
+
+        // Choice buttons (choice questions only). Labels wrap, so long choices get taller buttons instead of tiny text.
+        for (int i = 0; i < MaxChoices; i++)
+        {
+            int pos = i;
+            var b = UIKit.HudButton(d, "", () => ChooseChoice(pos), UIKit.HudVariant.Secondary, 22);
+            b.name = $"Choice {ChoiceLetter(i)} Button";
+            var label = b.GetComponentInChildren<TMP_Text>(true);
+            label.enableAutoSizing = false;
+            label.fontSize = 22;
+            label.characterSpacing = 0f;
+            label.textWrappingMode = TextWrappingModes.Normal;
+            label.alignment = TextAlignmentOptions.MidlineLeft;
+            label.margin = new Vector4(48, 10, 24, 10);
+            label.font = UIKit.BodyFont != null ? UIKit.BodyFont : label.font;
+            choiceButtons[i] = b;
+            choiceLabels[i] = label;
+            b.gameObject.SetActive(false);
+        }
 
         // ----- Feedback state -----
         var f = UIKit.Rect("Feedback", card);
