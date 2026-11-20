@@ -42,6 +42,7 @@ public class WrongAnswerConsequences : MonoBehaviour
     // Card
     RectTransform root, card, alertBox, edges;
     CanvasGroup cardGroup;
+    PopupIcon headerIcon;
     Image strip, alertBg;
     Outline alertOutline;
     TMP_Text kicker, title, alertCaption, alertHeadline, alertBody, whyHeader, whyText, clueHeader, clueText, statusText, followUpNote;
@@ -148,7 +149,10 @@ public class WrongAnswerConsequences : MonoBehaviour
         string noun = MessageChannels.Noun(m.channel);
         bool scam = m.correctVerdict == MessageVerdict.Scam;
 
-        Color tone = reaction == Reaction.SecurityIncident ? UIKit.Danger : UIKit.Warning;
+        // Red × for a real mistake (trusted a scam, or a wrong answer); amber ! for an over-cautious or incomplete verdict.
+        var popupTone = reaction == Reaction.SecurityIncident || reaction == Reaction.FeedbackOnly ? UIKit.PopupTone.Error : UIKit.PopupTone.Warning;
+        headerIcon.SetTone(popupTone);
+        Color tone = UIKit.ToneColor(popupTone);
         strip.color = tone;
         kicker.text = "INVESTIGATION ERROR";
         kicker.color = tone;
@@ -347,10 +351,11 @@ public class WrongAnswerConsequences : MonoBehaviour
         string noun = MessageChannels.Noun(m.channel);
         bool scam = m.correctVerdict == MessageVerdict.Scam;
         Color tone = r.isCorrect ? UIKit.Safe : UIKit.Warning;
+        headerIcon.SetTone(r.isCorrect ? UIKit.PopupTone.Success : UIKit.PopupTone.Warning);
         strip.color = tone;
         kicker.color = tone;
         kicker.text = r.isCorrect ? "FOLLOW-UP COMPLETE" : "FOLLOW-UP CLOSED";
-        title.text = r.isCorrect ? "✓  Evidence confirmed - case recovered" : "Still not right";
+        title.text = r.isCorrect ? "Evidence confirmed - case recovered" : "Still not right";
 
         alertBox.gameObject.SetActive(r.isCorrect);
         if (r.isCorrect)
@@ -417,6 +422,8 @@ public class WrongAnswerConsequences : MonoBehaviour
         if (effects != null) { StopCoroutine(effects); effects = null; }
         ClearFrames();
         edges.gameObject.SetActive(false);
+        card.localScale = Vector3.one;   // closed mid-entrance: next open starts clean
+        card.anchoredPosition = Vector2.zero;
         cardGroup.gameObject.SetActive(false);
         InteractionGate.RemoveEscapeHandler(this);
         primaryAction = secondaryAction = null;
@@ -457,6 +464,9 @@ public class WrongAnswerConsequences : MonoBehaviour
         ClearFrames();
         cardGroup.gameObject.SetActive(true);
         cardGroup.alpha = 0f;
+        // The card's border takes the tone too, and the header icon plays its entrance (shake for ×, pulse for !, ping for ✓).
+        if (card.TryGetComponent<Outline>(out var border)) border.effectColor = new Color(tone.r, tone.g, tone.b, 0.85f);
+        headerIcon.Play();
         InteractionGate.PushEscapeHandler(this, OnEscape);
         var t = target != null ? target.WarningTarget : null;
         if (warning && t != null)
@@ -468,7 +478,10 @@ public class WrongAnswerConsequences : MonoBehaviour
         effects = StartCoroutine(Effects(warning, tone));
     }
 
-    /// <summary>Fade the card in, then (warnings) a quiet alert, a short shake and two soft red pulses. Under a second.</summary>
+    /// <summary>
+    /// Fade and scale the card in, then (warnings) a quiet alert and two soft pulses on the screen edges.
+    /// The shake now lives on the header icon only, so the text never moves while the player reads. Under a second.
+    /// </summary>
     IEnumerator Effects(bool warning, Color tone)
     {
         edges.gameObject.SetActive(warning);
@@ -477,19 +490,20 @@ public class WrongAnswerConsequences : MonoBehaviour
         const float duration = 0.9f;
         for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
         {
-            cardGroup.alpha = Mathf.Clamp01(t / 0.15f);
+            float k = Mathf.Clamp01(t / 0.2f);
+            cardGroup.alpha = k;
+            card.localScale = Vector3.one * Mathf.Lerp(0.96f, 1f, 1f - (1f - k) * (1f - k) * (1f - k));
             if (warning)
             {
                 float pulse = Mathf.Sin(t / duration * Mathf.PI * 2f);   // two soft pulses
                 float a = pulse * pulse * (1f - t / duration);
                 foreach (var img in edgeImages) img.color = new Color(tone.r, tone.g, tone.b, 0.32f * a);
                 foreach (var img in frameImages) if (img != null) img.color = new Color(tone.r, tone.g, tone.b, img.name == "Fill" ? 0.12f * a : 0.9f * Mathf.Max(a, 0.25f));
-                float shake = t < 0.35f ? Mathf.Sin(t * 70f) * 9f * (1f - t / 0.35f) : 0f;
-                card.anchoredPosition = new Vector2(shake, 0f);
             }
             yield return null;
         }
         cardGroup.alpha = 1f;
+        card.localScale = Vector3.one;
         card.anchoredPosition = Vector2.zero;
         edges.gameObject.SetActive(false);
         ClearFrames();
@@ -684,9 +698,11 @@ public class WrongAnswerConsequences : MonoBehaviour
         strip = UIKit.AddImage(stripRt, UIKit.Danger);
         strip.raycastTarget = false;
 
-        kicker = UIKit.Text(card, "Kicker", "", 20, UIKit.Danger, bold: true);
+        // Header: status icon (× mistake, ! warning, ✓ recovered) + kicker + title
+        var cardHead = UIKit.IconHeader(card, UIKit.PopupTone.Error, out headerIcon, 72f);
+        kicker = UIKit.Text(cardHead, "Kicker", "", 20, UIKit.Danger, bold: true);
         kicker.characterSpacing = 5f;
-        title = UIKit.Text(card, "Title", "", 38, UIKit.TextPrimary, bold: true);
+        title = UIKit.Text(cardHead, "Title", "", 36, UIKit.TextPrimary, bold: true);
 
         alertBox = UIKit.Rect("Alert", card);
         alertBg = UIKit.AddImage(alertBox, new Color(0.2f, 0.05f, 0.05f, 0.96f), rounded: true);

@@ -333,6 +333,8 @@ public class MainMenuUI : MonoBehaviour
         panelDim.gameObject.SetActive(true);
         p.gameObject.SetActive(true);
         StartCoroutine(PanelIn(p));
+        var icon = p.GetComponentInChildren<PopupIcon>();   // confirmation panels (quit, reset) have a status icon
+        if (icon != null) icon.Play();
     }
 
     public void ClosePanel()
@@ -1822,7 +1824,9 @@ public class MainMenuUI : MonoBehaviour
     void BuildQuit()
     {
         var p = MakePanel("quit", "QUIT GAME", 720);
-        UIKit.Text(p, "Question", "Are you sure you want to quit Scam Sense?", UIKit.SizeBody, UIKit.TextPrimary);
+        UIKit.TintPanel(p, UIKit.PopupTone.Warning);   // a confirmation: amber strip and border
+        var q = UIKit.IconHeader(p, UIKit.PopupTone.Warning, out _, 64f);
+        UIKit.Text(q, "Question", "Are you sure you want to quit Scam Sense?", UIKit.SizeBody, UIKit.TextPrimary);
         UIKit.Text(p, "Saved", "Your scores, stars and unlocked rooms are saved.", UIKit.SizeSmall, UIKit.TextSecondary);
         FooterButtons(p,
             ("CANCEL", (UnityEngine.Events.UnityAction)ClosePanel, UIKit.HudVariant.Secondary),
@@ -1862,7 +1866,9 @@ public class MainMenuUI : MonoBehaviour
         AddFx(open);
 
         var p = MakePanel("resetprogress", "RESET PROGRESS", 860);
-        UIKit.Text(p, "Question", ResetQuestion, UIKit.SizeBody, UIKit.TextPrimary);
+        UIKit.TintPanel(p, UIKit.PopupTone.Error);   // destructive and cannot be undone: red strip and border
+        var q = UIKit.IconHeader(p, UIKit.PopupTone.Error, out _, 64f);
+        UIKit.Text(q, "Question", ResetQuestion, UIKit.SizeBody, UIKit.TextPrimary);
         resetScopeText = UIKit.Text(p, "Scope", "", UIKit.SizeSmall, UIKit.TextSecondary);
         var buttons = UIKit.Rect("Footer", p);
         UIKit.Horizontal(buttons, 16);

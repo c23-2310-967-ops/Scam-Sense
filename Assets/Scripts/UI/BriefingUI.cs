@@ -20,6 +20,8 @@ public class BriefingUI : MonoBehaviour
     private GameObject notesBlock;
     private Button beginButton;
     private Action onBegin;
+    private PopupAnimator panelAnimator;
+    private PopupIcon infoIcon;
 
     void Awake()
     {
@@ -60,18 +62,34 @@ public class BriefingUI : MonoBehaviour
                      $"Score at least <color={UIKit.HexAccent}><b>{level.minScoreToUnlockNext}</b></color> of {maxScore} to unlock the next room.";
 
         UIKit.SetInteractable(beginButton, true);
+        group.blocksRaycasts = true;
         root.gameObject.SetActive(true);
         StartCoroutine(FadeIn());
+        panelAnimator.Open();
+        infoIcon.Play();
     }
 
     void Begin()
     {
         if (!beginButton.interactable) return;
         UIKit.SetInteractable(beginButton, false);
-        root.gameObject.SetActive(false);
+        // The level starts right away (same as before); only the overlay fades out over a few frames, without blocking clicks.
+        group.blocksRaycasts = false;
+        StartCoroutine(FadeOut());
         var cb = onBegin;
         onBegin = null;
         cb?.Invoke();
+    }
+
+    IEnumerator FadeOut()
+    {
+        for (float t = 0f; t < 0.18f; t += Time.unscaledDeltaTime)
+        {
+            group.alpha = 1f - t / 0.18f;
+            yield return null;
+        }
+        group.alpha = 1f;
+        root.gameObject.SetActive(false);
     }
 
     IEnumerator FadeIn()
@@ -101,9 +119,13 @@ public class BriefingUI : MonoBehaviour
         UIKit.FitHeight(panel);
         UIKit.AccentStrip(panel, null, 8f);
 
-        title = UIKit.Text(panel, "Title", "CASE BRIEFING", 44, UIKit.TextPrimary, bold: true);
+        panelAnimator = panel.gameObject.AddComponent<PopupAnimator>();
+
+        // Header: info icon + title + subtitle (an information pop-up)
+        var head = UIKit.IconHeader(panel, UIKit.PopupTone.Info, out infoIcon, 76f, 26f);
+        title = UIKit.Text(head, "Title", "CASE BRIEFING", 44, UIKit.TextPrimary, bold: true);
         title.characterSpacing = 8f;
-        subtitle = UIKit.Text(panel, "Subtitle", "", 21, UIKit.TextSecondary, bold: true);
+        subtitle = UIKit.Text(head, "Subtitle", "", 21, UIKit.TextSecondary, bold: true);
         subtitle.characterSpacing = 2f;
         UIKit.Divider(panel, 3f).GetComponent<Image>().color = UIKit.Accent;
 

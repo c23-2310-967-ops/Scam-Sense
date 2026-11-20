@@ -26,6 +26,10 @@ public class ResultsUI : MonoBehaviour
     private Outline unlockOutline;
     private readonly Image[] stars = new Image[3];
     private Button continueButton, replayButton, menuButton;
+    private PopupAnimator panelAnimator;
+    private PopupIcon resultIcon;
+    private TMP_Text outcomeText;
+    private RectTransform panelRt;
 
     // Career section + promotion card
     private RectTransform careerRow, barFill, promo, promoBadgeRt, promoGlow;
@@ -80,7 +84,17 @@ public class ResultsUI : MonoBehaviour
         foreach (var s in stars) { s.color = StarOff; s.rectTransform.localScale = Vector3.one; }
         PrepareCareer(r.career);
 
+        // Completion styling: passed the room's score = success (green ✓), otherwise needs review (amber !).
+        bool passed = r.score >= r.requiredScore;
+        var tone = passed ? UIKit.PopupTone.Success : UIKit.PopupTone.Warning;
+        resultIcon.SetTone(tone);
+        outcomeText.text = passed ? "CASE SOLVED" : "CASE NEEDS REVIEW";
+        outcomeText.color = UIKit.ToneColor(tone);
+        UIKit.TintPanel(panelRt, tone);
+
         root.gameObject.SetActive(true);
+        panelAnimator.Open();
+        resultIcon.Play();
         StartCoroutine(Reveal(r));
     }
 
@@ -305,6 +319,7 @@ public class ResultsUI : MonoBehaviour
         UIKit.Dimmer(root, 0.85f);
 
         var panel = UIKit.Rect("Panel", root);
+        panelRt = panel;
         UIKit.Place(panel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1500, 0));
         UIKit.PanelImage(panel);
         var v = UIKit.Vertical(panel, 36, 12, TextAnchor.UpperCenter);
@@ -312,8 +327,28 @@ public class ResultsUI : MonoBehaviour
         UIKit.FitHeight(panel);
         UIKit.AccentStrip(panel, null, 8f);
 
-        title = UIKit.Text(panel, "Title", "", 30, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
+        panelAnimator = panel.gameObject.AddComponent<PopupAnimator>();
+
+        // Header, centred: outcome icon (✓ passed / ! needs review) beside the outcome and the case title.
+        // One row keeps the panel height almost unchanged, so it still fits 1366x768 screens.
+        var headRow = UIKit.Rect("Header", panel);
+        var hh = headRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+        hh.spacing = 20f;
+        hh.childAlignment = TextAnchor.MiddleCenter;
+        hh.childControlWidth = hh.childControlHeight = true;
+        hh.childForceExpandWidth = hh.childForceExpandHeight = false;
+        resultIcon = UIKit.IconBadge(headRow, UIKit.PopupTone.Success, 52f);   // compact: the results panel is near full height
+        var headText = UIKit.Rect("Text", headRow);
+        var hv = headText.gameObject.AddComponent<VerticalLayoutGroup>();
+        hv.childControlWidth = hv.childControlHeight = true;
+        hv.childForceExpandWidth = hv.childForceExpandHeight = false;
+        hv.spacing = 2f;
+        outcomeText = UIKit.Text(headText, "Outcome", "", 20, UIKit.Safe, TextAlignmentOptions.Left, bold: true);
+        outcomeText.characterSpacing = 4f;
+        outcomeText.textWrappingMode = TextWrappingModes.NoWrap;
+        title = UIKit.Text(headText, "Title", "", 30, UIKit.TextPrimary, TextAlignmentOptions.Left, bold: true);
         title.characterSpacing = 3f;
+        title.textWrappingMode = TextWrappingModes.NoWrap;
 
         var starRow = UIKit.Rect("Stars", panel);
         var h = UIKit.Horizontal(starRow, 26);

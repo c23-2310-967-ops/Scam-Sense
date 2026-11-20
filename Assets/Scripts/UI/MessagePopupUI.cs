@@ -72,8 +72,11 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
     private QuizManager quiz;
 
     // Feedback
-    private TMP_Text verdictTitle, pointsLine, answerLine, explanationText, scoreLine;
+    private TMP_Text verdictTitle, pointsLine, answerLine, explanationText, scoreLine, whyHeader;
     private Button continueButton;
+    private PopupIcon verdictIcon;
+    private Image answerCallout;
+    private PopupAnimator feedbackAnimator;
 
     // Handheld phone mode (text messages)
     private RectTransform decisionCard;
@@ -218,6 +221,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
         legitButton.gameObject.SetActive(!on);
         for (int i = 0; i < MaxChoices; i++) choiceButtons[i].gameObject.SetActive(false);
         decisionCard.sizeDelta = new Vector2(on ? ChoiceCardWidth : CardWidth, decisionCard.sizeDelta.y);
+        UIKit.TintPanel(decisionCard, UIKit.PopupTone.Info);   // back to the neutral look after a result
         if (!on)
         {
             questionPrompt.text = "Is this message a scam or legitimate?";
@@ -321,7 +325,15 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
         decisionGroup.SetActive(false);
         feedbackGroup.SetActive(true);
 
-        verdictTitle.text = r.isCorrect ? $"<color={UIKit.HexSafe}>✓  CORRECT</color>" : $"<color={UIKit.HexWarning}>×  NOT QUITE</color>";
+        // Success / incorrect styling: icon, card border and strip, and the answer box all take the result's tone.
+        var tone = r.isCorrect ? UIKit.PopupTone.Success : UIKit.PopupTone.Error;
+        verdictTitle.text = r.isCorrect ? $"<color={UIKit.HexSafe}>CORRECT</color>" : $"<color={UIKit.HexDanger}>NOT QUITE</color>";
+        verdictIcon.SetTone(tone);
+        UIKit.TintPanel(decisionCard, tone);
+        UIKit.TintCallout(answerCallout, tone);
+        whyHeader.text = r.isCorrect ? "WHY IT'S RIGHT" : "WHAT TO LOOK FOR";
+        feedbackAnimator.Open();
+        verdictIcon.Play();
         if (r.IsChoice)
         {
             // Letters are the ones the player saw this attempt (choices are shuffled per attempt).
@@ -337,7 +349,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
             string hex = r.message.correctVerdict == MessageVerdict.Scam ? UIKit.HexDanger : UIKit.HexSafe;
             answerLine.text = r.isCorrect
                 ? $"This message is <color={hex}><b>{word}</b></color>."
-                : $"You chose {UIKit.VerdictWord(r.chosen)}, but this message is <color={hex}><b>{word}</b></color>. Here is what to look for:";
+                : $"You chose {UIKit.VerdictWord(r.chosen)}, but this message is <color={hex}><b>{word}</b></color>.";
         }
 
         pointsLine.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {ScoringSystem.Clock(r.seconds)}";
@@ -652,11 +664,25 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter
         fv.padding.left = 44;
         feedbackGroup = f.gameObject;
 
-        verdictTitle = UIKit.Text(f, "Verdict", "", UIKit.SizeDisplay, UIKit.TextPrimary, bold: true);
+        feedbackAnimator = f.gameObject.AddComponent<PopupAnimator>();
+        feedbackAnimator.drift = 0f;            // inside the card's layout
+        feedbackAnimator.startScale = 0.98f;
+
+        // Header: status icon + verdict + points
+        var head = UIKit.IconHeader(f, UIKit.PopupTone.Success, out verdictIcon, 76f);
+        verdictTitle = UIKit.Text(head, "Verdict", "", UIKit.SizeDisplay, UIKit.TextPrimary, bold: true);
         verdictTitle.characterSpacing = 3f;
-        pointsLine = UIKit.Text(f, "Points", "", 26, UIKit.TextPrimary);
-        answerLine = UIKit.Text(f, "Answer", "", 26, UIKit.TextPrimary);
-        UIKit.Header(f, "Why");
+        pointsLine = UIKit.Text(head, "Points", "", 24, UIKit.TextPrimary);
+
+        // The answer is the one line the player must not miss: a tinted box in the result's colour.
+        var answerBox = UIKit.Rect("AnswerBox", f);
+        answerCallout = UIKit.Callout(answerBox, UIKit.PopupTone.Success);
+        var ab = UIKit.Vertical(answerBox, 18, 0);
+        ab.padding.left = ab.padding.right = 22;
+        answerLine = UIKit.Text(answerBox, "Answer", "", 26, UIKit.TextPrimary);
+        answerLine.lineSpacing = 6f;
+
+        whyHeader = UIKit.Header(f, "Why");
         explanationText = UIKit.Text(f, "Explanation", "", 25, UIKit.TextPrimary);
         explanationText.lineSpacing = 8f;
         UIKit.Divider(f);
