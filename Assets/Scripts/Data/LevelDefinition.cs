@@ -60,14 +60,14 @@ public class LevelScoring
 
     public int MaxPointsPerMessage => Mathf.Max(0, basePoints) + Mathf.Max(0, speedBonus);
 
-    /// <summary>One sentence of rules for the briefing and How to Play.</summary>
+    /// <summary>Short scoring rules for the briefing and How to Play (one line, no jargon).</summary>
     public string Summary()
     {
-        string s = $"Correct answers earn <b>{basePoints}</b> points" + (speedBonus > 0 ? $" (up to <b>+{speedBonus}</b> for a quick, confident answer)" : "") + ". ";
-        s += HasTimePressure && maxTimePenalty > 0
-            ? $"Each message gives you time to read it fully - longer messages get more. After that, a little comes off (at most <b>{maxTimePenalty}</b>). "
-            : "There is no time pressure - take the time you need to read and investigate. ";
-        return s + $"A wrong answer costs <b>{wrongPenalty}</b>.";
+        string s = $"Right answer <b>+{basePoints}</b>" + (speedBonus > 0 ? $" (up to <b>+{speedBonus}</b> more if quick)" : "") +
+                   $"   ·   Wrong answer <b>-{wrongPenalty}</b>   ·   ";
+        return s + (HasTimePressure && maxTimePenalty > 0
+            ? $"Plenty of reading time; going over costs at most <b>{maxTimePenalty}</b>."
+            : "No time limit: take your time.");
     }
 
     public void Validate()

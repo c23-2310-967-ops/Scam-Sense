@@ -31,6 +31,9 @@ This replaces the earlier Unity Gaming Services setup. The menu flow and panels 
 
 Every table has **Row Level Security**: a signed-in player (guest or account) can only read and write rows where the user id is their own (`auth.uid()`). Signed-out requests can read nothing. A trigger also stops progress from going down on the server: unlocks stay unlocked and best scores only go up.
 
+### Classroom (teacher / student) - `20261126074705_classroom_roles_classes_records.sql`
+Adds server-side roles (`user_roles`, teacher invite codes), `classes` with unique 6-character codes, `class_members`, read-only `activities` / `questions` catalogs and per-question `question_results`. Finished runs are now written only through `submit_game_result`: it validates the run, stamps the class and attempt number, ignores retried uploads, and never edits stored results. Teachers can read only students in their own classes. Before this migration is applied, the game falls back to the old direct insert into `game_results`. Usage and setup: `Docs/ClassroomGuide.md`.
+
 ## Public key vs guest (anonymous) users
 
 These are two different things:

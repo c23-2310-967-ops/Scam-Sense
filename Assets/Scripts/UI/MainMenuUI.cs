@@ -15,12 +15,14 @@ using UnityEditor.Events;
 
 /// <summary>
 /// Scam Sense main menu, in the same style as the in-game UI (UIKit):
-///   Play - Continue (only with saved progress) - Level Selection - Settings - How to Play - About - Quit.
+///   PLAY (one primary action: opens the next case in the progression) - Classroom - Settings - About - Quit.
+/// There is no level picker: rooms open in order through the existing unlock rules (score to unlock the next room;
+/// RESULTS > NEXT ROOM / REPLAY inside a level). Instructions are given in the game where they are needed (Level 1
+/// guide, briefing controls strip, first-time tips, pause menu), not on a How to Play page.
 /// The menu UI lives in the scene ("MainMenu Canvas"), created once with
 /// Tools > Scam Sense > Build Menu UI In Scene. Every button's OnClick is a normal persistent event you can see
 /// and edit in the Inspector, and all references below are assigned. If the scene UI is missing, the menu is
 /// built at runtime instead (same look), so the scene never breaks.
-/// Only the level cards are generated at runtime, because they come from the LevelCatalog data.
 /// Background: slow cinematic shots of the game's house (or the existing workstation video).
 /// Uses the existing systems: LevelCatalog + LocalDataManager (progress / unlocks), GameAudioSettings and
 /// GameDisplaySettings (same saved keys as the old Settings panel), SceneLoader (loading screen), MainMixer.
@@ -70,8 +72,10 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Image bgA, bgB;
     [SerializeField] private CanvasGroup fade, titleGroup, columnGroup, panelDim;
     [SerializeField] private RectTransform titleLine;
-    [SerializeField] private Button playButton, continueButton;
-    [SerializeField] private TMP_Text continueSub, progressChip, statusText;
+    [SerializeField] private Button playButton;
+    [Tooltip("The line under PLAY: which case it opens.")]
+    [SerializeField] private TMP_Text playSub;
+    [SerializeField] private TMP_Text progressChip, statusText;
     [SerializeField] private List<NamedPanel> panelList = new List<NamedPanel>();
 
     // ---------- runtime ----------
@@ -81,9 +85,15 @@ public class MainMenuUI : MonoBehaviour
     private RectTransform openPanel;
     private bool loading;
     private AccountUI account;
+    private ClassroomUI classroom;
 
     /// <summary>The menu canvas root and the panel container (AccountUI puts its panels here).</summary>
     public RectTransform Root => root;
+    public LevelCatalog Catalog => catalog;
+
+    /// <summary>PLAY from the Classroom: the same as the menu's PLAY.</summary>
+    public void PlayNextCase() => Play();
+
     public RectTransform PanelHost => panelHost;
     public CanvasGroup Fade => fade;
 
@@ -98,9 +108,7 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button resetCancelButton;
     [SerializeField] private TMP_Text resetScopeText, resetResultTitle, resetResultBody;
 
-    [Header("Scene UI - level selection & live feed")]
-    [Tooltip("Level cards are generated here at runtime from the LevelCatalog.")]
-    [SerializeField] private RectTransform levelRow;
+    [Header("Scene UI - live feed")]
     [SerializeField] private TMP_Text feedSender, feedBody, feedTime;
     [SerializeField] private CanvasGroup feedGroup;
 
@@ -150,6 +158,11 @@ public class MainMenuUI : MonoBehaviour
         if (account == null) account = gameObject.AddComponent<AccountUI>();
         account.Init(this);
 
+        // Classroom (student / teacher portals) - its panel shell is in the scene too; the menu button opens it.
+        classroom = GetComponent<ClassroomUI>();
+        if (classroom == null) classroom = gameObject.AddComponent<ClassroomUI>();
+        classroom.Init(this);
+
         StartCoroutine(Intro());
         StartCoroutine(FeedLoop());
         StartCoroutine(LoadBackdrop());
@@ -167,6 +180,7 @@ public class MainMenuUI : MonoBehaviour
         v.alignment = TextAlignmentOptions.BottomRight;
         UIKit.Place(v.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-80, 46), new Vector2(400, 26));
         v.raycastTarget = false;
+        if (panelDim != null) v.transform.SetSiblingIndex(panelDim.transform.GetSiblingIndex());   // under the dim and the panels
     }
 
     /// <summary>Things that can't be saved in a scene: the panel lookup and hover sounds (C# callbacks).</summary>
@@ -233,23 +247,30 @@ public class MainMenuUI : MonoBehaviour
         DipBackdropForCuts();
 
         var kb = Keyboard.current;
-        if (kb != null && kb.escapeKey.wasPressedThisFrame && !loading && !AccountUI.IsBlocking)
+        if (kb != null && kb.escapeKey.wasPressedThisFrame && !loading && !AccountUI.IsBlocking && !ClassroomUI.IsOpen)
         {
-            if (openPanel != null && panels.TryGetValue("roompreview", out var rp) && openPanel == rp) CloseRoomPreview();
-            else if (openPanel != null) ClosePanel();
+            if (openPanel != null) ClosePanel();
             else OpenPanel("quit");
         }
     }
 
     // ---------- Actions (public so they can be picked in a Button's OnClick list) ----------
 
-    /// <summary>PLAY: asks how to play (guest / sign in) if nobody is signed in yet, then starts Level 1.</summary>
-    public void Play() => LoadLevel(0);
-
-    public void Continue()
+    /// <summary>
+    /// PLAY: asks how to play (guest / sign in) if nobody chose yet, then opens the next case in the progression -
+    /// Level 1 for a new player, otherwise the first unlocked room not completed yet (or the furthest unlocked one).
+    /// The room is worked out after signing in, because signing in can switch to a different save.
+    /// </summary>
+    public void Play()
     {
-        if (catalog == null || !catalog.HasProgress()) return;
-        LoadLevel(catalog.ContinueIndex());
+        if (loading || catalog == null) return;
+        if (account != null && !account.ReadyToPlay)
+        {
+            ClosePanel();
+            account.RequestAccount(Play);
+            return;
+        }
+        LoadLevel(CurrentRoomIndex());
     }
 
     /// <summary>Starts a level. Without an account choice yet, the Authentication panel opens first.</summary>
@@ -326,7 +347,6 @@ public class MainMenuUI : MonoBehaviour
             openPanel.gameObject.SetActive(false);
         }
         if (id == "settings") LoadSettingsIntoUI();
-        if (id == "levels") BuildLevelCards();
         if (id == "resetprogress") PrepareResetProgress();
         if (id == "career") { careerTab = 0; FillCareerPanel(); }   // always opens on OVERVIEW
         openPanel = p;
@@ -372,16 +392,9 @@ public class MainMenuUI : MonoBehaviour
     public void RefreshProgress()
     {
         bool has = catalog != null && catalog.HasProgress();
-        continueButton.gameObject.SetActive(has);
-        if (has)
-        {
-            int i = catalog.ContinueIndex();
-            var lvl = catalog.levels[i];
-            var p = LocalDataManager.Peek(lvl.levelId);
-            continueSub.text = $"Level {lvl.levelNumber}" + (p != null && p.completed ? $"  ·  best {p.bestScore}" : "");
-        }
+        if (playSub != null) playSub.text = PlaySubtitle();
 
-        if (!has) { progressChip.text = "No saved progress yet  ·  start with Play"; RefreshRoomStrip(); RefreshCareerCard(); return; }
+        if (!has) { progressChip.text = "No saved progress yet  ·  press PLAY to start your first case"; RefreshCareerCard(); return; }
         var sb = new StringBuilder("Saved progress  ");
         foreach (var l in catalog.levels)
         {
@@ -391,8 +404,19 @@ public class MainMenuUI : MonoBehaviour
             sb.Append($"·  Level {l.levelNumber}: <b>{p.bestScore}</b> pts  <color={UIKit.HexWarning}>{Stars(p.bestStars)}</color>  ");
         }
         progressChip.text = sb.ToString();
-        RefreshRoomStrip();
         RefreshCareerCard();
+    }
+
+    /// <summary>What PLAY opens, under its label: "Case 1 · The First Case", "Case 3 · The Digital Trap", "Replay case 5 · ...".</summary>
+    string PlaySubtitle()
+    {
+        if (catalog == null || catalog.Count == 0) return "";
+        int i = CurrentRoomIndex();
+        var lvl = catalog.levels[i];
+        if (lvl == null) return "";
+        var p = LocalDataManager.Peek(lvl.levelId);
+        bool done = p != null && p.completed;
+        return (done ? "Replay case " : "Case ") + lvl.levelNumber + "  ·  " + lvl.displayName;
     }
 
     /// <summary>Three stars: earned ones gold, the rest dim (plus "n/3" so it never relies on colour alone).</summary>
@@ -495,183 +519,9 @@ public class MainMenuUI : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // ---------- Level selection ----------
+    // ---------- Progression ----------
 
-    void BuildLevelCards()
-    {
-        EnsureCardScroll();
-        foreach (Transform c in levelRow) { c.gameObject.SetActive(false); Destroy(c.gameObject); }
-        if (catalog == null) return;
-        if (cardScroll != null) cardScroll.horizontalNormalizedPosition = 0f;
-        if (cardScrollHint != null) cardScrollHint.gameObject.SetActive(catalog.Count > 3);
-
-        // The next room after the last catalogued one, if the save knows about it. From three rooms on it is
-        // a note on the last card rather than a placeholder card, so the row only shows rooms that exist.
-        var last = catalog.Count > 0 ? catalog.levels[catalog.Count - 1] : null;
-        bool hasUnbuiltNext = last != null && !string.IsNullOrEmpty(last.nextLevelId);
-        bool nextAsCard = hasUnbuiltNext && catalog.Count < 3;
-        int current = CurrentRoomIndex();
-
-        for (int i = 0; i < catalog.Count; i++)
-        {
-            var lvl = catalog.levels[i];
-            if (lvl == null) continue;
-            bool unlocked = catalog.IsUnlocked(i);
-            var p = LocalDataManager.Peek(lvl.levelId);
-            string req = i > 0 && catalog.levels[i - 1] != null
-                ? $"Score {catalog.levels[i - 1].minScoreToUnlockNext} in Level {catalog.levels[i - 1].levelNumber} to unlock."
-                : "";
-            string note = LevelCatalog.SceneAvailable(lvl) ? null
-                              : string.IsNullOrEmpty(lvl.sceneName) ? "Coming soon - this room isn't built yet"
-                              : "Scene missing from build";
-            if (note == null && lvl == last && hasUnbuiltNext && !nextAsCard && LocalDataManager.IsUnlocked(last.nextLevelId))
-                note = $"Level {last.levelNumber + 1} unlocked · coming in a future update";
-            int idx = i;
-            MakeLevelCard(lvl.levelNumber, lvl.displayName, lvl.description, unlocked, p, req,
-                          unlocked && LevelCatalog.SceneAvailable(lvl) ? () => LoadLevel(idx) : (UnityEngine.Events.UnityAction)null,
-                          note, lvl.previewImage, () => OpenRoomPreview(idx, "levels"), i == current);
-        }
-
-        if (nextAsCard)
-        {
-            bool unlocked = LocalDataManager.IsUnlocked(last.nextLevelId);
-            MakeLevelCard(last.levelNumber + 1, "Coming soon", "The next case is still being prepared.", unlocked, null,
-                          $"Score {last.minScoreToUnlockNext} in Level {last.levelNumber} to unlock.", null,
-                          unlocked ? "Unlocked · available in a future update" : null, null, null, false);
-        }
-    }
-
-    ScrollRect cardScroll;
-    TMP_Text cardScrollHint;
-
-    /// <summary>
-    /// The level cards sit in a horizontally scrolling row (mouse wheel or drag), so any number of rooms fits
-    /// the Level Selection panel without shrinking the cards. Set up once, the first time the panel opens.
-    /// </summary>
-    void EnsureCardScroll()
-    {
-        if (cardScroll != null || levelRow == null) return;
-        cardScroll = levelRow.parent != null ? levelRow.parent.GetComponent<ScrollRect>() : null;
-        if (cardScroll != null) return;
-
-        var panel = levelRow.parent;
-        int index = levelRow.GetSiblingIndex();
-        var viewport = UIKit.Rect("CardsViewport", panel);
-        viewport.SetSiblingIndex(index);
-        UIKit.Size(viewport, -1, CardHeight);
-        viewport.gameObject.AddComponent<RectMask2D>();
-        viewport.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0);   // catches wheel/drag between cards
-
-        levelRow.SetParent(viewport, false);
-        levelRow.anchorMin = new Vector2(0, 0);
-        levelRow.anchorMax = new Vector2(0, 1);
-        levelRow.pivot = new Vector2(0, 0.5f);
-        levelRow.anchoredPosition = Vector2.zero;
-        levelRow.sizeDelta = Vector2.zero;
-        var fit = levelRow.gameObject.AddComponent<ContentSizeFitter>();
-        fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        cardScroll = viewport.gameObject.AddComponent<ScrollRect>();
-        cardScroll.viewport = viewport;
-        cardScroll.content = levelRow;
-        cardScroll.horizontal = true;
-        cardScroll.vertical = false;
-        cardScroll.movementType = ScrollRect.MovementType.Clamped;
-        cardScroll.scrollSensitivity = 60f;
-
-        cardScrollHint = UIKit.Text(panel, "ScrollHint", "Scroll or drag sideways to see every room  ›", UIKit.SizeSmall - 4, UIKit.TextSecondary, TextAlignmentOptions.MidlineRight);
-        cardScrollHint.transform.SetSiblingIndex(index + 1);
-    }
-
-    const float CardHeight = 630f;
-
-    /// <summary>
-    /// One room card: preview still (dimmed with a padlock while locked), level, name, description, progress,
-    /// and PREVIEW + PLAY. The room to play next gets a cyan outline and a CURRENT CASE tag.
-    /// Locked rooms can always be previewed; PLAY stays disabled (and LoadLevel refuses locked rooms anyway).
-    /// </summary>
-    void MakeLevelCard(int number, string title, string desc, bool unlocked, LocalDataManager.LevelProgress p,
-                       string requirement, UnityEngine.Events.UnityAction onPlay, string note,
-                       Sprite preview, UnityEngine.Events.UnityAction onPreview, bool current)
-    {
-        var card = UIKit.Rect("Level_" + number, levelRow);
-        UIKit.Size(card, 380, CardHeight);
-        UIKit.PanelImage(card, unlocked ? UIKit.PanelRaised : new Color(0.07f, 0.09f, 0.14f, 1f));
-        if (current)
-        {
-            var outline = card.GetComponent<Outline>();
-            if (outline != null) { outline.effectColor = UIKit.Accent; outline.effectDistance = new Vector2(3f, -3f); }
-        }
-        var v = UIKit.Vertical(card, 26, 12);
-        v.childForceExpandHeight = false;
-
-        var head = UIKit.Rect("Head", card);
-        var h = UIKit.Horizontal(head, 10, TextAnchor.MiddleLeft);
-        h.childForceExpandWidth = false;
-        h.childForceExpandHeight = false;
-        UIKit.Size(head, -1, 40);
-        var num = UIKit.Text(head, "Num", $"LEVEL {number:00} · ROOM {number}", 18, UIKit.Accent, TextAlignmentOptions.MidlineLeft, bold: true);
-        num.characterSpacing = 1f;
-        num.textWrappingMode = TextWrappingModes.NoWrap;
-        UIKit.Size(num, 175);
-        bool completed = p != null && p.completed;
-        string tag = !unlocked ? "LOCKED" : current && !completed ? "CURRENT CASE" : completed ? "COMPLETED" : "UNLOCKED";
-        Color tagBg = !unlocked ? UIKit.Border : completed ? UIKit.SafeButton : UIKit.AccentDark;
-        UIKit.Badge(head, (unlocked ? "" : "× ") + tag, tagBg, Color.white, 17);
-
-        RoomThumbnail(card, number, preview, unlocked, onPreview, new Vector2(328, 184), true);
-
-        UIKit.Text(card, "Title", title, 30, unlocked ? UIKit.TextPrimary : UIKit.TextSecondary, bold: true);
-        var d = UIKit.Text(card, "Desc", string.IsNullOrEmpty(desc) ? " " : desc, 19, UIKit.TextSecondary);
-        d.lineSpacing = 2f;
-        d.overflowMode = TextOverflowModes.Ellipsis;
-        UIKit.Size(d, -1, 98);   // four lines
-
-        var stats = UIKit.Text(card, "Stats", "", 20, UIKit.TextPrimary);
-        if (completed)
-            stats.text = $"Best score  <b>{p.bestScore}</b>   ·   <color={UIKit.HexWarning}><size=24>{Stars(p.bestStars)}</size></color>";
-        else if (unlocked)
-            stats.text = $"<color={UIKit.HexSecondary}>Not completed yet</color>";
-        else
-            stats.text = $"<color={UIKit.HexSecondary}>{requirement}</color>";
-
-        if (!string.IsNullOrEmpty(note))
-            UIKit.Text(card, "Note", note, 18, UIKit.Warning).fontStyle = FontStyles.Italic;
-
-        var spacer = UIKit.Rect("Spacer", card);
-        spacer.gameObject.AddComponent<LayoutElement>().flexibleHeight = 1f;
-
-        var row = UIKit.Rect("Buttons", card);
-        var hr = UIKit.Horizontal(row, 10);
-        hr.childForceExpandWidth = false;
-        UIKit.Size(row, -1, 62);
-        if (onPreview != null)
-        {
-            var prev = UIKit.HudButton(row, "PREVIEW", onPreview, UIKit.HudVariant.Secondary, 20);
-            prev.name = "PreviewButton";
-            UIKit.Size(prev, 128, 62);
-            AddFx(prev);
-        }
-        var btn = UIKit.HudButton(row, onPlay != null ? "PLAY" : (unlocked ? "UNAVAILABLE" : "LOCKED"), onPlay,
-                                  onPlay != null ? UIKit.HudVariant.Primary : UIKit.HudVariant.Secondary, 24);
-        btn.name = "PlayButton";
-        UIKit.Size(btn, -1, 62).flexibleWidth = 1f;
-        UIKit.SetInteractable(btn, onPlay != null);
-        AddFx(btn);
-    }
-
-    // ---------- Room previews ----------
-
-    static Sprite padlock;
-    int previewIndex;
-    string previewReturn;
-    RectTransform roomStrip;
-    Image previewImage;
-    TMP_Text previewNumber, previewTitle, previewStatus, previewDesc, previewInfo, previewPrevLabel, previewNextLabel;
-    Button previewPlay, previewPrev, previewNext;
-    GameObject previewLock, previewMissing;
-
-    /// <summary>The room to play next: the first unlocked room not completed yet, else the furthest unlocked one.</summary>
+    /// <summary>The room PLAY opens: the first unlocked room not completed yet, else the furthest unlocked one.</summary>
     int CurrentRoomIndex()
     {
         if (catalog == null) return 0;
@@ -685,64 +535,9 @@ public class MainMenuUI : MonoBehaviour
         return catalog.ContinueIndex();
     }
 
-    /// <summary>
-    /// A room still. Locked: dimmed with a padlock, but the room stays visible. Missing image: a neutral
-    /// "ROOM n" placeholder. Clicking it opens the room preview (never starts the level).
-    /// </summary>
-    RectTransform RoomThumbnail(RectTransform parent, int number, Sprite sprite, bool unlocked,
-                                UnityEngine.Events.UnityAction onClick, Vector2 size, bool showHint)
-    {
-        var frame = UIKit.Rect("Thumbnail", parent);
-        UIKit.Size(frame, size.x, size.y);
-        var bg = UIKit.AddImage(frame, new Color(0.04f, 0.06f, 0.1f, 1f));
-        if (sprite != null)
-        {
-            var pic = UIKit.Rect("Image", frame);
-            UIKit.Stretch(pic);
-            var img = UIKit.AddImage(pic, unlocked ? Color.white : new Color(0.55f, 0.6f, 0.68f, 1f), sprite);
-            img.preserveAspect = false;
-            img.raycastTarget = false;
-        }
-        else
-        {
-            var ph = UIKit.Text(frame, "Placeholder", $"ROOM {number}\n<size=60%>Preview not available</size>", size.y * 0.2f,
-                                UIKit.TextSecondary, TextAlignmentOptions.Center, bold: true);
-            UIKit.Stretch(ph.rectTransform);
-        }
-        if (!unlocked)
-        {
-            var dim = UIKit.Rect("LockedDim", frame);
-            UIKit.Stretch(dim);
-            UIKit.AddImage(dim, new Color(0.02f, 0.04f, 0.08f, 0.45f)).raycastTarget = false;
-            var icon = UIKit.Rect("Padlock", frame);
-            float s = Mathf.Min(size.y * 0.34f, 64f);
-            UIKit.Place(icon, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, s * 0.12f), new Vector2(s, s));
-            UIKit.AddImage(icon, new Color(1f, 1f, 1f, 0.92f), PadlockSprite()).raycastTarget = false;
-        }
-        if (showHint && onClick != null)
-        {
-            var hint = UIKit.Text(frame, "Hint", "VIEW ROOM  ›", 15, new Color(1f, 1f, 1f, 0.85f), TextAlignmentOptions.BottomRight, bold: true);
-            UIKit.Stretch(hint.rectTransform, 10f);
-            hint.characterSpacing = 2f;
-        }
-        var edge = frame.gameObject.AddComponent<Outline>();
-        edge.effectColor = new Color(UIKit.Border.r, UIKit.Border.g, UIKit.Border.b, 0.9f);
-        edge.effectDistance = new Vector2(1f, -1f);
-        if (onClick != null)
-        {
-            var b = frame.gameObject.AddComponent<Button>();
-            b.targetGraphic = bg;
-            var colors = b.colors;
-            colors.highlightedColor = new Color(1.2f, 1.2f, 1.25f, 1f);
-            b.colors = colors;
-            b.onClick.AddListener(onClick);
-            frame.gameObject.AddComponent<ButtonPressFeedback>();
-            AddFx(b);
-        }
-        return frame;
-    }
+    static Sprite padlock;
 
-    /// <summary>A small white padlock, drawn once (no texture asset needed).</summary>
+    /// <summary>A small white padlock, drawn once (no texture asset needed). Used by the locked achievement cards.</summary>
     static Sprite PadlockSprite()
     {
         if (padlock != null) return padlock;
@@ -764,192 +559,6 @@ public class MainMenuUI : MonoBehaviour
         tex.Apply();
         padlock = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
         return padlock;
-    }
-
-    /// <summary>Room preview panel: large still, name, description and status, browse with ‹ ›. Built once at runtime.</summary>
-    void BuildRoomPreview()
-    {
-        if (panels.ContainsKey("roompreview")) return;
-        var p = MakePanel("roompreview", "ROOM PREVIEW", 1360);
-        var body = UIKit.Rect("Body", p);
-        var h = UIKit.Horizontal(body, 36, TextAnchor.UpperLeft);
-        h.childForceExpandWidth = false;
-        h.childForceExpandHeight = false;
-
-        var pic = UIKit.Rect("Picture", body);
-        UIKit.Size(pic, 800, 450);
-        UIKit.AddImage(pic, new Color(0.04f, 0.06f, 0.1f, 1f));
-        var picImg = UIKit.Rect("Image", pic);
-        UIKit.Stretch(picImg);
-        previewImage = UIKit.AddImage(picImg, Color.white);
-        previewImage.raycastTarget = false;
-        var missing = UIKit.Text(pic, "Missing", "Preview not available", 30, UIKit.TextSecondary, TextAlignmentOptions.Center, bold: true);
-        UIKit.Stretch(missing.rectTransform);
-        previewMissing = missing.gameObject;
-        var lockRoot = UIKit.Rect("Locked", pic);
-        UIKit.Stretch(lockRoot);
-        UIKit.AddImage(lockRoot, new Color(0.02f, 0.04f, 0.08f, 0.4f)).raycastTarget = false;
-        var icon = UIKit.Rect("Padlock", lockRoot);
-        UIKit.Place(icon, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 20), new Vector2(96, 96));
-        UIKit.AddImage(icon, new Color(1f, 1f, 1f, 0.95f), PadlockSprite()).raycastTarget = false;
-        var lockText = UIKit.Text(lockRoot, "Text", "LOCKED  ·  PREVIEW ONLY", 24, Color.white, TextAlignmentOptions.Center, bold: true);
-        UIKit.Place(lockText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -60), new Vector2(600, 40));
-        lockText.characterSpacing = 3f;
-        previewLock = lockRoot.gameObject;
-        var edge = pic.gameObject.AddComponent<Outline>();
-        edge.effectColor = UIKit.Border;
-        edge.effectDistance = new Vector2(2f, -2f);
-
-        var info = UIKit.Rect("Info", body);
-        UIKit.Vertical(info, 0, 14);
-        UIKit.Size(info, 420, 450);
-        previewNumber = UIKit.Text(info, "Number", "", 20, UIKit.Accent, bold: true);
-        previewNumber.characterSpacing = 3f;
-        previewTitle = UIKit.Text(info, "Title", "", 40, UIKit.TextPrimary, bold: true);
-        previewStatus = UIKit.Text(info, "Status", "", 21, UIKit.TextPrimary, bold: true);
-        previewDesc = UIKit.Text(info, "Description", "", 22, UIKit.TextSecondary);
-        previewInfo = UIKit.Text(info, "Progress", "", 20, UIKit.TextSecondary);
-        var spacer = UIKit.Rect("Spacer", info);
-        spacer.gameObject.AddComponent<LayoutElement>().flexibleHeight = 1f;
-        previewPlay = UIKit.HudButton(info, "PLAY", PlayPreviewedRoom, UIKit.HudVariant.Primary, 26);
-        previewPlay.name = "PlayButton";
-        UIKit.Size(previewPlay, -1, 66);
-        AddFx(previewPlay);
-
-        var row = UIKit.Rect("Footer", p);
-        UIKit.Horizontal(row, 16);
-        UIKit.Size(row, -1, 72);
-        previewPrev = UIKit.HudButton(row, "‹  PREVIOUS", () => StepRoomPreview(-1), UIKit.HudVariant.Secondary, 24);
-        AddFx(previewPrev);
-        previewNext = UIKit.HudButton(row, "NEXT  ›", () => StepRoomPreview(1), UIKit.HudVariant.Secondary, 24);
-        AddFx(previewNext);
-        var back = UIKit.HudButton(row, "BACK", CloseRoomPreview, UIKit.HudVariant.Secondary, 24);
-        AddFx(back);
-    }
-
-    /// <summary>Opens the preview of room <paramref name="index"/>; BACK returns to <paramref name="returnPanel"/> (null = main menu).</summary>
-    public void OpenRoomPreview(int index, string returnPanel)
-    {
-        if (catalog == null || catalog.Count == 0) return;
-        BuildRoomPreview();
-        previewReturn = returnPanel;
-        previewIndex = Mathf.Clamp(index, 0, catalog.Count - 1);
-        FillRoomPreview();
-        if (openPanel == panels["roompreview"]) return;
-        OpenPanel("roompreview");
-    }
-
-    void StepRoomPreview(int step)
-    {
-        if (catalog == null || catalog.Count == 0) return;
-        previewIndex = (previewIndex + step + catalog.Count) % catalog.Count;
-        FillRoomPreview();
-    }
-
-    void CloseRoomPreview()
-    {
-        if (!string.IsNullOrEmpty(previewReturn)) OpenPanel(previewReturn);
-        else ClosePanel();
-    }
-
-    void PlayPreviewedRoom() => LoadLevel(previewIndex);   // LoadLevel refuses locked rooms
-
-    void FillRoomPreview()
-    {
-        var lvl = catalog.levels[previewIndex];
-        if (lvl == null) return;
-        bool unlocked = catalog.IsUnlocked(previewIndex);
-        bool available = LevelCatalog.SceneAvailable(lvl);
-        var p = LocalDataManager.Peek(lvl.levelId);
-        bool completed = p != null && p.completed;
-        bool current = previewIndex == CurrentRoomIndex();
-
-        previewImage.sprite = lvl.previewImage;
-        previewImage.enabled = lvl.previewImage != null;
-        previewImage.color = unlocked ? Color.white : new Color(0.6f, 0.65f, 0.72f, 1f);
-        previewMissing.SetActive(lvl.previewImage == null);
-        previewLock.SetActive(!unlocked);
-
-        previewNumber.text = $"LEVEL {lvl.levelNumber:00}  ·  ROOM {lvl.levelNumber} OF {catalog.Count}";
-        previewTitle.text = lvl.displayName;
-        previewStatus.text = !unlocked ? $"<color={UIKit.HexWarning}>×  LOCKED</color>"
-                           : completed ? $"<color={UIKit.HexSafe}>✓  COMPLETED</color>"
-                           : current ? $"<color={UIKit.HexAccent}>›  CURRENT CASE</color>"
-                           : $"<color={UIKit.HexAccent}>UNLOCKED</color>";
-        previewDesc.text = string.IsNullOrEmpty(lvl.description) ? " " : lvl.description;
-
-        var prevLevel = previewIndex > 0 ? catalog.levels[previewIndex - 1] : null;
-        if (!unlocked && prevLevel != null)
-            previewInfo.text = $"Score <b>{prevLevel.minScoreToUnlockNext}</b> in Level {prevLevel.levelNumber} to unlock this room.";
-        else if (completed)
-            previewInfo.text = $"Best score <b>{p.bestScore}</b>   ·   <color={UIKit.HexWarning}>{Stars(p.bestStars)}</color>";
-        else if (!available)
-            previewInfo.text = $"<color={UIKit.HexWarning}>This room isn't in this build yet.</color>";
-        else
-            previewInfo.text = $"{lvl.MessageCount} messages to investigate.";
-
-        bool canPlay = unlocked && available;
-        UIKit.SetLabel(previewPlay, canPlay ? (completed ? "PLAY AGAIN" : "PLAY") : unlocked ? "UNAVAILABLE" : "LOCKED");
-        UIKit.SetInteractable(previewPlay, canPlay);
-        bool many = catalog.Count > 1;
-        UIKit.SetInteractable(previewPrev, many);
-        UIKit.SetInteractable(previewNext, many);
-    }
-
-    /// <summary>
-    /// Main screen: "INVESTIGATION ROOMS" strip (bottom right) with a small still of every room and its lock
-    /// state. Rebuilt whenever progress is refreshed, so unlocks show up straight away.
-    /// </summary>
-    void RefreshRoomStrip()
-    {
-        if (root == null || catalog == null) return;
-        if (roomStrip == null)
-        {
-            roomStrip = UIKit.Rect("RoomStrip", root);
-            UIKit.Place(roomStrip, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-120, 104), new Vector2(860, 190));
-            var title = UIKit.Text(roomStrip, "Caption", "INVESTIGATION ROOMS  ·  SNEAK PEEK", 20, UIKit.Accent, TextAlignmentOptions.TopLeft, bold: true);
-            title.characterSpacing = 3f;
-            UIKit.Place(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), Vector2.zero, new Vector2(860, 28));
-            var row = UIKit.Rect("Rooms", roomStrip);
-            UIKit.Place(row, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -38), new Vector2(860, 152));
-            var hl = UIKit.Horizontal(row, 14, TextAnchor.UpperLeft);
-            hl.childForceExpandWidth = hl.childForceExpandHeight = false;
-            roomStrip.SetSiblingIndex(menuColumn != null ? menuColumn.GetSiblingIndex() : roomStrip.GetSiblingIndex());   // under the panels
-        }
-        var rooms = (RectTransform)roomStrip.Find("Rooms");
-        foreach (Transform c in rooms) { c.gameObject.SetActive(false); Destroy(c.gameObject); }   // hidden now, destroyed at frame end
-        int current = CurrentRoomIndex();
-        int count = Mathf.Min(catalog.Count, 6);
-        float cellW = Mathf.Min(200f, (860f - 14f * (count - 1)) / Mathf.Max(1, count));   // every room fits the 860-wide strip
-        for (int i = 0; i < count; i++)
-        {
-            var lvl = catalog.levels[i];
-            if (lvl == null) continue;
-            int idx = i;
-            bool unlocked = catalog.IsUnlocked(i);
-            var cell = UIKit.Rect("Room_" + lvl.levelNumber, rooms);
-            UIKit.Vertical(cell, 0, 6).childForceExpandHeight = false;
-            UIKit.Size(cell, cellW, 152);
-            var thumb = RoomThumbnail(cell, lvl.levelNumber, lvl.previewImage, unlocked, () => OpenRoomPreview(idx, null), new Vector2(cellW, Mathf.Round(cellW * 0.56f)), false);
-            if (i == current)
-            {
-                var o = thumb.GetComponent<Outline>();
-                o.effectColor = UIKit.Accent;
-                o.effectDistance = new Vector2(2f, -2f);
-                var tag = UIKit.Rect("CurrentTag", thumb);
-                UIKit.Place(tag, new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, -6), new Vector2(92, 22));
-                UIKit.AddImage(tag, UIKit.AccentDark).raycastTarget = false;
-                var tt = UIKit.Text(tag, "Text", "CURRENT", 13, Color.white, TextAlignmentOptions.Center, bold: true);
-                UIKit.Stretch(tt.rectTransform);
-                tt.characterSpacing = 2f;
-            }
-            // Name only; the padlock and the CURRENT tag show the state on the picture itself.
-            var cap = UIKit.Text(cell, "Label", $"<color={UIKit.HexAccent}><b>{lvl.levelNumber:00}</b></color>  {lvl.displayName}",
-                                 16, unlocked ? UIKit.TextPrimary : UIKit.TextSecondary, TextAlignmentOptions.TopLeft);
-            cap.textWrappingMode = TextWrappingModes.NoWrap;
-            cap.overflowMode = TextOverflowModes.Ellipsis;
-            UIKit.Size(cap, cellW, 30);
-        }
     }
 
     // ---------- Career profile (main menu card + dashboard) ----------
@@ -1515,21 +1124,24 @@ public class MainMenuUI : MonoBehaviour
 
         // Navigation column (left)
         menuColumn = UIKit.Rect("Navigation", root);
-        UIKit.Place(menuColumn, new Vector2(0, 1), new Vector2(0, 1), new Vector2(120, -350), new Vector2(500, 0));
+        UIKit.Place(menuColumn, new Vector2(0, 1), new Vector2(0, 1), new Vector2(120, -350), new Vector2(520, 0));
         var col = UIKit.Vertical(menuColumn, 0, 12);
+        col.childForceExpandWidth = false;   // each entry keeps its own width (QUIT GAME is narrower)
         UIKit.FitHeight(menuColumn);
         columnGroup = menuColumn.gameObject.AddComponent<CanvasGroup>();
 
-        playButton = MenuButton("PLAY", "New case", primary: true);
+        // One obvious first action: a large PLAY that says which case it opens. Then three quiet options, and QUIT
+        // set apart at the bottom so it is never hit by accident.
+        playButton = PlayMenuButton();
         Wire(playButton, Play);
-        continueButton = MenuButton("CONTINUE", "", primary: false);
-        Wire(continueButton, Continue);
-        continueSub = continueButton.transform.Find("Sub").GetComponent<TMP_Text>();
-        Wire(MenuButton("LEVEL SELECTION", ""), OpenPanel, "levels");
+        Gap(menuColumn, 14f);
+        classroom = GetComponent<ClassroomUI>();
+        if (classroom == null) classroom = gameObject.AddComponent<ClassroomUI>();
+        Wire(MenuButton("CLASSROOM", ""), classroom.Open);
         Wire(MenuButton("SETTINGS", ""), OpenPanel, "settings");
-        Wire(MenuButton("HOW TO PLAY", ""), OpenPanel, "how");
         Wire(MenuButton("ABOUT", ""), OpenPanel, "about");
-        Wire(MenuButton("QUIT GAME", ""), OpenPanel, "quit");
+        Gap(menuColumn, 22f);
+        Wire(MenuButton("QUIT GAME", "", quiet: true), OpenPanel, "quit");
 
         statusText = UIKit.Text(menuColumn, "Status", "", UIKit.SizeSmall, UIKit.Warning);
         statusText.gameObject.SetActive(false);
@@ -1551,8 +1163,6 @@ public class MainMenuUI : MonoBehaviour
         UIKit.Stretch(panelHost);
 
         BuildSettings();
-        BuildLevels();
-        BuildHowTo();
         BuildAbout();
         BuildQuit();
         BuildResetProgress();
@@ -1578,22 +1188,57 @@ public class MainMenuUI : MonoBehaviour
         return img;
     }
 
-    Button MenuButton(string label, string subLabel, bool primary = false)
+    /// <summary>Height of the secondary menu buttons.</summary>
+    const float MenuButtonHeight = 64f;
+
+    /// <summary>
+    /// The primary action: a large PLAY (idle light sweep every 5 s) with the case it opens underneath
+    /// ("Case 2 · The Investigation"), so a first-time player knows exactly where to start.
+    /// </summary>
+    Button PlayMenuButton()
     {
-        // HUD-style button with the Digital Light Sweep; PLAY also gets a gentle idle sweep every 6 s.
-        var b = UIKit.HudButton(menuColumn, label, null, primary, 28, primary ? 6f : 0f);
-        UIKit.Size(b, 500, primary ? 84 : 72);
+        var b = UIKit.HudButton(menuColumn, "PLAY", null, UIKit.HudVariant.Primary, 44, 5f);
+        b.name = "PLAY Button";
+        UIKit.Size(b, 520, 124);
+        var lbl = b.transform.Find("Label").GetComponent<TMP_Text>();
+        lbl.alignment = TextAlignmentOptions.TopLeft;
+        lbl.margin = new Vector4(56, 18, 20, 0);
+        lbl.characterSpacing = 10f;
+        playSub = UIKit.Text(b.transform, "Sub", "", 21, new Color(1f, 1f, 1f, 0.88f), TextAlignmentOptions.BottomLeft);
+        UIKit.Stretch(playSub.rectTransform);
+        playSub.margin = new Vector4(58, 0, 24, 20);
+        playSub.textWrappingMode = TextWrappingModes.NoWrap;
+        playSub.overflowMode = TextOverflowModes.Ellipsis;
+        var arrow = UIKit.Text(b.transform, "Arrow", "▶", 34, Color.white, TextAlignmentOptions.MidlineRight);
+        UIKit.Stretch(arrow.rectTransform);
+        arrow.margin = new Vector4(0, 0, 34, 0);
+        AddFx(b);
+        return b;
+    }
+
+    /// <summary>A secondary menu entry; <paramref name="quiet"/> = smaller and dimmer (QUIT GAME).</summary>
+    Button MenuButton(string label, string subLabel, bool quiet = false)
+    {
+        var b = UIKit.HudButton(menuColumn, label, null, UIKit.HudVariant.Secondary, quiet ? 22 : 26);
+        UIKit.Size(b, quiet ? 340 : 520, quiet ? 54 : MenuButtonHeight);
         var lbl = b.transform.Find("Label").GetComponent<TMP_Text>();
         lbl.alignment = TextAlignmentOptions.MidlineLeft;
         lbl.margin = new Vector4(52, 0, 20, 0);
         lbl.characterSpacing = 4f;
+        if (quiet) lbl.color = UIKit.TextSecondary;
 
-        var sub = UIKit.Text(b.transform, "Sub", subLabel, 20, primary ? Color.white : UIKit.TextSecondary, TextAlignmentOptions.MidlineRight);
+        var sub = UIKit.Text(b.transform, "Sub", subLabel, 20, UIKit.TextSecondary, TextAlignmentOptions.MidlineRight);
         UIKit.Stretch(sub.rectTransform);
         sub.margin = new Vector4(20, 0, 26, 0);
         sub.textWrappingMode = TextWrappingModes.NoWrap;
         AddFx(b);
         return b;
+    }
+
+    static void Gap(RectTransform parent, float height)
+    {
+        var g = UIKit.Rect("Gap", parent);
+        UIKit.Size(g, -1, height);
     }
 
     void BuildFeed()
@@ -1730,72 +1375,6 @@ public class MainMenuUI : MonoBehaviour
         UIKit.Stretch(value.rectTransform);
         value.margin = new Vector4(76, 0, 76, 0);
         return value;
-    }
-
-    void BuildLevels()
-    {
-        var p = MakePanel("levels", "LEVEL SELECTION", 1320);
-        UIKit.Text(p, "Intro", "Each room is a new case. Reach the required score to unlock the next room — stars reward how well you did.",
-                   UIKit.SizeSmall, UIKit.TextSecondary);
-        levelRow = UIKit.Rect("Cards", p);
-        var h = UIKit.Horizontal(levelRow, 24, TextAnchor.UpperLeft);
-        h.childControlWidth = h.childControlHeight = true;
-        h.childForceExpandWidth = h.childForceExpandHeight = false;
-        UIKit.Size(levelRow, -1, CardHeight);
-        FooterButtons(p, ("BACK", (UnityEngine.Events.UnityAction)ClosePanel, UIKit.HudVariant.Secondary));
-    }
-
-    void BuildHowTo()
-    {
-        var p = MakePanel("how", "HOW TO PLAY", 1320);
-        var cols = UIKit.Rect("Columns", p);
-        var h = UIKit.Horizontal(cols, 56, TextAnchor.UpperLeft);
-        h.childForceExpandHeight = false;
-
-        var left = UIKit.Rect("Controls", cols);
-        UIKit.Vertical(left, 0, 12);
-        Column(left, 560);
-        UIKit.Header(left, "Controls");
-        KeyRow(left, "W A S D", "Move");
-        KeyRow(left, "MOUSE", "Look around");
-        KeyRow(left, "E", "Interact: phone, computer, chairs, doors");
-        KeyRow(left, "SPACE", "Stand up from a chair (E also works)");
-        KeyRow(left, "CLICK", "Choose answers and buttons");
-        KeyRow(left, "ESC", "Pause menu / exit the computer");
-
-        var right = UIKit.Rect("Investigate", cols);
-        UIKit.Vertical(right, 0, 12);
-        Column(right, 600);
-        UIKit.Header(right, "Investigate");
-        var lvl = catalog != null && catalog.Count > 0 ? catalog.levels[0] : null;
-        int unlock = lvl != null ? lvl.minScoreToUnlockNext : 300;
-        string stars = lvl != null ? $"{lvl.oneStarScore} / {lvl.twoStarScore} / {lvl.threeStarScore}" : "200 / 300 / 400";
-        var text = UIKit.Text(right, "Steps",
-            Bullet("Text messages arrive on your phone — press <b>E</b> to read them.") +
-            Bullet("Emails are read on a <b>computer</b>: the downstairs desk or the upstairs computer room. Look at the monitor and press <b>E</b>.") +
-            Bullet("Decide: <color=" + UIKit.HexDanger + "><b>SCAM</b></color> or <color=" + UIKit.HexSafe + "><b>LEGITIMATE</b></color>.") +
-            Bullet("Check the <b>sender</b>, whether it matches something <b>you did</b>, any <b>urgency</b> or pressure, and where <b>links</b> lead.") +
-            Bullet(lvl != null && lvl.scoring != null ? lvl.scoring.Summary() + " Later cases are worth more and ask for a little more speed."
-                                                     : "Correct answers earn points; take the time you need to read each message.") +
-            Bullet($"Stars reward your score ({stars}). Reach <b>{unlock}</b> points to unlock the next room."),
-            23, UIKit.TextPrimary);
-        text.lineSpacing = 8f;
-
-        FooterButtons(p, ("BACK", (UnityEngine.Events.UnityAction)ClosePanel, UIKit.HudVariant.Secondary));
-    }
-
-    static string Bullet(string s) => $"<color={UIKit.HexAccent}>•</color>  {s}\n";
-
-    void KeyRow(RectTransform parent, string key, string action)
-    {
-        var row = UIKit.Rect("Key_" + key, parent);
-        var h = UIKit.Horizontal(row, 16, TextAnchor.MiddleLeft);
-        h.childForceExpandWidth = false;
-        UIKit.Size(row, -1, 50);
-        var cap = UIKit.Badge(row, key, UIKit.Accent, UIKit.Background, 20);
-        UIKit.Size(cap.transform.parent.GetComponent<RectTransform>(), 150, 44);
-        var t = UIKit.Text(row, "Action", action, 23, UIKit.TextPrimary, TextAlignmentOptions.MidlineLeft);
-        UIKit.Size(t, 420);
     }
 
     void BuildAbout()

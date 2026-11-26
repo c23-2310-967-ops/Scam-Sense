@@ -819,7 +819,7 @@ public class ComputerTerminal : MonoBehaviour, IMessagePresenter, IInvestigation
         question.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
         detailsToggle = UIKit.HudButton(qRow, "DETAILS", () => SetDetailsView(!showingDetails), UIKit.HudVariant.Secondary, 20);
         UIKit.Size(detailsToggle, 200, 46);
-        // HINT (messages with a hint only - the Level 1 tutorial); hidden for every other message.
+        // HINT (messages that have a hint - every curriculum question); hidden for messages without one.
         hintCtl = HintControl.Build(qRow, decisionBar, () => quiz != null ? quiz.Scoring : null, 46f, 20f, 170f);
         var timerRow = UIKit.Rect("TimerRow", decisionBar);
         UIKit.Horizontal(timerRow, 10).childForceExpandHeight = false;

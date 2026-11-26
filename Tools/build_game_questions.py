@@ -1,11 +1,18 @@
 """Docs/Curriculum_Question_Bank.md (the validated question set) -> Assets/Editor/CurriculumQuestions.json.
 
+NOTE (2026-11-25): after running this script, run Tools > Scam Sense > Curriculum > Arrange Rooms in Unity
+(Assets/Editor/CurriculumRoomLayout.cs). It adds the HINT for every non-tutorial question, the M04 English line,
+each room's "In this room:" intro and the scoring curve, none of which this script writes.
+
 The JSON is read by Assets/Editor/CurriculumQuestionsImporter.cs, which writes the questions into the five room
 assets. Question wording is converted, not retyped: markdown bold/italics become TMP tags, <br> becomes a new line.
 The seven Scam-or-Legitimate items are split into sender / subject / body / link so they look like real messages;
 their wording is kept, only re-arranged into those fields.
 """
-import html, json, re, sys
+import html, json, os, re, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from activity_content import ACTIVITIES, VERDICT_CLUES, PLAIN   # how questions are played (not what they ask)
 
 BANK, OUT = sys.argv[1], sys.argv[2]
 md = open(BANK, encoding="utf-8").read()
@@ -174,12 +181,11 @@ TUTORIAL = {
 
 LEVEL1 = dict(
     tutorial=True, firstQuestion="E03", briefingTitle="WELCOME, INVESTIGATOR",
-    briefing="You just joined the Cybercrime Investigation Unit. Scammers send fake texts, emails and posts to steal money, "
-             "passwords and personal details, and your job is to catch them.\n\n"
-             "This first room is your training case. A guide will show you how to investigate, use hints and answer. "
-             "Six questions are waiting, and they arrive in a different order every time you play.",
-    objectives=["Follow the guide on your first question.", "Answer all six questions in this room.",
-                "Score {unlock} or more to unlock the next room."])
+    briefing="You just joined the Cybercrime Investigation Unit. Your job: catch fake texts, emails and posts before they "
+             "steal money, passwords or personal details.\n\n"
+             "This is your training case. A guide will walk you through your first question.",
+    objectives=["Follow the guide on your first question.", "Answer all 6 questions.",
+                "Score {unlock}+ to unlock the next room."])
 
 ROOMS = [
     ("Assets/Levels/Level1_TheFirstCase.asset", "Welcome to your first case."),
@@ -188,6 +194,20 @@ ROOMS = [
     ("Assets/Levels/Level4_DigitalForensicsLab.asset", "Welcome to the Digital Forensics Lab."),
     ("Assets/Levels/Level5_MacLab.asset", "The campus network has been compromised."),
 ]
+
+def check_clues(qid, inspectables, evidence, fields=None, activity_texts=None):
+    """Every clue phrase must be in its text, every clue findable, ids unique."""
+    ids = [c["id"] for c in inspectables]
+    assert len(ids) == len(set(ids)), (qid, "inspectable ids must be unique")
+    texts = {i["key"]: i["text"] for i in (activity_texts or [])}
+    names = {"Sender": "sender", "SenderDetail": "senderDetail", "Subject": "subject", "Body": "body", "Link": "link"}
+    for c in inspectables:
+        text = texts.get(c["part"], "") if c["field"] == "Activity" else (fields or {}).get(names[c["field"]], "")
+        assert text, (qid, c["id"], "empty field / unknown activity item")
+        assert c["match"] == "" or c["match"] in text, (qid, c["id"], "match phrase not in the text")
+        assert c["clueId"] == "" or any(e["id"] == c["clueId"] for e in evidence), (qid, c["id"], "unknown clue")
+    for e in evidence:
+        assert any(c["clueId"] == e["id"] for c in inspectables), (qid, e["id"], "clue can never be found")
 
 out = {"source": "Docs/Curriculum_Question_Bank.md", "rooms": []}
 for r_i, (asset, intro) in enumerate(ROOMS):
@@ -235,6 +255,23 @@ for r_i, (asset, intro) in enumerate(ROOMS):
             for e in t["evidence"]:
                 assert any(c["clueId"] == e["id"] for c in t["inspectables"]), (qid, e["id"], "clue can never be found")
             item.update(hint=t["hint"], inspectables=t["inspectables"], evidence=t["evidence"])
+        if qid in ACTIVITIES:
+            # Interactive activity: its clue details replace the plain-text ones (the question text is unchanged).
+            a = ACTIVITIES[qid]
+            assert item["choices"], (qid, "activities are for choice questions")
+            assert qid not in PLAIN
+            check_clues(qid, a["inspectables"], a["evidence"], activity_texts=a["activity"]["items"])
+            keys = [i["key"] for i in a["activity"]["items"]]
+            assert len(keys) == len(set(keys)), (qid, "item keys must be unique")
+            n_key = sum(1 for e in a["evidence"] if e["supportsVerdict"])
+            assert 0 <= a["activity"]["minClues"] <= n_key, (qid, "minClues > key clues")
+            assert not a["activity"]["outcomes"] or len(a["activity"]["outcomes"]) == len(item["choices"]), (qid, "one outcome per choice")
+            item.update(inspectables=a["inspectables"], evidence=a["evidence"], activity=a["activity"])
+        elif qid in VERDICT_CLUES:
+            v = VERDICT_CLUES[qid]
+            assert not item["choices"] and r_i > 0, (qid, "verdict clues are for SCAM / LEGITIMATE items outside Level 1")
+            check_clues(qid, v["inspectables"], v["evidence"], fields=item)
+            item.update(inspectables=v["inspectables"], evidence=v["evidence"])
         room["lessons"].append(item["learningObjective"])
         room["questions"].append(item)
     assert len(room["questions"]) == 6
@@ -249,5 +286,8 @@ for r_i, (asset, intro) in enumerate(ROOMS):
 ids = [q["id"] for r in out["rooms"] for q in r["questions"]]
 assert len(ids) == 30 and len(set(ids)) == 30
 json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+acts = [q["id"] for r in out["rooms"] for q in r["questions"] if q.get("activity")]
+assert set(acts) == set(ACTIVITIES), "every activity must be used"
+print("activities", len(acts), "verdict clue sets", len(VERDICT_CLUES))
 print("rooms", len(out["rooms"]), "questions", len(ids),
       "choice questions", sum(1 for r in out["rooms"] for q in r["questions"] if q["choices"]))

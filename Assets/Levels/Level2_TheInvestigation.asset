@@ -16,23 +16,24 @@ MonoBehaviour:
   levelNumber: 2
   displayName: The Investigation
   sceneName: Room2_InvestigationOffice
-  description: Flagged messages arrive in the investigation office. Inspect the sender,
-    context and requests before you decide.
+  description: Protecting your personal data and accounts, fake virus pop-ups, what
+    to do after a scam, and a message that is real.
   previewImage: {fileID: 21300000, guid: 505a3627d9fec30428c0950dace725d0, type: 3}
   briefingTitle: 'LEVEL 2: THE INVESTIGATION'
-  briefingText: 'Your investigation continues. This room has six questions: four
-    case questions with four answer choices and two messages or web pages to judge
-    as SCAM or LEGITIMATE. They arrive in a different order on every attempt, and
-    the answer choices are shuffled too, so read each one carefully instead of remembering
-    positions.'
+  briefingText: 'In this room: protecting your personal data and accounts, fake virus
+    pop-ups, what to do after a scam, and a message that is real.
+
+    You''ll get
+    6 questions: 4 with answer choices (A-D) and 2 to judge as SCAM or LEGITIMATE.
+    Take your time and read each one carefully.'
   caseNotes:
   - While browsing, a full-screen red page appeared and started beeping.
   - 'One minute before this email arrived, you clicked "Forgot password" on NovaCloud
     yourself. Trusted domain (case files): novacloud.example'
   objectives:
-  - Answer all six questions in this room.
-  - Read the whole situation before you choose.
-  - Score 550 or more to unlock the next room.
+  - Answer all 6 questions.
+  - Read the whole situation before you choose. Stuck? Press HINT.
+  - Score 450+ to unlock the next room.
   messages:
   - id: E07
     channel: 5
@@ -44,19 +45,89 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: The Data Privacy Act's principles include <b>transparency</b> (tell
-      people why data is collected), <b>legitimate purpose</b> and <b>proportionality</b>
-      (collect only what is needed). A raffle needs a way to contact you, not your
-      ID and birthdate, and an ID photo plus a birthdate can be used for identity
-      theft. With no notice, you can't know what happens to your data.
+    explanation: A raffle only needs a way to contact you, not your ID and birthdate.
+      Together, those can be used to pretend to be you. The <b>Data Privacy Act</b>
+      says they must explain why they collect data and take only what they need.
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: name
+      field: 5
+      match: required
+      label: Full name
+      finding: A raffle needs to know who won. Asking for a name is reasonable.
+      linkAddress: 
+      clueId: 
+      part: name
+    - id: mobile
+      field: 5
+      match: required
+      label: Mobile number
+      finding: A raffle needs a way to contact the winner. This is proportionate.
+      linkAddress: 
+      clueId: 
+      part: mobile
+    - id: birth
+      field: 5
+      match: required
+      label: Birthdate
+      finding: A raffle doesn't need your birthdate. Together with an ID photo it
+        can be used for identity theft.
+      linkAddress: 
+      clueId: birth
+      part: birth
+    - id: id
+      field: 5
+      match: photo of your valid ID
+      label: ID photo
+      finding: Far more than joining a raffle needs. An ID photo is valuable to identity
+        thieves.
+      linkAddress: 
+      clueId: idphoto
+      part: id
+    - id: notice
+      field: 5
+      match: None provided
+      label: Privacy notice
+      finding: Without a notice you can't know why your data is collected or what
+        happens to it (transparency).
+      linkAddress: 
+      clueId: notice
+      part: notice
+    - id: free
+      field: 5
+      match: Free to join!
+      label: Free entry
+      finding: Free raffles are normal. Not a warning sign on its own.
+      linkAddress: 
+      clueId: 
+      part: info
+    - id: shirts
+      field: 5
+      match: company shirts
+      label: Staff
+      finding: Uniforms are easy to copy and prove little either way. Not a warning
+        sign on its own.
+      linkAddress: 
+      clueId: 
+      part: info
+    evidence:
+    - id: idphoto
+      title: Asks for an ID photo
+      whyItMatters: Collect only what is needed (proportionality).
+      supportsVerdict: 1
+    - id: birth
+      title: Asks for your birthdate
+      whyItMatters: Birthdates help thieves pretend to be you.
+      supportsVerdict: 1
+    - id: notice
+      title: No privacy notice
+      whyItMatters: People must be told why their data is collected (transparency).
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -65,30 +136,62 @@ MonoBehaviour:
       followUp: 1
       recheckDetails: []
     choices:
-    - They ask for a photo of your ID and your birthdate just to join, and there
-      is no privacy notice explaining why
+    - They want a photo of your ID and your birthdate just to join, with no notice
+      saying why
     - The raffle is free to join
     - The staff wear company shirts
     - The draw is next week
     correctChoice: 0
-    feedback: An ID photo for a raffle? Too much. Ask <b>why they need it</b> and
+    feedback: Too much! An ID photo for a raffle? Ask <b>why they need it</b> and
       look for a privacy notice.
     curriculumRef: "Social and Professional Issues (BIT2105) \u2014 Week 15: Data
       Privacy Act (RA 10173)"
+    hint: Think about what a raffle really needs from you just to contact a winner.
+    activity:
+      kind: 6
+      title: "Mall raffle  \xB7  sign-up form"
+      instruction: Check each box on the form. Which ones ask for too much?
+      items:
+      - key: name
+        role: 0
+        label: Full name
+        text: required
+      - key: mobile
+        role: 0
+        label: Mobile number
+        text: required
+      - key: birth
+        role: 0
+        label: Birthdate
+        text: required
+      - key: id
+        role: 0
+        label: ID photo
+        text: Upload a photo of your valid ID (required)
+      - key: notice
+        role: 0
+        label: Privacy notice
+        text: None provided
+      - key: info
+        role: 8
+        label: 
+        text: Free to join! Staff in company shirts are at the booth. The draw is
+          next week.
+      minClues: 1
+      outcomes: []
   - id: E08
     channel: 5
     sender: Case Review
     senderDetail: 
     subject: Multiple Choice
-    body: <b>Which of your accounts deserves the strongest protection, because a
-      scammer who controls it can take over many of your other accounts?</b>
+    body: A scammer who gets into one account may use it to get into your others.
+      <b>Which account needs the strongest protection?</b>
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: Most services send password resets to your email. Whoever controls
-      that inbox can reset the passwords of your other accounts, including social
-      media, e-wallets and school accounts. That makes it your most valuable information
-      asset, so it needs a unique password and MFA first.
+    explanation: '"Forgot password" links go to your email. Whoever controls your
+      email can reset your other accounts: social media, e-wallets and school. Protect
+      it first with a unique password and MFA (a second check, like a code).'
     trigger: 0
     readingSeconds: 0
     stationId: 
@@ -110,11 +213,19 @@ MonoBehaviour:
     - Your music streaming account
     - An old forum account you no longer use
     correctChoice: 1
-    feedback: Your <b>email</b> is the master key. Every 'Forgot password' link goes
+    feedback: Your <b>email</b> is the master key. Every "Forgot password" link goes
       there.
     curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 9:
       Information Assets and Asset Management (\"evaluate their value and protection
       requirements\")"
+    hint: Where do "Forgot password" links get sent?
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: E09
     channel: 2
     sender: Unknown web page
@@ -126,18 +237,72 @@ MonoBehaviour:
     correctVerdict: 0
     scenarioContext: While browsing, a full-screen red page appeared and started
       beeping.
-    explanation: This is a tech-support scam. Real security warnings and updates
-      come from your operating system's own settings and security app, not from a
-      web page with a phone number. The "support" agent will ask for remote access
-      or payment. Close the tab. If it won't close, end the browser with Task Manager.
+    explanation: This is a <b>tech-support scam</b>. Real warnings come from your
+      computer's own security app, not from a web page with a phone number. The "support"
+      person will ask for money or control of your PC. Close the tab. If it's stuck,
+      close the browser with Task Manager.
     trigger: 2
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: The page
+      finding: A page you didn't ask for, from a site you don't know.
+      linkAddress: 
+      clueId: 
+      part: 
+    - id: alert
+      field: 2
+      match: 
+      label: The alert
+      finding: Big red alerts are designed to cause panic.
+      linkAddress: 
+      clueId: 
+      part: 
+    - id: locked
+      field: 3
+      match: INFECTED and LOCKED
+      label: The claim
+      finding: A web page can't scan your computer. It's only a page made to scare
+        you.
+      linkAddress: 
+      clueId: fake
+      part: 
+    - id: call
+      field: 3
+      match: Call Certified Support at 1-800-555-0199
+      label: What it wants
+      finding: Real security warnings never ask you to call a number. This is a tech-support
+        scam.
+      linkAddress: 
+      clueId: call
+      part: 
+    - id: restart
+      field: 3
+      match: DO NOT restart your computer
+      label: The instruction
+      finding: It keeps you on the scary page. Closing the browser usually ends it.
+      linkAddress: 
+      clueId: pressure
+      part: 
+    evidence:
+    - id: fake
+      title: Fake infection claim
+      whyItMatters: Web pages can't see what's on your computer.
+      supportsVerdict: 1
+    - id: call
+      title: Asks you to call 'support'
+      whyItMatters: Real warnings don't come with a phone number.
+      supportsVerdict: 1
+    - id: pressure
+      title: Keeps you from closing it
+      whyItMatters: Pressure is the scam's main tool.
+      supportsVerdict: 1
     consequence:
       kind: 0
       alertTitle: 
@@ -147,10 +312,18 @@ MonoBehaviour:
       recheckDetails: []
     choices: []
     correctChoice: 0
-    feedback: Scam. Real alerts come from your <b>system settings</b>, never from
-      a web page asking you to call.
+    feedback: Scam! Real alerts come from your <b>computer's settings</b>, never
+      from a web page that tells you to call.
     curriculumRef: "Computer Security (BIT1225) \u2014 Operating System Security
       (\"patch management, and security configuration\")"
+    hint: 'Where do real security warnings come from: a web page, or your own computer?'
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: E10
     channel: 5
     sender: Case Review
@@ -161,18 +334,63 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: Evidence is what lets the platform, your e-wallet and the police
-      act. Reference numbers and the seller's account details can help trace the
-      money. Deleting the chat destroys proof. Public threats can backfire on you
-      legally. "Pay more to get a refund" is a second scam.
+    explanation: Proof is what lets PayLite and the police help you, and the reference
+      number can help trace the money. Deleting the chat destroys proof. Public threats
+      can get you in trouble. "Pay more to get a refund" is a second scam.
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: chat
+      field: 5
+      match: "Paid na po, \u20B11,500 via PayLite"
+      label: Your chat
+      finding: The chat shows what was agreed and paid. Keep it - it's evidence.
+      linkAddress: 
+      clueId: chat
+      part: m1
+    - id: blocked
+      field: 5
+      match: The seller blocked you
+      label: Blocked
+      finding: Being blocked after paying is a classic sign of a fake seller. Save
+        everything before it disappears.
+      linkAddress: 
+      clueId: 
+      part: blocked
+    - id: receipt
+      field: 5
+      match: reference number
+      label: Payment receipt
+      finding: The reference number lets PayLite trace where the money went.
+      linkAddress: 
+      clueId: ref
+      part: receipt
+    - id: profile
+      field: 5
+      match: profile link and account name
+      label: Seller's profile
+      finding: The seller's account details help the platform and the police find
+        them.
+      linkAddress: 
+      clueId: account
+      part: profile
+    evidence:
+    - id: chat
+      title: The chat history
+      whyItMatters: Proof of what was agreed. Deleting it destroys evidence.
+      supportsVerdict: 1
+    - id: ref
+      title: Receipt with reference number
+      whyItMatters: Reference numbers can help trace the money.
+      supportsVerdict: 1
+    - id: account
+      title: Seller's account details
+      whyItMatters: They let the platform and the police act.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -184,13 +402,45 @@ MonoBehaviour:
     - Delete the chat so you can move on
     - Post the seller's photo and threaten them publicly
     - Send another payment because they say it "unlocks" your refund
-    - Save screenshots of the chat, the seller's profile link and the payment receipt
-      with its reference number, then report to PayLite and the authorities
+    - Save proof (the chat, the seller's profile and the receipt with its reference
+      number), then report to PayLite and the police
     correctChoice: 3
-    feedback: 'Save the evidence first: chat, profile and <b>reference number</b>.
-      Then report it.'
+    feedback: 'Save the proof first: chat, profile and <b>reference number</b>. Then
+      report it.'
     curriculumRef: "Cyber Forensics (BIT2226) \u2014 Digital Evidence and Evidence
       Collection (\"collection, preservation, and documentation\")"
+    hint: After a scam, what will the e-wallet company and the police ask you to
+      show them?
+    activity:
+      kind: 3
+      title: "Marketplace chat  \xB7  seller"
+      instruction: Look at what you have. What could prove what happened?
+      items:
+      - key: m1
+        role: 3
+        label: You
+        text: "Paid na po, \u20B11,500 via PayLite. When will you ship?"
+      - key: blocked
+        role: 5
+        label: BLOCKED
+        text: You can no longer message this account. The seller blocked you.
+      - key: receipt
+        role: 4
+        label: payment
+        text: "PayLite_Receipt.png  \xB7  \u20B11,500  \xB7  reference number shown"
+      - key: profile
+        role: 6
+        label: seller
+        text: Seller's profile link and account name
+      minClues: 1
+      outcomes:
+      - The chat is gone, and with it the proof of what was agreed. Your report becomes
+        much harder to act on.
+      - The public post starts a fight and can get you into legal trouble. The money
+        still isn't traced.
+      - The "refund unlock" is a second scam. You lose another payment.
+      - PayLite and the authorities get the reference number and account details
+        they need to trace the money.
   - id: M01
     channel: 1
     sender: NovaCloud
@@ -202,19 +452,65 @@ MonoBehaviour:
     correctVerdict: 1
     scenarioContext: 'One minute before this email arrived, you clicked "Forgot password"
       on NovaCloud yourself. Trusted domain (case files): novacloud.example'
-    explanation: You started this action yourself a minute ago. The sender and link
-      domain match the trusted domain exactly. The email doesn't ask for your password
-      or any personal details, and it tells you it's safe to ignore if you didn't
-      ask for it. A reset email that proves you own the inbox is how authentication
-      is supposed to work.
+    explanation: You asked for this reset yourself a minute ago. The address matches
+      the trusted one exactly, and it doesn't ask for your password. It even says
+      you can ignore it if you didn't ask. Not every message is a scam!
     trigger: 2
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: domain
+      field: 1
+      match: 
+      label: Sender address
+      finding: no-reply@novacloud.example matches the trusted domain in your case
+        files.
+      linkAddress: 
+      clueId: domain
+      part: 
+    - id: expires
+      field: 3
+      match: This link expires in 15 minutes.
+      label: Expiry
+      finding: Short expiry times are normal for reset links - it's a security feature,
+        not pressure.
+      linkAddress: 
+      clueId: 
+      part: 
+    - id: ignore
+      field: 3
+      match: If you didn't request this, you can ignore this email.
+      label: No pressure
+      finding: It lets you ignore it if you didn't ask. A scam would push you to
+        act.
+      linkAddress: 
+      clueId: nopressure
+      part: 
+    - id: link
+      field: 4
+      match: 
+      label: Reset link
+      finding: It goes to novacloud.example, the trusted domain - and you asked for
+        this reset a minute ago.
+      linkAddress: "https://novacloud.example/reset?t=8f3k\u2026"
+      clueId: link
+      part: 
+    evidence:
+    - id: domain
+      title: Trusted sender domain
+      whyItMatters: Matches novacloud.example in your case files.
+      supportsVerdict: 1
+    - id: link
+      title: Link to the real domain
+      whyItMatters: And you requested the reset yourself.
+      supportsVerdict: 1
+    - id: nopressure
+      title: No pressure
+      whyItMatters: You can safely ignore it if you didn't ask.
+      supportsVerdict: 1
     consequence:
       kind: 0
       alertTitle: 
@@ -224,10 +520,19 @@ MonoBehaviour:
       recheckDetails: []
     choices: []
     correctChoice: 0
-    feedback: Legitimate. You asked for it, the domain matches, and it doesn't ask
+    feedback: Legitimate! You asked for it, the address matches, and it doesn't ask
       for your password.
     curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Weeks 7\u20138:
       Principles of Information Assurance (authentication)"
+    hint: Read the case note. Did you ask for this, and does the address match the
+      trusted one?
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: M02
     channel: 5
     sender: Case Review
@@ -238,18 +543,71 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: A domain is read <b>from the right</b>, ending just before the first
-      single "/". Here that is account-verify.example, and everything to its left
-      is a subdomain the attacker chose. This is not typosquatting, because nothing
-      is misspelled. HTTPS only encrypts the connection (see M03).
+    explanation: To find the real website, read the address <b>from right to left</b>,
+      up to the first single "/". Here it is <b>account-verify.example</b>. The "examplebank"
+      in front is a decoy the scammer added. Nothing is misspelled, and HTTPS doesn't
+      make it safe.
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: https
+      field: 5
+      match: https://
+      label: https://
+      finding: HTTPS only encrypts the connection. It doesn't tell you who owns the
+        site.
+      linkAddress: 
+      clueId: 
+      part: addr
+    - id: sub
+      field: 5
+      match: examplebank.example.
+      label: The left part
+      finding: Everything to the left of the real domain is a subdomain - the attacker
+        can write anything there, even a bank's name.
+      linkAddress: 
+      clueId: sub
+      part: addr
+    - id: domain
+      field: 5
+      match: account-verify.example
+      label: The real domain
+      finding: Read the domain from the right, ending just before the first single
+        '/'. The real domain is account-verify.example.
+      linkAddress: 
+      clueId: domain
+      part: addr
+    - id: path
+      field: 5
+      match: /login
+      label: The path
+      finding: The part after the '/' can say anything. It doesn't change who owns
+        the site.
+      linkAddress: 
+      clueId: 
+      part: addr
+    - id: page
+      field: 5
+      match: ExampleBank Online
+      label: The page
+      finding: Copying a bank's look is easy. Nothing is misspelled here, so this
+        isn't typosquatting either.
+      linkAddress: 
+      clueId: 
+      part: page
+    evidence:
+    - id: domain
+      title: 'Real domain: account-verify.example'
+      whyItMatters: The domain decides who owns the page.
+      supportsVerdict: 1
+    - id: sub
+      title: Bank name used as a subdomain
+      whyItMatters: Subdomain tricks put a trusted name on the left.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -263,9 +621,30 @@ MonoBehaviour:
     - 'It''s a subdomain trick: the real domain is account-verify.example'
     - It's a misspelled (typosquatted) bank domain
     correctChoice: 2
-    feedback: 'Read the domain <b>right to left</b>: account-verify.example. The
-      bank''s name is just a decoy subdomain.'
+    feedback: 'Read <b>right to left</b>: the real site is account-verify.example.
+      The bank''s name is just a decoy.'
     curriculumRef: "Computer Security (BIT1225) \u2014 Web and Application Security"
+    hint: Read the web address from right to left, up to the first single slash.
+    activity:
+      kind: 2
+      title: "ExampleBank Online  \xB7  Log in"
+      instruction: Check the address bar, piece by piece. Where does this page really
+        go?
+      items:
+      - key: addr
+        role: 0
+        label: Address
+        text: https://examplebank.example.account-verify.example/login
+      - key: page
+        role: 1
+        label: 
+        text: ExampleBank Online. Log in to continue.
+      - key: button
+        role: 7
+        label: 
+        text: LOG IN
+      minClues: 1
+      outcomes: []
   inboxExtras:
   - id: l2_old_order
     channel: 1
@@ -297,6 +676,14 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: l2_old_meeting
     channel: 1
     sender: Calendar
@@ -327,6 +714,14 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: l2_old_facilities
     channel: 1
     sender: Facilities Team
@@ -357,59 +752,69 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   caseFiles:
   - title: Case Notes
     body: "\u2022 While browsing, a full-screen red page appeared and started beeping.\n\u2022
       One minute before this email arrived, you clicked \"Forgot password\" on NovaCloud
       yourself. Trusted domain (case files): novacloud.example"
   - title: How This Room Works
-    body: 'Six questions are waiting in this room. They arrive one at a time, in
-      a different order on every attempt.
+    body: '1. 6 questions arrive one at a time, in a new order each attempt.
 
 
-      Case questions have four answer
-      choices, shuffled each attempt. Pick the safest and most accurate one.
+      2.
+      Case questions: pick the safest, most accurate answer (A-D).
 
 
-      Messages
-      and web pages are judged as SCAM or LEGITIMATE.
+      3. Messages
+      and web pages: choose SCAM or LEGITIMATE.
 
 
-      Score 550 or more to
-      unlock the next room.'
+      4. Not sure? Press HINT to
+      see what to look at. After each answer you''ll see why it was right or wrong.
+
+
+      Goal:
+      score 450+ to unlock the next room.'
   firstMessageDelay: 8
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 4
   scoring:
     basePoints: 150
-    speedBonus: 15
+    speedBonus: 0
     fastWindow: 0.35
-    wrongPenalty: 25
-    recoveryPoints: 40
+    wrongPenalty: 15
+    recoveryPoints: 38
     baseReadingSeconds: 20
     secondsPerWord: 0.5
     secondsPerDetail: 3
-    minReadingSeconds: 40
-    maxReadingSeconds: 120
+    minReadingSeconds: 45
+    maxReadingSeconds: 150
     caseExtraSeconds: 60
     overtimeStepSeconds: 15
-    overtimePenaltyPerStep: 5
-    maxTimePenalty: 30
+    overtimePenaltyPerStep: 0
+    maxTimePenalty: 0
     minCorrectPoints: 120
-  oneStarScore: 375
-  twoStarScore: 550
+  oneStarScore: 315
+  twoStarScore: 450
   threeStarScore: 900
-  minScoreToUnlockNext: 550
+  minScoreToUnlockNext: 450
   nextLevelId: level_3
   nextSceneName: Room3_DigitalTrap
   lessons:
-  - Check whether a request for personal data is proportional and explained before
-    handing it over.
-  - Value accounts by what else they unlock.
-  - Know where real security alerts and updates come from.
-  - Preserve and document evidence before doing anything else.
-  - 'Avoid "everything is a scam" thinking: confirm real messages with evidence.'
-  - Find the real domain in a URL by reading right to left.
+  - Share personal data only when it's really needed and the reason is explained.
+  - Protect first the account that unlocks all the others.
+  - Know where real security alerts come from.
+  - Save proof before doing anything else.
+  - 'Real messages exist too: check the facts before calling something a scam.'
+  - Find the real website in a link by reading right to left.
   learningSummary: 
   performanceHigh: Excellent investigation! You identified the key warning signs
     and made efficient decisions.
@@ -417,3 +822,5 @@ MonoBehaviour:
     and improve your response time.
   performanceLow: Keep learning. Examine sender identity, context, urgency, and requests
     for sensitive information before deciding.
+  tutorial: 0
+  tutorialFirstQuestion: 

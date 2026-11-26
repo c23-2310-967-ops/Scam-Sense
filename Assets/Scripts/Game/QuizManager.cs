@@ -211,6 +211,7 @@ public class QuizManager : MonoBehaviour
         waitTarget = Mathf.Max(0f, delay);
         walked = 0f;
         if (player != null) lastPlayerPos = player.position;
+        if (hud != null) hud.SetNextStep("Explore the room. A new message is on its way.");
     }
 
     void TickWaiting()
@@ -237,8 +238,32 @@ public class QuizManager : MonoBehaviour
         if (hud != null) hud.ShowNotification(Current, NeedsComputer(Current) ? (string.IsNullOrEmpty(Current.stationId) ? "Read it at a computer" : $"Flagged on workstation {Current.stationId}")
                                                      : NeedsCaseTerminal(Current) ? "Submit at the final case terminal"
                                                      : $"Press [{interactKey}] to read");
+        if (hud != null)
+        {
+            string key = UIKit.Key(InteractionPrompt.KeyName(interactKey));
+            hud.SetNextStep(NeedsCaseTerminal(Current) ? $"Check the evidence, then press {key} at the final case terminal."
+                          : NeedsComputer(Current) ? (string.IsNullOrEmpty(Current.stationId)
+                                ? $"New {MessageChannels.Noun(Current.channel)}! Look at a computer screen and press {key}."
+                                : $"Go to workstation <b>{Current.stationId}</b>, look at the screen and press {key}.")
+                          : $"New message on your phone! Press {key} to read it.");
+        }
+        OfferFirstTimeTip();
         if (levelAudio != null) levelAudio.PlayNotification(Current.channel);
         StateChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// The first time a player meets a kind of message (phone, computer, workstation, final case terminal, question),
+    /// a short tip explains it. The Level 1 guide teaches these itself, so while it runs the tip is only marked as seen.
+    /// </summary>
+    void OfferFirstTimeTip()
+    {
+        string id = FirstTimeTips.NextTip(Current, NeedsComputer(Current), NeedsCaseTerminal(Current), FirstTimeTips.Seen, out string text);
+        if (id == null) return;
+        FirstTimeTips.MarkSeen(id);
+        var coach = GetComponent<TutorialCoach>();
+        if (coach != null && coach.Running) return;
+        if (hud != null) hud.ShowTip(text);
     }
 
     void TickNotified()
@@ -263,18 +288,18 @@ public class QuizManager : MonoBehaviour
             {
                 // The final case terminal opens it (once the evidence has been reviewed).
                 if (LookedAt<FinalCaseTerminal>() == null && hud != null)
-                    hud.ShowToast("Final case: review the evidence, then go to the final case terminal and press E.");
+                    hud.ShowToast("Check the evidence first, then press E at the final case terminal.");
                 return;
             }
             if (NeedsComputer(Current))
             {
                 // Looking at a monitor? Let the ComputerTerminal handle this press.
                 if (!LookingAtComputer() && hud != null && !string.IsNullOrEmpty(Current.stationId))
-                    hud.ShowToast($"This message is flagged on workstation {Current.stationId} - find it, look at the screen and press E.");
+                    hud.ShowToast($"Find workstation {Current.stationId}, look at its screen and press E.");
                 else if (!LookingAtComputer() && hud != null)
                     hud.ShowToast(Current.channel == MessageChannel.Website
-                        ? "Web pages are reviewed on a computer - look at a monitor and press E."
-                        : "Emails are read on a computer - look at a monitor and press E.");
+                        ? "Web pages open on a computer: look at a screen and press E."
+                        : "Emails open on a computer: look at a screen and press E.");
                 return;
             }
             InteractionGate.ConsumeInteract();   // doors/chairs ignore this press
@@ -460,7 +485,7 @@ public class QuizManager : MonoBehaviour
     {
         phase = Phase.Complete;
         InteractionPrompt.Clear(this);
-        if (hud != null) hud.HideNotification();
+        if (hud != null) { hud.HideNotification(); hud.SetNextStep("All questions answered. Your results are next!"); }
         Completed?.Invoke();
     }
 

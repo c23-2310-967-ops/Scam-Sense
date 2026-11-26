@@ -115,6 +115,7 @@ public class ScoringSystem : MonoBehaviour
         if (m == null) return c.minReadingSeconds;
         if (m.readingSeconds > 0f) return m.readingSeconds;
         int words = Words(m.sender) + Words(m.senderDetail) + Words(m.subject) + Words(m.body) + Words(m.link);
+        if (m.HasActivity) foreach (var item in m.activity.items) words += Words(item.text);   // the simulated app is read too
         int details = (m.inspectables != null ? m.inspectables.Count : 0) + (m.clues != null ? m.clues.Length : 0);
         float t = c.baseReadingSeconds + words * c.secondsPerWord + details * c.secondsPerDetail;
         t = Mathf.Clamp(t, c.minReadingSeconds, c.maxReadingSeconds);

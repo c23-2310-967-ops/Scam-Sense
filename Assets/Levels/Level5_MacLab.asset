@@ -16,24 +16,25 @@ MonoBehaviour:
   levelNumber: 5
   displayName: The Compromised Campus Network
   sceneName: Room5_MacLab
-  description: Suspicious messages have been reported in the university MacLab. Investigate
-    the flagged workstations and decide what's real.
+  description: Keeping evidence safe, the hidden checks inside an email, identity-theft
+    forms, ransomware, fake QR codes and the right way to report.
   previewImage: {fileID: 21300000, guid: ec2bc026c46543c4788ea2715af04007, type: 3}
   briefingTitle: 'LEVEL 5: THE COMPROMISED CAMPUS NETWORK'
-  briefingText: 'The campus network has been compromised. This room has six questions:
-    four case questions with four answer choices and two messages or web pages to
-    judge as SCAM or LEGITIMATE. They arrive in a different order on every attempt,
-    and the answer choices are shuffled too, so read each one carefully instead of
-    remembering positions.'
+  briefingText: 'In this room: keeping evidence safe, the hidden checks inside an
+    email, identity-theft forms, ransomware, fake QR codes and the right way to report.
+
+    You''ll
+    get 6 questions: 4 with answer choices (A-D) and 2 to judge as SCAM or LEGITIMATE.
+    Take your time and read each one carefully.'
   caseNotes:
   - A "Scholarship Grant 2027" form is shared in a student group. It uses the school
     logo.
   - The canteen's "Scan to pay with PayLite" poster looks normal, but up close the
     QR code is a sticker placed on top of the printed one.
   objectives:
-  - Answer all six questions in this room.
-  - Read the whole situation before you choose.
-  - Score 1080 or more to complete the investigation.
+  - Answer all 6 questions.
+  - Read the whole situation before you choose. Stuck? Press HINT.
+  - Score 870+ to finish the investigation.
   messages:
   - id: H05
     channel: 5
@@ -45,19 +46,76 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: Evidence has to be <b>complete</b> and <b>unchanged</b> to be trusted.
-      Cropping removes context, and blurring removes the scammer's identifiers that
-      investigators need. Keeping the original device and noting how you collected
-      each item is a basic <b>chain of custody</b>. Uninstalling may delete the chat
-      history. Group chats spread personal data.
+    explanation: Investigators can only trust evidence that is <b>complete</b> and
+      <b>unchanged</b>. Cropping hides context, and blurring hides the scammer's
+      name they need. Keeping the original and noting when you saved each item is
+      called the <b>chain of custody</b>. Uninstalling may delete the chat.
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: chat
+      field: 5
+      match: untouched on the original phone
+      label: Original chat
+      finding: Complete, unchanged evidence on the original device can be trusted.
+      linkAddress: 
+      clueId: complete
+      part: chat
+    - id: shots
+      field: 5
+      match: profile and number, with dates and times
+      label: Full screenshots
+      finding: Identifiers and timestamps are what investigators need to trace the
+        scammer.
+      linkAddress: 
+      clueId: ids
+      part: shots
+    - id: receipt
+      field: 5
+      match: reference numbers
+      label: Receipts
+      finding: Reference numbers can help trace the money.
+      linkAddress: 
+      clueId: ids
+      part: receipt
+    - id: crop
+      field: 5
+      match: cropped screenshot with the scammer's name blurred
+      label: Edited copy
+      finding: Cropping removes context and blurring hides identifiers. Edited evidence
+        is weaker evidence.
+      linkAddress: 
+      clueId: edited
+      part: crop
+    - id: log
+      field: 5
+      match: when and how each item was collected
+      label: Collection note
+      finding: 'This is a basic chain of custody: it shows the evidence wasn''t changed.'
+      linkAddress: 
+      clueId: custody
+      part: log
+    evidence:
+    - id: complete
+      title: Complete and unchanged
+      whyItMatters: Evidence has to be complete to be trusted.
+      supportsVerdict: 1
+    - id: ids
+      title: Identifiers kept
+      whyItMatters: Names, numbers and references are the leads.
+      supportsVerdict: 1
+    - id: edited
+      title: Edits weaken evidence
+      whyItMatters: Don't crop or blur; share copies instead.
+      supportsVerdict: 1
+    - id: custody
+      title: Chain of custody
+      whyItMatters: Record when and how each item was collected.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -69,17 +127,52 @@ MonoBehaviour:
     - Crop the screenshots to just the scam message and blur the scammer's name for
       privacy
     - Forward everything to a big group chat so more people can confirm it
-    - Keep the full conversation untouched on the original phone. Take full screenshots
-      showing the sender's profile or number with dates and times, save receipts
-      with reference numbers, share only copies, and note when and how each item
-      was collected
+    - Keep the original chat untouched, take full screenshots (with names, dates
+      and times), save receipts, share only copies, and note when you saved each
+      one
     - Uninstall the app to stop the scammer and write down what you remember
     correctChoice: 2
-    feedback: Keep the <b>originals untouched</b>, share copies, and write down when
-      you saved each one.
+    feedback: Keep the <b>originals untouched</b>, share copies, and note when you
+      saved each one.
     curriculumRef: "Cyber Forensics (BIT2226) \u2014 Legal Aspects of Cyber Forensics
       (\"maintaining evidence integrity\"). Supporting: Digital Evidence and Evidence
       Collection"
+    hint: Investigators need evidence that is complete and unchanged.
+    activity:
+      kind: 9
+      title: Your friend's evidence folder
+      instruction: Check each item. Which evidence can investigators trust?
+      items:
+      - key: chat
+        role: 6
+        label: original
+        text: Full chat with the scammer, untouched on the original phone
+      - key: shots
+        role: 6
+        label: screenshots
+        text: Full screenshots showing the profile and number, with dates and times
+      - key: receipt
+        role: 6
+        label: receipts
+        text: Payment receipts with reference numbers
+      - key: crop
+        role: 6
+        label: edited copy
+        text: A cropped screenshot with the scammer's name blurred
+      - key: log
+        role: 8
+        label: 
+        text: A note of when and how each item was collected
+      minClues: 2
+      outcomes:
+      - Investigators can't confirm the cropped images - and the blurred name was
+        the lead they needed.
+      - Your friend's personal data spreads through the group, and copies get changed
+        along the way.
+      - Investigators get complete, unchanged evidence with a clear record of how
+        it was collected.
+      - Uninstalling may wipe the chat history, leaving the report to rest on memory
+        alone.
   - id: H06
     channel: 5
     sender: Case Review
@@ -100,22 +193,90 @@ MonoBehaviour:
       Subject: FINAL reminder: unpaid tuition,
       account on hold
 
-      <b>What is the strongest evidence that this is spoofed?</b>'
+      <b>Which clue best proves this email is fake (spoofed)?</b>'
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: The "From" line can say anything, so the display name proves nothing.
-      <b>SPF/DMARC fail</b> means the registrar's domain did not authorize the server
-      that sent this email. The <b>Reply-To</b> quietly sends your answer to the
-      attacker. The subject and time are only weak signs.
+    explanation: 'The "From" name can say anything. <b>SPF and DMARC</b> are checks
+      that ask: did the school''s own mail system really send this? Both <b>failed</b>.
+      Reply-To also sends your answer to the scammer. The subject and the time are
+      only weak clues.'
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: display
+      field: 5
+      match: '"Registrar''s Office"'
+      label: Display name
+      finding: The From line can say anything. A display name proves nothing.
+      linkAddress: 
+      clueId: 
+      part: from
+    - id: spf
+      field: 5
+      match: spf=fail
+      label: SPF
+      finding: 'SPF fail: the registrar''s domain did not authorize the server that
+        sent this email.'
+      linkAddress: 
+      clueId: authfail
+      part: auth
+    - id: dmarc
+      field: 5
+      match: dmarc=fail
+      label: DMARC
+      finding: 'DMARC fail: the email doesn''t line up with the registrar''s own
+        domain policy.'
+      linkAddress: 
+      clueId: authfail
+      part: auth
+    - id: reply
+      field: 5
+      match: freemail.example
+      label: Reply-To
+      finding: Replies quietly go to a free-mail address - straight to the attacker.
+      linkAddress: 
+      clueId: replyto
+      part: reply
+    - id: ret
+      field: 5
+      match: mailer-xyz.example
+      label: Return-Path
+      finding: A different bounce domain. Worth noting, but the authentication results
+        tell you more.
+      linkAddress: 
+      clueId: 
+      part: ret
+    - id: subject
+      field: 5
+      match: FINAL reminder
+      label: Subject
+      finding: Pressure is a weak sign on its own. Real reminders can sound urgent
+        too.
+      linkAddress: 
+      clueId: 
+      part: subject
+    - id: time
+      field: 5
+      match: 2:14 AM
+      label: Time sent
+      finding: Odd hours are a weak sign. Emails are sent at all hours.
+      linkAddress: 
+      clueId: 
+      part: time
+    evidence:
+    - id: authfail
+      title: SPF and DMARC fail
+      whyItMatters: The domain didn't authorize the sender.
+      supportsVerdict: 1
+    - id: replyto
+      title: Reply-To goes to free mail
+      whyItMatters: Your answer would go to the attacker.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -124,16 +285,48 @@ MonoBehaviour:
       followUp: 1
       recheckDetails: []
     choices:
-    - SPF and DMARC fail for the registrar's domain, and replies are redirected to
-      a free-mail address
+    - The sender checks (SPF and DMARC) fail, and replies go to a free-mail address
     - The subject mentions tuition
     - The display name says "Registrar's Office"
     - It was sent at 2:14 AM
     correctChoice: 0
-    feedback: SPF and DMARC <b>failed</b>, and replies go to free-mail. The 'From'
+    feedback: SPF and DMARC <b>failed</b>, and replies go to free-mail. The "From"
       name is just text anyone can type.
     curriculumRef: "Cyber Forensics (BIT2226) \u2014 Network Forensics and Cybercrime
       Investigation (\"identify signs of cybercrimes\")"
+    hint: The "From" name is just text. Which lines are checks the mail system actually
+      ran?
+    activity:
+      kind: 1
+      title: "Message source  \xB7  headers"
+      instruction: Check each header line. Which one is strong proof?
+      items:
+      - key: from
+        role: 0
+        label: From
+        text: '"Registrar''s Office" <registrar@uphsl-binan.example>'
+      - key: reply
+        role: 0
+        label: Reply-To
+        text: registrar.office.ph@freemail.example
+      - key: ret
+        role: 0
+        label: Return-Path
+        text: bounce@mailer-xyz.example
+      - key: auth
+        role: 0
+        label: Authentication-Results
+        text: spf=fail; dkim=none; dmarc=fail
+      - key: subject
+        role: 0
+        label: Subject
+        text: 'FINAL reminder: unpaid tuition, account on hold'
+      - key: time
+        role: 0
+        label: Sent
+        text: 2:14 AM
+      minClues: 2
+      outcomes: []
   - id: H07
     channel: 2
     sender: Scholarship Grant 2027 form
@@ -150,21 +343,85 @@ MonoBehaviour:
     correctVerdict: 0
     scenarioContext: A "Scholarship Grant 2027" form is shared in a student group.
       It uses the school logo.
-    explanation: 'Real scholarship offices sometimes do ask for ID, which is what
-      makes this hard. The deciding signs are: <b>(1)</b> no one ever needs your
-      MPIN to <i>send</i> you money; <b>(2)</b> an ID plus a selfie holding it is
-      exactly what''s needed to open accounts in your name; <b>(3)</b> there is no
-      privacy notice and no official contact. That breaks the DPA principles of <b>transparency</b>
-      and <b>proportionality</b>. Check through the scholarship office''s official
-      channel.'
+    explanation: Real scholarships may ask for an ID, which makes this tricky. But
+      <b>no one needs your MPIN to send you money</b>, and an ID plus a selfie holding
+      it is all a scammer needs to open accounts as you. There is no privacy notice
+      and only a mobile number, so check with the scholarship office directly.
     trigger: 2
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: The form
+      finding: Shared in a student group and using the school logo. Logos are easy
+        to copy.
+      linkAddress: 
+      clueId: 
+      part: 
+    - id: maiden
+      field: 3
+      match: mother's maiden name
+      label: It asks for
+      finding: A classic security-question answer, used to reset accounts.
+      linkAddress: 
+      clueId: secq
+      part: 
+    - id: selfie
+      field: 3
+      match: a selfie holding your ID
+      label: It asks for
+      finding: ID photos plus a selfie let someone open accounts as you.
+      linkAddress: 
+      clueId: idtheft
+      part: 
+    - id: mpin
+      field: 3
+      match: your PayLite MPIN
+      label: It asks for
+      finding: Your MPIN is like your e-wallet password. Nobody legitimate asks for
+        it.
+      linkAddress: 
+      clueId: mpin
+      part: 
+    - id: notice
+      field: 3
+      match: There is no privacy notice.
+      label: Privacy notice
+      finding: No notice means no explanation of why the data is collected or what
+        happens to it.
+      linkAddress: 
+      clueId: notice
+      part: 
+    - id: contact
+      field: 3
+      match: The only contact is a mobile number.
+      label: Contact
+      finding: No office, no official address - nobody accountable.
+      linkAddress: 
+      clueId: notice
+      part: 
+    evidence:
+    - id: mpin
+      title: Asks for your MPIN
+      whyItMatters: Never share it with anyone.
+      supportsVerdict: 1
+    - id: idtheft
+      title: ID plus selfie
+      whyItMatters: Everything needed to pretend to be you.
+      supportsVerdict: 1
+    - id: secq
+      title: Security-question answer
+      whyItMatters: Used to take over accounts.
+      supportsVerdict: 1
+    - id: notice
+      title: No privacy notice, no real contact
+      whyItMatters: Nobody is accountable for your data.
+      supportsVerdict: 1
     consequence:
       kind: 0
       alertTitle: 
@@ -174,10 +431,18 @@ MonoBehaviour:
       recheckDetails: []
     choices: []
     correctChoice: 0
-    feedback: Scam. <b>No one needs your MPIN to pay you.</b> With ID + selfie +
-      MPIN, they can become you.
+    feedback: Scam! <b>No one needs your MPIN to pay you.</b> With your ID, selfie
+      and MPIN, they can become you.
     curriculumRef: "Social and Professional Issues (BIT2105) \u2014 Week 15: Data
       Privacy Act (RA 10173)"
+    hint: Look at the PIN request. Does anyone need that to send you money?
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: H08
     channel: 5
     sender: Case Review
@@ -188,20 +453,79 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: 'First, <b>contain</b> it: cutting the network connection stops
-      it spreading to shared drives and other PCs. Leaving the PC on keeps evidence
-      in memory for investigators. Follow your organization''s response plan if it
-      says otherwise. Paying doesn''t guarantee you''ll get your files back. Restarting
-      or cleaning can destroy evidence. Copying to a USB can spread the infection
-      or copy already-locked files.'
+    explanation: 'First, stop it spreading: cut the network so it can''t reach other
+      PCs. Leave the PC on so investigators keep the evidence. Paying doesn''t promise
+      your files back, restarting can erase evidence, and a USB can carry the infection.'
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: locked
+      field: 5
+      match: .locked
+      label: File names
+      finding: Your files are being encrypted right now. This is ransomware.
+      linkAddress: 
+      clueId: ransomware
+      part: f1
+    - id: locked2
+      field: 5
+      match: .locked
+      label: More files
+      finding: It's spreading through your files while you watch.
+      linkAddress: 
+      clueId: ransomware
+      part: f2
+    - id: readme
+      field: 5
+      match: README_RESTORE_FILES.txt
+      label: New file
+      finding: The ransom note. Don't delete it - it's evidence.
+      linkAddress: 
+      clueId: 
+      part: note
+    - id: pay
+      field: 5
+      match: Pay in cryptocurrency
+      label: The demand
+      finding: Paying doesn't guarantee you'll get your files back.
+      linkAddress: 
+      clueId: 
+      part: ransom
+    - id: net
+      field: 5
+      match: shared drives
+      label: Network
+      finding: While connected, ransomware can spread to shared drives and other
+        PCs. Cutting the connection contains it.
+      linkAddress: 
+      clueId: contain
+      part: net
+    - id: power
+      field: 5
+      match: PC is on
+      label: Power
+      finding: Leaving it on keeps evidence in memory for investigators. Restarting
+        can destroy it.
+      linkAddress: 
+      clueId: evidence
+      part: power
+    evidence:
+    - id: ransomware
+      title: Files being encrypted
+      whyItMatters: Ransomware is active on this PC.
+      supportsVerdict: 1
+    - id: contain
+      title: Still on the network
+      whyItMatters: Disconnect first to stop it spreading.
+      supportsVerdict: 1
+    - id: evidence
+      title: Evidence in memory
+      whyItMatters: Leave the PC on and report it.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -211,14 +535,54 @@ MonoBehaviour:
       recheckDetails: []
     choices:
     - Pay quickly before the price goes up
-    - Disconnect the PC from the network (unplug the cable or turn off Wi-Fi), leave
-      it on, stop using it, and report to IT or the incident team immediately
+    - Unplug it from the network (or turn off Wi-Fi), leave it on, stop using it,
+      and report to IT right away
     - Restart, run a cleanup tool and delete the ransom note
     - Copy your files to your USB drive to save them
     correctChoice: 1
-    feedback: <b>Disconnect, don't shut down, report.</b> Containment first; investigators
+    feedback: <b>Disconnect, keep it on, report.</b> Stop the spread first. Investigators
       need the evidence.
     curriculumRef: "Computer Security (BIT1225) \u2014 Incident Response and Forensics"
+    hint: First stop it from spreading, and keep the evidence.
+    activity:
+      kind: 8
+      title: "Lab PC  \xB7  Documents"
+      instruction: Check what's happening on this PC, then choose your first step.
+      items:
+      - key: f1
+        role: 4
+        label: changed just now
+        text: Thesis_Draft.docx.locked
+      - key: f2
+        role: 4
+        label: changed just now
+        text: Budget.xlsx.locked
+      - key: note
+        role: 4
+        label: new
+        text: README_RESTORE_FILES.txt
+      - key: ransom
+        role: 5
+        label: RANSOM NOTE
+        text: Your files are encrypted. Pay in cryptocurrency to get them back.
+      - key: net
+        role: 6
+        label: network
+        text: "Connected  \xB7  lab network and shared drives"
+      - key: power
+        role: 6
+        label: power
+        text: PC is on
+      minClues: 2
+      outcomes:
+      - The money goes to criminals with no guarantee your files come back - and
+        the infection keeps spreading.
+      - The infection is cut off from shared drives and other PCs, and the evidence
+        in memory is kept for the incident team.
+      - Restarting can destroy evidence in memory, and cleaning up doesn't stop what
+        has already spread.
+      - The USB copy holds already-locked files and may carry the infection to the
+        next computer.
   - id: H09
     channel: 2
     sender: Page opened by the canteen QR code
@@ -229,18 +593,57 @@ MonoBehaviour:
     correctVerdict: 0
     scenarioContext: The canteen's "Scan to pay with PayLite" poster looks normal,
       but up close the QR code is a sticker placed on top of the printed one.
-    explanation: This is QR code phishing. A sticker over the original is the physical
-      clue. A real merchant QR opens <b>inside the e-wallet app</b> and shows the
-      merchant's name for you to confirm. It never asks for your MPIN on a web page.
-      Also tell the canteen staff, so the next person doesn't get caught.
+    explanation: This is <b>QR code phishing</b>. The sticker over the real code
+      is the clue you can see. A real payment QR opens <b>inside your e-wallet app</b>
+      and shows the shop's name. It never asks for your MPIN on a web page. Tell
+      the canteen staff too.
     trigger: 2
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: sticker
+      field: 0
+      match: 
+      label: How you got here
+      finding: The QR code was a sticker placed on top of the printed one (case notes).
+        Someone swapped it.
+      linkAddress: 
+      clueId: sticker
+      part: 
+    - id: mpin
+      field: 3
+      match: MPIN
+      label: It asks for
+      finding: A web page asking for your MPIN is a phishing page. Enter it only
+        inside the official app.
+      linkAddress: 
+      clueId: mpin
+      part: 
+    - id: link
+      field: 4
+      match: 
+      label: Address
+      finding: paylite-merchant-pay.example is a separate domain, not the official
+        app.
+      linkAddress: paylite-merchant-pay.example/canteen
+      clueId: domain
+      part: 
+    evidence:
+    - id: sticker
+      title: QR sticker over the real one
+      whyItMatters: Tampered QR codes send you to fake pages.
+      supportsVerdict: 1
+    - id: mpin
+      title: Asks for your MPIN on a web page
+      whyItMatters: Your MPIN belongs only in the app.
+      supportsVerdict: 1
+    - id: domain
+      title: Unofficial domain
+      whyItMatters: Not PayLite's own app or site.
+      supportsVerdict: 1
     consequence:
       kind: 0
       alertTitle: 
@@ -250,10 +653,19 @@ MonoBehaviour:
       recheckDetails: []
     choices: []
     correctChoice: 0
-    feedback: Scam. Sticker over sticker, a browser page and an MPIN request. Real
-      payments happen <b>inside the app</b>.
+    feedback: Scam! A sticker, a web page and an MPIN request. Real payments happen
+      <b>inside the app</b>.
     curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 17:
       Real-World Applications and Case Studies"
+    hint: Look closely at the QR code itself, and think about where a real payment
+      happens.
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: H10
     channel: 5
     sender: Case Review
@@ -265,20 +677,75 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: The ACM Code of Ethics asks computing professionals to <b>avoid
-      harm (1.2)</b>, <b>respect privacy (1.6)</b> and <b>access computing resources
-      only when authorized (2.8)</b>. Downloading the list means handling other people's
-      stolen data without authorization. Posting the link sends more victims to it.
-      Testing it hands over your own password. Reporting lets the people with authority
-      act.
+    explanation: 'Using stolen passwords, even to help, is not allowed and can hurt
+      the victims more. Posting the link sends more people to the fake page, and
+      testing it gives away your own password. Report it: IT has the right to act.
+      (ACM Code of Ethics: avoid harm, respect privacy, use only what you''re allowed
+      to.)'
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: addr
+      field: 5
+      match: student-portal-login.example
+      label: The address
+      finding: For your report, write it in a non-clickable form, e.g. hxxp://student-portal-login[.]example,
+        so nobody opens it by accident.
+      linkAddress: 
+      clueId: report
+      part: addr
+    - id: open
+      field: 5
+      match: No sign-in needed
+      label: Open access
+      finding: Being able to see it doesn't make it yours to use. Using it further
+        would be unauthorized access.
+      linkAddress: 
+      clueId: unauth
+      part: open
+    - id: r1
+      field: 5
+      match: student_0417
+      label: Captured entry
+      finding: Real victims' stolen passwords. Handling them breaks their privacy
+        - even to help.
+      linkAddress: 
+      clueId: privacy
+      part: r1
+    - id: r2
+      field: 5
+      match: student_0932
+      label: Captured entry
+      finding: Another victim. Their data isn't yours to download or share.
+      linkAddress: 
+      clueId: privacy
+      part: r2
+    - id: download
+      field: 5
+      match: DOWNLOAD LIST
+      label: Download
+      finding: 'Downloading means handling stolen data without authorization. (Simulated:
+        nothing downloads.)'
+      linkAddress: 
+      clueId: unauth
+      part: download
+    evidence:
+    - id: unauth
+      title: No authorization
+      whyItMatters: Access computing resources only when authorized.
+      supportsVerdict: 1
+    - id: privacy
+      title: Other people's data
+      whyItMatters: Respect privacy; avoid harm.
+      supportsVerdict: 1
+    - id: report
+      title: Report it safely
+      whyItMatters: Screenshots and a non-clickable URL for IT.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -290,14 +757,52 @@ MonoBehaviour:
     - Download the list and message each victim yourself
     - Post the link on the freedom wall to warn everyone
     - Test it with your own real password to confirm it works
-    - Report it right away to the school's IT or security office with screenshots
-      and the URL written in a non-clickable form (e.g., hxxp://), without logging
-      in or using the captured data
+    - Report it to the school's IT office with screenshots and the web address, without
+      logging in or using the stolen data
     correctChoice: 3
-    feedback: Report it, don't touch it. Good intentions don't make <b>unauthorized
-      access</b> okay.
+    feedback: Report it, don't touch it. Good intentions don't make <b>using stolen
+      data</b> okay.
     curriculumRef: "Social and Professional Issues (BIT2105) \u2014 Week 16: Professional
       Organization and ACM Code of Ethics"
+    hint: Which choice helps the victims without you touching the stolen data?
+    activity:
+      kind: 2
+      title: "Admin panel  \xB7  fake school login"
+      instruction: Look at the page, but don't touch anything. What is the right
+        thing to do?
+      items:
+      - key: addr
+        role: 0
+        label: Address
+        text: http://student-portal-login.example/admin
+      - key: open
+        role: 8
+        label: 
+        text: No sign-in needed to view this page.
+      - key: r1
+        role: 6
+        label: captured
+        text: "student_0417  \xB7  \u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+      - key: r2
+        role: 6
+        label: captured
+        text: "student_0932  \xB7  \u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+      - key: hidden
+        role: 8
+        label: 
+        text: Passwords are hidden in this simulation.
+      - key: download
+        role: 7
+        label: 
+        text: DOWNLOAD LIST
+      minClues: 2
+      outcomes:
+      - You're now holding other people's stolen data without authorization, and
+        contacting victims yourself can cause more harm.
+      - The post sends more students to the fake page, and more passwords are captured.
+      - Your own password joins the captured list.
+      - IT takes action with the authority to protect the victims, and you never
+        touched the stolen data.
   inboxExtras:
   - id: l5_old_welcome
     channel: 1
@@ -330,6 +835,14 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   caseFiles:
   - title: Case Notes
     body: "\u2022 A \"Scholarship Grant 2027\" form is shared in a student group.
@@ -337,20 +850,23 @@ MonoBehaviour:
       poster looks normal, but up close the QR code is a sticker placed on top of
       the printed one."
   - title: How This Room Works
-    body: 'Six questions are waiting in this room. They arrive one at a time, in
-      a different order on every attempt.
+    body: '1. 6 questions arrive one at a time, in a new order each attempt.
 
 
-      Case questions have four answer
-      choices, shuffled each attempt. Pick the safest and most accurate one.
+      2.
+      Case questions: pick the safest, most accurate answer (A-D).
 
 
-      Messages
-      and web pages are judged as SCAM or LEGITIMATE.
+      3. Messages
+      and web pages: choose SCAM or LEGITIMATE.
 
 
-      Score 1080 or more
-      to complete the investigation.'
+      4. Not sure? Press HINT to
+      see what to look at. After each answer you''ll see why it was right or wrong.
+
+
+      Goal:
+      score 870+ to finish the investigation.'
   firstMessageDelay: 8
   delayBetweenMessages: {x: 8, y: 14}
   minimumActivityDelay: 4
@@ -358,32 +874,31 @@ MonoBehaviour:
     basePoints: 300
     speedBonus: 30
     fastWindow: 0.35
-    wrongPenalty: 60
-    recoveryPoints: 70
+    wrongPenalty: 45
+    recoveryPoints: 75
     baseReadingSeconds: 20
     secondsPerWord: 0.5
     secondsPerDetail: 3
-    minReadingSeconds: 40
-    maxReadingSeconds: 120
+    minReadingSeconds: 45
+    maxReadingSeconds: 150
     caseExtraSeconds: 75
     overtimeStepSeconds: 10
     overtimePenaltyPerStep: 10
-    maxTimePenalty: 70
-    minCorrectPoints: 230
-  oneStarScore: 720
-  twoStarScore: 1080
+    maxTimePenalty: 60
+    minCorrectPoints: 240
+  oneStarScore: 585
+  twoStarScore: 870
   threeStarScore: 1800
-  minScoreToUnlockNext: 1080
+  minScoreToUnlockNext: 870
   nextLevelId: 
   nextSceneName: 
   lessons:
-  - Keep evidence complete, unchanged and documented.
-  - Use technical header evidence rather than what the email shows on the surface.
-  - Separate normal data requests from identity-theft collection using DPA principles.
-  - 'Know the first response steps: contain, preserve evidence, report.'
-  - 'Treat QR codes like links: check where they lead, and look for physical tampering.'
-  - Respond to discovered wrongdoing within your authority and without causing more
-    harm.
+  - Keep evidence complete, unchanged and recorded.
+  - Trust an email's hidden checks, not just what it shows.
+  - Tell a normal data request from identity theft.
+  - 'Know the first steps: stop the spread, keep the evidence, report.'
+  - Treat QR codes like links, and look for stickers placed on top.
+  - Report wrongdoing without causing more harm.
   learningSummary: 
   performanceHigh: Outstanding! The campus network is secure - every flagged message
     was correctly identified.
@@ -391,3 +906,5 @@ MonoBehaviour:
     records separate the real notices from the fakes.
   performanceLow: Keep practising. Compare every sender, attachment and request with
     the university's official records.
+  tutorial: 0
+  tutorialFirstQuestion: 

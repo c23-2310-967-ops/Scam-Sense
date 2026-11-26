@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEngine;
 
 /// <summary>
 /// Every room's level data (Assets/Levels): scenes exist in the build, messages are complete, ids are unique
@@ -94,29 +95,59 @@ public class LevelDataTests
         }
     }
 
-    // ---------- Curriculum questions (5 rooms x 6 questions) ----------
+    // ---------- Curriculum questions (layout: CurriculumRoomLayout) ----------
 
     [Test]
-    public void EveryRoom_HasSixQuestions()
+    public void EveryRoom_HasAReasonableNumberOfQuestions()
     {
         foreach (var level in Levels())
-            Assert.AreEqual(CurriculumQuestionsImporter.QuestionsPerRoom, level.MessageCount, $"{level.name} must have exactly six questions");
+        {
+            Assert.GreaterOrEqual(level.MessageCount, CurriculumQuestionsImporter.MinQuestionsPerRoom, $"{level.name} has too few questions");
+            Assert.LessOrEqual(level.MessageCount, CurriculumQuestionsImporter.MaxQuestionsPerRoom, $"{level.name} is too long");
+        }
+    }
+
+    [TestCase(2, 1, 1)]
+    [TestCase(3, 1, 2)]
+    [TestCase(4, 2, 3)]
+    [TestCase(6, 3, 4)]
+    [TestCase(8, 4, 5)]
+    public void CorrectAnswersNeeded_ScaleWithRoomSize(int questions, int oneStar, int unlock)
+    {
+        var (k1, k2) = CurriculumQuestionsImporter.CorrectNeeded(questions);
+        Assert.AreEqual(oneStar, k1, "1 star");
+        Assert.AreEqual(unlock, k2, "unlock: about 60%, never every question");
     }
 
     [Test]
-    public void ThirtyQuestions_EachInExactlyOneRoom()
+    public void EveryQuestion_IsInAtMostOneRoom()
     {
         var ids = Levels().SelectMany(l => l.messages.Select(m => m.id)).ToList();
-        Assert.AreEqual(30, ids.Count, "The five rooms must hold 30 questions in total");
         var dupes = ids.GroupBy(i => i).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
         Assert.IsEmpty(dupes, "A question appears in more than one room: " + string.Join(", ", dupes));
+    }
+
+    [Test]
+    public void Level1_IsAShortIntroduction_TwoScamsTwoReal()
+    {
+        var level = Levels().Single(l => l.levelId == "level_1");
+        Assert.AreEqual(4, level.MessageCount, "Level 1 has 4 messages");
+        Assert.AreEqual(2, level.messages.Count(m => m.correctVerdict == MessageVerdict.Legitimate && !m.HasChoices), "2 legitimate messages");
+        Assert.AreEqual(2, level.messages.Count(m => m.correctVerdict == MessageVerdict.Scam), "2 scams");
+        Assert.IsTrue(level.messages.All(m => !string.IsNullOrWhiteSpace(m.explanation) && !string.IsNullOrWhiteSpace(m.feedback)), "every message explains its answer");
+        Assert.IsFalse(level.inboxExtras.Any(m => m.subject != null && m.subject.Contains("desk lamp")),
+                       "the old receipt contradicted the case note 'You have not ordered anything this month'");
+        foreach (var l in Levels())
+            Assert.AreEqual(l.lessons.Length, l.lessons.Distinct().Count(), $"{l.name}: 'What you learned' lists the same lesson twice");
+        var sizes = Levels().Where(l => l.levelId != "level_1").Select(l => l.MessageCount);
+        Assert.IsTrue(sizes.All(n => n > level.MessageCount), "the introduction is the shortest room");
     }
 
     [Test]
     public void Rooms_MatchTheValidatedQuestionBank()
     {
         var data = CurriculumQuestionsImporter.Load();
-        Assert.AreEqual(5, data.rooms.Length, "The question data must define five rooms");
+        Assert.AreEqual(Catalog.levels.Count, data.rooms.Length, "The question data must define one room per level in the catalog");
         foreach (var room in data.rooms)
         {
             var level = AssetDatabase.LoadAssetAtPath<LevelDefinition>(room.levelAsset);
@@ -163,12 +194,51 @@ public class LevelDataTests
             Assert.AreEqual(first, level.tutorial, $"{level.name}: only Level 1 may run the tutorial");
             if (first) continue;
             Assert.IsEmpty(level.tutorialFirstQuestion ?? "", $"{level.name}: a guided first question belongs to Level 1 only");
+        }
+    }
+
+    // ---------- Beginner support ----------
+
+    [Test]
+    public void EveryQuestion_HasAShortHint_ThatNeverGivesTheAnswer()
+    {
+        var problems = new List<string>();
+        foreach (var level in Levels())
             foreach (var m in level.messages)
             {
-                Assert.IsFalse(m.HasHint, $"{level.name} / {m.id}: HINT is a Level 1 tutorial feature");
-                Assert.IsFalse(m.HasInvestigation && m.channel != MessageChannel.Email,
-                    $"{level.name} / {m.id}: underlined clues outside emails are a Level 1 tutorial feature");
+                string where = $"{level.name} / {m.id}";
+                if (!m.HasHint) { problems.Add($"{where}: no hint"); continue; }
+                if (m.hint.Length > 140) problems.Add($"{where}: hint is {m.hint.Length} characters (keep it to one short line)");
+                if (m.HasChoices && m.choices.Any(c => m.hint.IndexOf(UIKit.StripRichText(c), System.StringComparison.OrdinalIgnoreCase) >= 0))
+                    problems.Add($"{where}: the hint quotes an answer choice");
+                foreach (var word in new[] { "SCAM", "LEGITIMATE", "correct answer", "the answer is" })
+                    if (m.hint.IndexOf(word, System.StringComparison.Ordinal) >= 0) problems.Add($"{where}: the hint says '{word}'");
             }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    [Test]
+    public void Difficulty_RisesGently()
+    {
+        var rooms = Catalog.levels;
+        var data = CurriculumQuestionsImporter.Load();
+        float Level(string d) => d == "Hard" ? 3f : d == "Medium" ? 2f : 1f;
+        float prevAvg = 0f;
+        for (int i = 0; i < rooms.Count; i++)
+        {
+            var l = rooms[i];
+            if (i > 0)
+            {
+                Assert.GreaterOrEqual(l.scoring.wrongPenalty, rooms[i - 1].scoring.wrongPenalty, $"{l.name}: wrong answers cost less than in the room before");
+                Assert.GreaterOrEqual(l.scoring.basePoints, rooms[i - 1].scoring.basePoints, $"{l.name}: fewer points than the room before");
+            }
+            if (i < 2) Assert.IsFalse(l.scoring.HasTimePressure, $"{l.name}: the first two rooms have no time pressure");
+            Assert.LessOrEqual(l.scoring.wrongPenalty, l.scoring.basePoints / 5, $"{l.name}: a mistake shouldn't cost more than a fifth of a right answer");
+            var room = data.rooms.First(r => r.levelAsset == AssetDatabase.GetAssetPath(l));
+            float avg = room.questions.Average(q => Level(q.difficulty));
+            Assert.GreaterOrEqual(avg, prevAvg, $"{l.name}: easier on average than the room before");
+            prevAvg = avg;
+            Assert.IsFalse(string.IsNullOrWhiteSpace(room.intro), $"{l.name}: the briefing must say what the room teaches");
         }
     }
 
@@ -187,6 +257,73 @@ public class LevelDataTests
                 problems.Add($"{m.id}: the hint quotes an answer choice");
         }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    // ---------- Interactive activities ----------
+
+    static readonly string[] CurriculumIds =
+        Enumerable.Range(1, 10).Select(i => $"E{i:00}").Concat(Enumerable.Range(1, 10).Select(i => $"M{i:00}"))
+                  .Concat(Enumerable.Range(1, 10).Select(i => $"H{i:00}")).ToArray();
+
+    static List<ScamMessage> CurriculumMessages() =>
+        Levels().SelectMany(l => l.messages).Where(m => CurriculumIds.Contains(m.id)).ToList();
+
+    [Test]
+    public void All30CurriculumQuestions_AreInARoomOrTheReserve_Once()
+    {
+        var reserve = (CurriculumQuestionsImporter.Load().reserve ?? new CurriculumQuestionsImporter.QuestionData[0]).Select(q => q.id);
+        var ids = CurriculumMessages().Select(m => m.id).Concat(reserve).ToList();
+        CollectionAssert.AreEquivalent(CurriculumIds, ids, "a validated question is missing, or is both in a room and in the reserve");
+    }
+
+    [Test]
+    public void Activities_AreValidAndFair()
+    {
+        var problems = new List<string>();
+        int count = 0;
+        foreach (var m in CurriculumMessages())
+        {
+            problems.AddRange(InvestigationSession.Validate(m).Select(p => $"{m.id}: {p}"));
+            if (!m.HasActivity) continue;
+            count++;
+            var a = m.activity;
+            if (!m.HasChoices) problems.Add($"{m.id}: activities are shown with the case-question window (choice questions only)");
+            if (!MessageInvestigation.Investigates(m)) problems.Add($"{m.id}: activity has nothing to inspect");
+            if (a.items.Select(i => i.key).Distinct().Count() != a.items.Count) problems.Add($"{m.id}: repeated item key");
+            int keyClues = m.evidence.Count(e => e.supportsVerdict);
+            if (a.minClues > keyClues) problems.Add($"{m.id}: needs {a.minClues} key clues but only has {keyClues}");
+            if (a.minClues > 2) problems.Add($"{m.id}: more than 2 clues to unlock is too strict");
+            if (a.HasOutcomes && a.outcomes.Length != m.choices.Length) problems.Add($"{m.id}: one outcome per choice is required");
+            if (a.HasOutcomes && a.outcomes.Any(string.IsNullOrWhiteSpace)) problems.Add($"{m.id}: empty outcome");
+            foreach (var i in m.inspectables.Where(i => i.field == InspectField.Activity))
+                if (a.Item(i.part) == null) problems.Add($"{m.id}: clue '{i.id}' points to missing item '{i.part}'");
+            // Simulated only: fictional .example addresses, never a real password field.
+            foreach (var item in a.items)
+                foreach (var word in item.text.Split(' ', '<', '>', '"', '(', ')'))
+                    if ((word.Contains("://") || word.Contains("@") || System.Text.RegularExpressions.Regex.IsMatch(word, @"\.(com|net|org|ph|edu)\b"))
+                        && !word.Contains(".example"))
+                        problems.Add($"{m.id}/{item.key}: '{word}' is not a fictional .example address");
+        }
+        Assert.GreaterOrEqual(count, 15, "most scenario questions should be played as activities");
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    [Test]
+    public void Activities_AreSpreadAcrossEveryRoom()
+    {
+        foreach (var level in Levels().Where(l => l.messages.Any(m => CurriculumIds.Contains(m.id))))
+            Assert.GreaterOrEqual(level.messages.Count(m => m.HasActivity || (m.HasInvestigation && !m.HasChoices)), Mathf.Min(3, (level.MessageCount + 1) / 2),
+                $"{level.name}: at least half of a room's questions (up to three) should be interactive investigations");
+    }
+
+    [Test]
+    public void Activities_UnlockGentlyInEarlyRooms()
+    {
+        var level1 = Levels().Single(l => l.levelId == "level_1");
+        foreach (var m in level1.messages.Where(m => m.HasActivity))
+            Assert.LessOrEqual(m.activity.minClues, 1, $"{m.id}: Level 1 is for beginners - at most one clue to unlock");
+        var guided = level1.messages.Single(m => m.id == level1.tutorialFirstQuestion);
+        Assert.AreEqual(0, guided.HasActivity ? guided.activity.minClues : 0, "the guided tutorial question must never lock its answers");
     }
 
     [Test]

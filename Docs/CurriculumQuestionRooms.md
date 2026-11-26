@@ -2,6 +2,33 @@
 
 The five rooms now ask the 30 validated curriculum questions, six per room, in a new random order on every attempt.
 
+> **Level 1 is a 4-message introduction (2026-11-25).**
+> - **Scams:** E02 (fake delivery text) and E03 (phishing email, the guided tutorial question).
+> - **Legitimate:** L01 (the library's "your reserved book is ready" email) and L02 (Sam's clean-up meeting-point email). Both were already unscored emails in the room's inbox. They're game examples, not validated items, and are defined in `CurriculumRoomLayout.ExtraQuestions`. They teach that real messages match what you did and ask for nothing secret.
+> - **Moved to the reserve:** E01, E04, E05 and E06 are in `reserve` in `CurriculumQuestions.json`. They aren't played now and are ready for future rooms.
+> - **Inbox:** the old desk-lamp receipt was removed from Level 1's inbox, because it contradicted the case note "You have not ordered anything this month".
+> - **Scoring:** Level 1 unlocks at 230 / 400 (3 of 4 right).
+> - **Rooms 2–5:** unchanged.
+
+> **Beginner pass (2026-11-25).** The validated wording, choices and answers are unchanged. What changed:
+> - **Layout tool:** the room layout now lives in `Assets/Editor/CurriculumRoomLayout.cs` (**Tools > Scam Sense > Curriculum > Arrange Rooms**). It still uses the validated 5 rooms × 6, easiest first.
+> - **Any room size:** the importer accepts 2–8 questions per room and works out each room's stars and unlock from its size. Moving to more rooms later (for example 10 × 3) means adding the level assets and scenes, then editing that table. The tool never creates rooms.
+> - **Hints:** every question now has a one-line **HINT** that points at what to check, never at the answer. Rooms 2–5 had none before.
+> - **Briefings:** each room's briefing starts with "In this room: …", the topics it teaches. The objectives mention HINT.
+> - **M04:** the Taglish text has an English translation line under it.
+> - **Scoring curve:** gentler, and rooms 1–2 have no time pressure.
+>
+>   | Room | Right / wrong | Time | Unlock (of max) |
+>   |---|---|---|---|
+>   | 1 | +100 / −10 | none | 300 / 600 |
+>   | 2 | +150 / −15 | none | 450 / 900 |
+>   | 3 | +200 / −25 | over time costs at most 25 | 590 / 1320 |
+>   | 4 | +250 / −35 | at most 50 | 730 / 1650 |
+>   | 5 | +300 / −45 | at most 60 | 870 / 1980 |
+>
+>   4 right answers out of 6 always unlock the next room, even if every one ran over its reading time.
+> - **Generator out of step:** `Tools/build_game_questions.py` doesn't know about the new hints, the M04 translation or the layout tool, and it can't run on this PC. After regenerating from the bank, run **Arrange Rooms** again to put them back. The JSON is the current game data.
+
 | Room | Level asset | Questions |
 |---|---|---|
 | 1 | `Level1_TheFirstCase` | Q1–Q6 (E01–E06) |

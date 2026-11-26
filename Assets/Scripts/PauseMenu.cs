@@ -243,6 +243,9 @@ public class PauseMenu : MonoBehaviour
         var title = UIKit.Text(mainPanel, "Title", "PAUSED", UIKit.SizeDisplay, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
         title.characterSpacing = 8f;
         UIKit.Text(mainPanel, "Sub", "The case timer is paused.", UIKit.SizeSmall, UIKit.TextSecondary, TextAlignmentOptions.Center);
+        // Controls reminder (the main menu no longer has a How to Play page).
+        var controls = UIKit.Text(mainPanel, "Controls", UIKit.ControlStrip(), 19, UIKit.TextSecondary, TextAlignmentOptions.Center);
+        controls.lineSpacing = 12f;
         AddMenuButton(mainPanel, "RESUME GAME", Resume, UIKit.Primary);
         AddMenuButton(mainPanel, "SETTINGS", OpenSettings, UIKit.Secondary);
         AddMenuButton(mainPanel, "RETURN TO MAIN MENU", AskMainMenu, UIKit.Secondary);

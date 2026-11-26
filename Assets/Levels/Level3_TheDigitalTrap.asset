@@ -16,21 +16,22 @@ MonoBehaviour:
   levelNumber: 3
   displayName: The Digital Trap
   sceneName: Room3_DigitalTrap
-  description: Convincing messages in a cybersecurity operations room. Compare each
-    one with the evidence before you decide.
+  description: What the padlock means, impostors asking for money, owning up to a
+    mistake, second login checks, fake Wi-Fi and fake bank texts.
   previewImage: {fileID: 21300000, guid: de67521957d88cb478527ddaa3a59230, type: 3}
   briefingTitle: "LEVEL 3 \u2014 THE DIGITAL TRAP"
-  briefingText: 'The traps are getting more convincing. This room has six questions:
-    five case questions with four answer choices and one message or web page to judge
-    as SCAM or LEGITIMATE. They arrive in a different order on every attempt, and
-    the answer choices are shuffled too, so read each one carefully instead of remembering
-    positions.'
+  briefingText: 'In this room: what the padlock means, impostors asking for money,
+    owning up to a mistake, second login checks, fake Wi-Fi and fake bank texts.
+
+    You''ll
+    get 6 questions: 5 with answer choices (A-D) and 1 to judge as SCAM or LEGITIMATE.
+    Take your time and read each one carefully.'
   caseNotes:
   - 'Trusted domain (case files): examplebank.example'
   objectives:
-  - Answer all six questions in this room.
-  - Read the whole situation before you choose.
-  - Score 720 or more to unlock the next room.
+  - Answer all 6 questions.
+  - Read the whole situation before you choose. Stuck? Press HINT.
+  - Score 590+ to unlock the next room.
   messages:
   - id: M03
     channel: 5
@@ -42,19 +43,61 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: HTTPS (TLS) protects data <i>in transit</i> so others on the network
-      can't read or change it. Certificates are easy for anyone to get for their
-      own domain, so scam sites often have padlocks too. The padlock tells you the
-      connection is private, not who you're talking to. You still have to check the
-      domain.
+    explanation: The padlock (HTTPS) means your connection is private, so others
+      can't read what you send. It doesn't say who owns the site. Anyone can get
+      a padlock, scam sites too, so you still need to check the address.
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: https
+      field: 5
+      match: https://
+      label: https://
+      finding: The 's' means the connection uses TLS encryption. Others on the network
+        can't read or change your data.
+      linkAddress: 
+      clueId: enc
+      part: addr
+    - id: lock
+      field: 5
+      match: Connection is secure
+      label: The padlock
+      finding: The connection is private - data in transit is encrypted. It says
+        nothing about who runs the site.
+      linkAddress: 
+      clueId: enc
+      part: lock
+    - id: cert
+      field: 5
+      match: controls this domain
+      label: The certificate
+      finding: Certificates are easy for anyone to get for their own domain - scam
+        sites have padlocks too.
+      linkAddress: 
+      clueId: anyone
+      part: cert
+    - id: form
+      field: 5
+      match: email and password
+      label: The form
+      finding: A padlock doesn't make a form safe to fill in. You still have to check
+        the domain.
+      linkAddress: 
+      clueId: 
+      part: form
+    evidence:
+    - id: enc
+      title: Encrypted connection
+      whyItMatters: That's what the padlock actually means.
+      supportsVerdict: 1
+    - id: anyone
+      title: Anyone can get a certificate
+      whyItMatters: So a padlock can't prove the site is the real company.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -69,11 +112,36 @@ MonoBehaviour:
     - The site has been checked by the government
     - The site cannot contain malware
     correctChoice: 1
-    feedback: The padlock means <b>encrypted</b>, not <b>trustworthy</b>. Fake sites
-      have padlocks too. Check the domain.
+    feedback: Padlock = <b>private connection</b>, not <b>safe site</b>. Fake sites
+      have padlocks too.
     curriculumRef: "Advanced Cybersecurity Strategies (BIT4233). Supporting: Computer
       Security (BIT1225), Cryptography \u2014 Modern Cryptography (\"secure data
       in transit and at rest\")"
+    hint: A padlock is about the connection. Does it tell you who owns the site?
+    activity:
+      kind: 2
+      title: Sign in
+      instruction: Click the padlock. What does it really prove?
+      items:
+      - key: addr
+        role: 0
+        label: Address
+        text: https://login-page.example/signin
+      - key: lock
+        role: 6
+        label: click to view
+        text: 'Padlock: Connection is secure'
+      - key: cert
+        role: 8
+        label: 
+        text: 'Certificate: issued to login-page.example. Checks that the requester
+          controls this domain.'
+      - key: form
+        role: 1
+        label: 
+        text: Sign in with your email and password.
+      minClues: 1
+      outcomes: []
   - id: M04
     channel: 5
     sender: Case Review
@@ -81,23 +149,83 @@ MonoBehaviour:
     subject: Identify the Threat
     body: "<b>SMS from an unknown number:</b> \"Ma, si Migs 'to. Nasira phone ko,
       bagong number ko 'to. Pa-send naman \u20B13,000 sa PayLite 0917 555 0188, emergency
-      lang. Wag ka muna tumawag, wala pa akong load.\" <b>What attack is this?</b>"
+      lang. Wag ka muna tumawag, wala pa akong load.\" <b>What attack is this?</b>\n<i>In
+      English: \"Mom, it's Migs. My phone broke, this is my new number. Please send
+      \u20B13,000 to PayLite 0917 555 0188, it's an emergency. Don't call yet, I
+      have no load.\"</i>"
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: 'The sender claims to be family on a "new number", invents an emergency,
-      asks for money, and <b>blocks you from checking</b> ("don''t call yet"). That
-      is social engineering: it exploits trust and urgency rather than technology.
-      To check, call Migs''s <i>old</i> number or ask something only the real Migs
-      would know.'
+    explanation: 'A "family member" with a new number, a sudden emergency, a money
+      request and "don''t call me" are classic signs. This trick is called <b>social
+      engineering</b>: it uses your feelings, not hacking. Call Migs''s <i>old</i>
+      number, or ask something only he would know.'
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: from
+      field: 5
+      match: not in your contacts
+      label: Sender
+      finding: Not in your contacts. The first text explains it away with a 'new
+        number'.
+      linkAddress: 
+      clueId: 
+      part: from
+    - id: newnum
+      field: 5
+      match: bagong number ko 'to
+      label: '"New number"'
+      finding: Claiming to be family on a new number is how impersonators skip your
+        contacts list.
+      linkAddress: 
+      clueId: newnum
+      part: m1
+    - id: money
+      field: 5
+      match: "Pa-send naman \u20B13,000"
+      label: The request
+      finding: 'The whole story leads to one thing: send money now.'
+      linkAddress: 
+      clueId: money
+      part: m2
+    - id: urgent
+      field: 5
+      match: emergency lang
+      label: Emergency
+      finding: An invented emergency rushes you past checking.
+      linkAddress: 
+      clueId: urgent
+      part: m2
+    - id: nocall
+      field: 5
+      match: Wag ka muna tumawag
+      label: '"Don''t call yet"'
+      finding: It stops you from calling Migs's old number - the easiest way to check.
+      linkAddress: 
+      clueId: nocall
+      part: m3
+    evidence:
+    - id: newnum
+      title: Claims to be family on a new number
+      whyItMatters: Impersonation exploits trust, not technology.
+      supportsVerdict: 1
+    - id: money
+      title: Asks for money
+      whyItMatters: The goal of the story.
+      supportsVerdict: 1
+    - id: urgent
+      title: Invented emergency
+      whyItMatters: Urgency stops you from thinking.
+      supportsVerdict: 1
+    - id: nocall
+      title: Blocks you from checking
+      whyItMatters: Call the old number or ask something only Migs would know.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -106,15 +234,40 @@ MonoBehaviour:
       followUp: 1
       recheckDetails: []
     choices:
-    - Impersonation ("new number" family emergency) social engineering
+    - 'Impersonation: someone pretending to be family with a "new number"'
     - Malware infection
     - A data breach
     - A promotional spam message
     correctChoice: 0
-    feedback: 'Impersonation. New number + emergency + ''don''t call'' means: <b>call
-      the old number first.</b>'
+    feedback: Impersonation! New number + emergency + "don't call" = <b>call the
+      old number first.</b>
     curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Weeks 10\u201311:
       Cybersecurity Threats and Attack Landscape"
+    hint: A new number, an emergency, a money request and "don't call me". How could
+      you check it's really him?
+    activity:
+      kind: 3
+      title: "Messages  \xB7  unknown number"
+      instruction: Read the texts. Click each warning sign.
+      items:
+      - key: from
+        role: 0
+        label: From
+        text: Unknown number (not in your contacts)
+      - key: m1
+        role: 2
+        label: Unknown number
+        text: Ma, si Migs 'to. Nasira phone ko, bagong number ko 'to.
+      - key: m2
+        role: 2
+        label: Unknown number
+        text: "Pa-send naman \u20B13,000 sa PayLite 0917 555 0188, emergency lang."
+      - key: m3
+        role: 2
+        label: Unknown number
+        text: Wag ka muna tumawag, wala pa akong load.
+      minClues: 2
+      outcomes: []
   - id: M05
     channel: 5
     sender: Case Review
@@ -125,18 +278,64 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: 'Fast reporting limits the damage: IT can lock sessions, block the
-      site and warn others. Changing the password quickly makes the stolen one useless.
-      Hiding the mistake is unprofessional and gives the attacker time. Forwarding
-      spreads the dangerous link. Deleting it removes evidence IT needs.'
+    explanation: Act fast. Changing your password makes the stolen one useless, and
+      IT can block the fake site and warn others. Hiding it gives the attacker time.
+      Forwarding spreads the bad link, and deleting removes the proof IT needs.
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: domain
+      field: 5
+      match: login-verify.example
+      label: The real domain
+      finding: 'Read from the right: the real domain is login-verify.example - not
+        your company''s. This was a fake page.'
+      linkAddress: 
+      clueId: fake
+      part: addr
+    - id: done
+      field: 5
+      match: Your account has been verified
+      label: The message
+      finding: Fake pages often say 'verified' so you don't worry. Nothing was verified
+        - your password was collected.
+      linkAddress: 
+      clueId: 
+      part: done
+    - id: typed
+      field: 5
+      match: work password
+      label: What you typed
+      finding: The attacker now has your work password. Every minute counts.
+      linkAddress: 
+      clueId: stolen
+      part: typed
+    - id: email
+      field: 5
+      match: The email that sent you to this page
+      label: The email
+      finding: IT needs this email to block the site and warn others. Don't delete
+        it or forward it to coworkers.
+      linkAddress: 
+      clueId: evidence
+      part: email
+    evidence:
+    - id: fake
+      title: It was a fake page
+      whyItMatters: The domain wasn't your company's.
+      supportsVerdict: 1
+    - id: stolen
+      title: Your password is stolen
+      whyItMatters: Change it fast so it becomes useless.
+      supportsVerdict: 1
+    - id: evidence
+      title: The email is evidence
+      whyItMatters: Reporting it lets IT limit the damage.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -148,28 +347,59 @@ MonoBehaviour:
     - Say nothing, since nothing bad has happened yet
     - Forward the email to coworkers to ask if they got it too
     - Delete the email so no one finds out
-    - Change the password through the official site right away, report to IT with
-      the email, and watch for login or MFA prompts you didn't start
+    - Change your password on the official site now, report it to IT, and watch for
+      sign-ins you didn't make
     correctChoice: 3
-    feedback: Report it. Mistakes happen, and <b>hiding them</b> is what makes them
-      serious.
+    feedback: Report it! Mistakes happen. <b>Hiding them</b> is what makes them worse.
     curriculumRef: "Social and Professional Issues (BIT2105). Supporting: IAS Week
       16 (incident reporting procedures) \u2014 Weeks 13\u201314: Security Incidents
       (\"recommend appropriate preventive and corrective measures\")"
+    hint: If your password may be stolen, what makes the stolen one useless, and
+      who needs to know?
+    activity:
+      kind: 2
+      title: Account verified
+      instruction: Check what happened, then choose your next step.
+      items:
+      - key: addr
+        role: 0
+        label: Address
+        text: https://company-portal.login-verify.example/signin
+      - key: done
+        role: 5
+        label: SIGNED IN
+        text: Thank you! Your account has been verified.
+      - key: typed
+        role: 8
+        label: 
+        text: One minute ago you typed your work password on this page.
+      - key: email
+        role: 6
+        label: inbox
+        text: The email that sent you to this page
+      minClues: 1
+      outcomes:
+      - The attacker can sign in as you while nobody knows. The longer it stays hidden,
+        the worse the damage.
+      - Coworkers open the same dangerous link, and more passwords are stolen.
+      - IT loses the evidence it needs to block the site, and your stolen password
+        still works.
+      - The stolen password stops working, IT blocks the site and warns others, and
+        you'll spot any login you didn't start.
   - id: M06
     channel: 5
     sender: Case Review
     senderDetail: 
     subject: Multiple Choice
     body: A classmate's school account password was stolen through phishing. <b>Which
-      control is most likely to stop the attacker from logging in?</b>
+      protection would most likely stop the attacker from logging in?</b>
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: 'MFA is a <b>technical control</b>: the attacker needs a second
-      factor (an app prompt, code or security key) as well as the password. The other
-      choices don''t affect a remote login. MFA is not perfect: only approve prompts
-      that you started yourself.'
+    explanation: <b>MFA</b> (multi-factor authentication) asks for a second check,
+      like a code or an app prompt, as well as the password. So a stolen password
+      alone isn't enough. The other choices don't stop someone logging in from far
+      away. Only approve prompts you started yourself.
     trigger: 0
     readingSeconds: 0
     stationId: 
@@ -191,11 +421,20 @@ MonoBehaviour:
     - Multi-factor authentication (MFA) on the account
     - Clearing the browser history
     correctChoice: 2
-    feedback: MFA. A stolen password alone isn't enough, <b>if you never approve
-      a prompt you didn't start.</b>
+    feedback: MFA! A stolen password alone isn't enough, as long as you <b>never
+      approve a prompt you didn't start</b>.
     curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 15:
       Security Controls and Protection Mechanisms (\"administrative, technical, and
       physical controls\")"
+    hint: The attacker already has the password. What extra check would they still
+      be missing?
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: M07
     channel: 5
     sender: Case Review
@@ -207,19 +446,62 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: Two networks with almost the same name suggests a fake "evil twin"
-      hotspot. A network page has no reason to ask for a <i>different</i> site's
-      password. That is credential harvesting. <b>A VPN wouldn't help here:</b> it
-      encrypts your traffic, but it can't protect a password you type into a fake
-      page yourself. Turning off the firewall removes protection.
+    explanation: 'Two networks with almost the same name can mean one is a fake hotspot
+      (an "evil twin"). No Wi-Fi needs your <i>social media</i> password: that page
+      is stealing it. A VPN wouldn''t help, because you''d still be typing your password
+      into a fake page.'
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: twin1
+      field: 5
+      match: Kape_FreeWiFi
+      label: Network 1
+      finding: Almost the same name as the other network. One of them may be a fake
+        'evil twin' hotspot.
+      linkAddress: 
+      clueId: twin
+      part: w1
+    - id: twin2
+      field: 5
+      match: Kape_Free_WiFi
+      label: Network 2
+      finding: Only an underscore apart. You can't tell which one is real without
+        asking the staff.
+      linkAddress: 
+      clueId: twin
+      part: w2
+    - id: portal
+      field: 5
+      match: SocialBook email and password
+      label: The sign-in page
+      finding: A Wi-Fi page has no reason to ask for a different site's password.
+        That is credential harvesting.
+      linkAddress: 
+      clueId: harvest
+      part: portal
+    - id: button
+      field: 5
+      match: LOG IN WITH SOCIALBOOK
+      label: The button
+      finding: 'Simulated: nothing is sent. A VPN wouldn''t help here - it can''t
+        protect a password you type into a fake page.'
+      linkAddress: 
+      clueId: harvest
+      part: button
+    evidence:
+    - id: twin
+      title: Two lookalike networks
+      whyItMatters: A sign of an 'evil twin' hotspot.
+      supportsVerdict: 1
+    - id: harvest
+      title: Asks for another site's password
+      whyItMatters: Credential harvesting.
+      supportsVerdict: 1
     consequence:
       kind: 4
       alertTitle: 
@@ -228,16 +510,49 @@ MonoBehaviour:
       followUp: 1
       recheckDetails: []
     choices:
-    - Don't enter it. Ask the staff for the real network name, and use mobile data
-      for anything sensitive
+    - Don't enter it. Ask staff for the real network, and use mobile data for anything
+      private
     - "Enter it, since caf\xE9s often ask you to log in"
     - Try both networks until one works without a login
     - Turn off your firewall so the network connects faster
     correctChoice: 0
-    feedback: Fake hotspot. No Wi-Fi network needs your <b>social media password</b>.
-      Ask staff, or use mobile data.
+    feedback: Fake hotspot! No Wi-Fi needs your <b>social media password</b>. Ask
+      staff, or use mobile data.
     curriculumRef: "Computer Security (BIT1225) \u2014 Network Security (\"firewalls,
       intrusion detection/prevention systems (IDS/IPS), and VPNs\")"
+    hint: Two networks with almost the same name, and a page asking for a social
+      media password. Does real Wi-Fi need that?
+    activity:
+      kind: 7
+      title: "Wi-Fi  \xB7  networks nearby"
+      instruction: Check the networks and the sign-in page, then choose.
+      items:
+      - key: w1
+        role: 6
+        label: open
+        text: Kape_FreeWiFi
+      - key: w2
+        role: 6
+        label: "open  \xB7  connected"
+        text: Kape_Free_WiFi
+      - key: portal
+        role: 1
+        label: Network sign-in page
+        text: Log in with your SocialBook email and password to get internet access.
+      - key: button
+        role: 7
+        label: 
+        text: LOG IN WITH SOCIALBOOK
+      minClues: 1
+      outcomes:
+      - Your SocialBook password stays safe. Staff point you to the real network,
+        and you use mobile data for anything sensitive.
+      - The fake hotspot collects your SocialBook login, and the attacker can take
+        over your account.
+      - You keep joining networks you can't trust, and anything sent on a fake one
+        can be watched.
+      - Your computer loses its protection on an untrusted network, and the fake
+        page is still waiting for a password.
   - id: M08
     channel: 0
     sender: ExampleBank
@@ -248,19 +563,68 @@ MonoBehaviour:
     link: examplebank-ph.example/update
     correctVerdict: 0
     scenarioContext: 'Trusted domain (case files): examplebank.example'
-    explanation: 'Text sender names (sender IDs) can be faked, and a faked one lands
-      in the same thread as the real sender''s messages. Where the message appears
-      doesn''t prove where it came from. The evidence is in the content: examplebank-ph.example
-      isn''t the trusted domain, and it threatens a same-day suspension. Many banks
-      have also announced that they no longer send clickable links by text.'
+    explanation: 'Scammers can fake the sender name on a text, so it can land in
+      your real bank''s chat. Look at the link instead: <b>examplebank-ph.example</b>
+      isn''t the bank''s real site, and "suspended TODAY" is pressure. Many banks
+      don''t send links by text at all.'
     trigger: 3
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
+    inspectables:
+    - id: thread
+      field: 1
+      match: 
+      label: The thread
+      finding: Scammers can fake the sender name so a text lands in your real bank's
+        thread. The thread proves nothing.
+      linkAddress: 
+      clueId: spoof
+      part: 
+    - id: today
+      field: 3
+      match: suspended TODAY
+      label: Deadline
+      finding: A same-day threat pushes you to act before you check.
+      linkAddress: 
+      clueId: urgent
+      part: 
+    - id: request
+      field: 3
+      match: Update your details at
+      label: The request
+      finding: Banks don't ask you to update your details through a text link.
+      linkAddress: 
+      clueId: request
+      part: 
+    - id: link
+      field: 4
+      match: 
+      label: Link
+      finding: examplebank-ph.example is not examplebank.example (the trusted domain
+        in your case files).
+      linkAddress: examplebank-ph.example/update
+      clueId: domain
+      part: 
+    evidence:
+    - id: spoof
+      title: Sender name can be faked
+      whyItMatters: Even in your real bank's thread.
+      supportsVerdict: 1
+    - id: domain
+      title: Wrong domain
+      whyItMatters: examplebank-ph.example isn't your bank.
+      supportsVerdict: 1
+    - id: urgent
+      title: Same-day threat
+      whyItMatters: Pressure to act now.
+      supportsVerdict: 1
+    - id: request
+      title: Asks for your details by link
+      whyItMatters: Banks don't do that.
+      supportsVerdict: 1
     consequence:
       kind: 0
       alertTitle: 
@@ -270,9 +634,17 @@ MonoBehaviour:
       recheckDetails: []
     choices: []
     correctChoice: 0
-    feedback: 'Scam. Sender names can be <b>faked</b>, so the thread proves nothing.
-      Check the link: it''s not examplebank.example.'
+    feedback: 'Scam! Sender names can be <b>faked</b>. Check the link: it''s not
+      examplebank.example.'
     curriculumRef: "Cyber Forensics (BIT2226) \u2014 Mobile Device Forensics"
+    hint: 'Ignore the sender name. Look at the link: is it the bank''s trusted address?'
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   inboxExtras:
   - id: l3_old_welcome
     channel: 1
@@ -305,6 +677,14 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: l3_old_statement
     channel: 1
     sender: Example Bank
@@ -335,6 +715,14 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: l3_old_order
     channel: 1
     sender: Example Delivery
@@ -365,24 +753,35 @@ MonoBehaviour:
     correctChoice: 0
     feedback: 
     curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   caseFiles:
   - title: Case Notes
     body: "\u2022 Trusted domain (case files): examplebank.example"
   - title: How This Room Works
-    body: 'Six questions are waiting in this room. They arrive one at a time, in
-      a different order on every attempt.
+    body: '1. 6 questions arrive one at a time, in a new order each attempt.
 
 
-      Case questions have four answer
-      choices, shuffled each attempt. Pick the safest and most accurate one.
+      2.
+      Case questions: pick the safest, most accurate answer (A-D).
 
 
-      Messages
-      and web pages are judged as SCAM or LEGITIMATE.
+      3. Messages
+      and web pages: choose SCAM or LEGITIMATE.
 
 
-      Score 720 or more to
-      unlock the next room.'
+      4. Not sure? Press HINT to
+      see what to look at. After each answer you''ll see why it was right or wrong.
+
+
+      Goal:
+      score 590+ to unlock the next room.'
   firstMessageDelay: 10
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 5
@@ -390,32 +789,31 @@ MonoBehaviour:
     basePoints: 200
     speedBonus: 20
     fastWindow: 0.35
-    wrongPenalty: 40
+    wrongPenalty: 25
     recoveryPoints: 50
     baseReadingSeconds: 20
     secondsPerWord: 0.5
     secondsPerDetail: 3
-    minReadingSeconds: 40
-    maxReadingSeconds: 110
+    minReadingSeconds: 45
+    maxReadingSeconds: 140
     caseExtraSeconds: 60
     overtimeStepSeconds: 10
-    overtimePenaltyPerStep: 10
-    maxTimePenalty: 50
-    minCorrectPoints: 150
-  oneStarScore: 480
-  twoStarScore: 720
+    overtimePenaltyPerStep: 5
+    maxTimePenalty: 25
+    minCorrectPoints: 160
+  oneStarScore: 405
+  twoStarScore: 590
   threeStarScore: 1200
-  minScoreToUnlockNext: 720
+  minScoreToUnlockNext: 590
   nextLevelId: level_4
   nextSceneName: Room4_DigitalForensicsLab
   lessons:
-  - Correct the common belief that a padlock means a site is safe.
-  - Recognize impersonation that relies on emotion and urgency, and verify through
-    a known channel.
-  - Report honestly and quickly after a security mistake.
-  - Pick the control that matches the threat.
-  - Spot fake hotspots and understand the limits of VPNs.
-  - Learn that what a phone displays is not proof of who sent a message.
+  - Know that a padlock doesn't mean a site is real.
+  - Spot scams that use feelings and rush you, and check through a number you know.
+  - Report a security mistake quickly and honestly.
+  - Pick the protection that fits the problem.
+  - Spot fake Wi-Fi hotspots, and know what a VPN can't do.
+  - Know that the name on your phone doesn't prove who sent a text.
   learningSummary: 
   performanceHigh: Outstanding analysis! You weighed every clue against the evidence
     and made sharp decisions.
@@ -423,3 +821,5 @@ MonoBehaviour:
     cases reward checking the case files.
   performanceLow: Keep practising. Compare each sender and request with the case
     files before you decide.
+  tutorial: 0
+  tutorialFirstQuestion: 

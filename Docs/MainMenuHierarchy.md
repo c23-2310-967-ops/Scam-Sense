@@ -1,6 +1,18 @@
 # Main menu UI in the Hierarchy
 
-The main menu (PLAY, CONTINUE, LEVEL SELECTION, SETTINGS, HOW TO PLAY, ABOUT, QUIT, with the Digital Light Sweep buttons) and the account panels are now **real objects in `Assets/Scenes/Menu.unity`**. You can select, move, restyle and rewire them in the Inspector. Every button's **OnClick** list holds normal persistent events.
+> **Simplified menu (2026-11-25).** The menu is now **PLAY · CLASSROOM · SETTINGS · ABOUT · QUIT GAME**.
+> - **PLAY** is the one large primary button. The line under it names the case it opens ("Case 2 · The Investigation"), which is the next room in the normal progression: the first unlocked room not completed yet. It replaces CONTINUE.
+> - **LEVEL SELECTION** is removed, together with the room strip and room preview, which could also start any unlocked room. The unlock rules are unchanged (score to unlock the next room). In a level, RESULTS still offers NEXT ROOM and REPLAY.
+> - **HOW TO PLAY** is removed. Its content now appears in the game where it's needed:
+>   - the Level 1 guide (`TutorialCoach`): controls, investigating, hints, answering, feedback;
+>   - the briefing card in every level: controls strip, goal score and scoring rules;
+>   - one-time **TIP** toasts (`Game/FirstTimeTips.cs`), shown the first time a player meets a phone message, an email or web page on a computer, a numbered workstation, the final case terminal, or a choice question;
+>   - a controls line on the **pause menu**.
+> - QUIT GAME is smaller and set apart at the bottom.
+>
+> The hierarchy below shows the original version; the Navigation children are now `PLAY Button, Gap, CLASSROOM Button, SETTINGS Button, ABOUT Button, Gap, QUIT GAME Button, Status`, and `Panel_levels` / `Panel_how` no longer exist. `MainMenuTests` checks this and that every menu button has a working OnClick.
+
+The main menu (originally PLAY, CONTINUE, LEVEL SELECTION, SETTINGS, HOW TO PLAY, ABOUT, QUIT, with the Digital Light Sweep buttons) and the account panels are **real objects in `Assets/Scenes/Menu.unity`**. You can select, move, restyle and rewire them in the Inspector. Every button's **OnClick** list holds normal persistent events.
 
 ## Hierarchy (Menu scene)
 ```

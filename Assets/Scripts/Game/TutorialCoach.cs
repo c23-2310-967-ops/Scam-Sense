@@ -26,7 +26,7 @@ public class TutorialCoach : MonoBehaviour
     float walked;
 
     /// <summary>A key drawn as a highlighted key cap in card text.</summary>
-    static string K(string key) => $"<mark=#38BDF840><b> {key} </b></mark>";
+    static string K(string key) => UIKit.Key(key);
 
     const int SortingOrder = 37;   // above the investigation UI (35) and wrong-answer card (36); below results (40) and pause (100)
 
@@ -97,93 +97,85 @@ public class TutorialCoach : MonoBehaviour
         {
             case Step.Welcome:
                 Show(UIKit.PopupTone.Info, "TRAINING CASE", "Welcome to Scam Sense",
-                    "You are a new <b>cybercrime investigator</b>. Scammers send fake texts, emails and posts to steal <b>money</b>, <b>passwords</b> and <b>personal details</b>. " +
-                    "Spotting them protects you and the people around you.\n\n" +
-                    $"Your goal: decide if each message is a <color={UIKit.HexDanger}><b>SCAM</b></color> (it tries to trick you) " +
-                    $"or <color={UIKit.HexSafe}><b>LEGITIMATE</b></color> (it is real and safe), and answer each case question. " +
-                    $"Score <b>{unlock}</b> or more to unlock the next room.\n" +
-                    $"<color={UIKit.HexSecondary}>This guide teaches the controls, then walks you through your first question.</color>",
+                    "Scammers send fake messages to steal <b>money</b>, <b>passwords</b> and <b>personal details</b>. Your job is to catch them.\n" +
+                    $"For each message, decide: <color={UIKit.HexDanger}><b>SCAM</b></color> (a trick) or <color={UIKit.HexSafe}><b>LEGITIMATE</b></color> (real and safe).\n" +
+                    $"<color={UIKit.HexSecondary}>First, 3 quick control tips. Score <b>{unlock}</b>+ to unlock the next room.</color>",
                     "LET'S START", () => Go(Step.Move));
                 break;
             case Step.Move:
                 BeginMoveCheck();
-                Show(UIKit.PopupTone.Info, "CONTROLS 1 OF 3  ·  MOVE AND LOOK", "Walk and look around",
-                    $"Walk with {K("W")} {K("A")} {K("S")} {K("D")}  and look around by moving the <b>mouse</b>. {K("Space")} jumps.\n" +
-                    $"<color={UIKit.HexSecondary}>Try it now. This step finishes when you have walked and looked around.</color>",
+                Show(UIKit.PopupTone.Info, "CONTROLS 1 OF 3", "Walk and look around",
+                    $"{K("W A S D")} walk     <b>Mouse</b> look     {K("Space")} jump\n" +
+                    $"<color={UIKit.HexSecondary}>Try it now: take a few steps and look around.</color>",
                     "NEXT  (Enter)", () => Go(Step.Interact));
                 break;
             case Step.Interact:
-                Show(UIKit.PopupTone.Info, "CONTROLS 2 OF 3  ·  INTERACT", "Use things in the room",
-                    $"Look at the door, a chair, the phone or a computer. When a label with {K("E")} appears, press {K("E")} to use it.\n" +
-                    $"Sitting on a chair? Press {K("E")} or {K("Space")} to stand up.",
+                Show(UIKit.PopupTone.Info, "CONTROLS 2 OF 3", "Use things",
+                    $"Things you can use <b>glow blue</b>. Look at one and press {K("E")}.\n" +
+                    $"<color={UIKit.HexSecondary}>On a chair? Press {K("E")} or {K("Space")} to stand up.</color>",
                     "NEXT  (Enter)", () => Go(Step.Menus));
                 break;
             case Step.Menus:
-                Show(UIKit.PopupTone.Info, "CONTROLS 3 OF 3  ·  MENUS", "Menus and windows",
-                    $"{K("Tab")} hides or shows your task list (top left).\n" +
-                    $"{K("Esc")} or {K("P")} opens the pause menu. {K("Esc")} also closes a computer or a card.\n" +
-                    "When a window is open, the mouse pointer appears: <b>click</b> buttons and underlined words. Click the game again to go back to looking around.",
+                Show(UIKit.PopupTone.Info, "CONTROLS 3 OF 3", "Menus and windows",
+                    $"{K("Tab")} show / hide tasks     {K("Esc")} pause or close a window\n" +
+                    "<color=" + UIKit.HexSecondary + ">When a window is open, <b>click</b> its buttons and underlined words.</color>",
                     "NEXT  (Enter)", () => Go(Step.WaitForQuestion));
                 break;
             case Step.WarningSigns:
                 Show(UIKit.PopupTone.Info, "STEP 1 OF 5  ·  WARNING SIGNS", "What to look for",
-                    "Check every message for warning signs:\n" +
-                    "•  <b>Sender</b> - unknown, or an address that only looks real\n" +
-                    "•  <b>Links</b> - odd or unofficial web addresses\n" +
-                    "•  <b>Pressure</b> - urgent deadlines or threats\n" +
-                    "•  <b>Requests</b> - passwords, codes, money or personal details\n" +
-                    "•  <b>Mistakes</b> - strange spelling or grammar\n" +
-                    $"<color={UIKit.HexSecondary}>One sign alone doesn't prove a scam. Real messages can have links or deadlines too, so weigh all the evidence.</color>",
+                    "•  <b>Sender</b>: unknown, or only looks real\n" +
+                    "•  <b>Links</b>: odd web addresses\n" +
+                    "•  <b>Pressure</b>: \"act now\" or threats\n" +
+                    "•  <b>Requests</b>: passwords, codes, money\n" +
+                    "•  <b>Mistakes</b>: strange spelling\n" +
+                    $"<color={UIKit.HexSecondary}>One sign alone isn't proof. Weigh all the clues.</color>",
                     "NEXT", () => Go(MessageInvestigation.Investigates(guided) ? Step.Investigate : guided != null && guided.HasHint ? Step.Hint : Step.Answer));
                 break;
             case Step.WaitForQuestion:
                 RefreshWaiting(force: true);
                 break;
             case Step.Investigate:
-                Show(UIKit.PopupTone.Info, "STEP 2 OF 5  ·  UNDERLINED CLUES", "Check the underlined details",
-                    $"Words <color=#7DD3FC><u>underlined in blue</u></color> are details worth checking. Click one to see what it tells you.\n<b>Click one now.</b>",
+                Show(UIKit.PopupTone.Info, "STEP 2 OF 5  ·  CLUES", "Click an underlined word",
+                    $"Words <color=#7DD3FC><u>underlined in blue</u></color> are clues. <b>Click one now</b> to check it.",
                     null, null);
                 break;
             case Step.ClueFound:
-                Show(UIKit.PopupTone.Success, "STEP 2 OF 5  ·  UNDERLINED CLUES", "Nice find!",
-                    $"The card explains what you found. A gold <color=#FBBF24>★</color> marks a <b>key clue</b>. " +
-                    "Check the other underlined words too - the more clues you find, the surer your answer.",
+                Show(UIKit.PopupTone.Success, "STEP 2 OF 5  ·  CLUES", "Nice find!",
+                    $"A gold <color=#FBBF24>★</color> marks a <b>key clue</b>. More clues = a surer answer.",
                     "NEXT", () => Go(guided != null && guided.HasHint ? Step.Hint : Step.Answer));
                 break;
             case Step.Hint:
-                Show(UIKit.PopupTone.Info, "STEP 3 OF 5  ·  HINTS", "Need a nudge?",
-                    "Press <b>HINT</b> to see what to focus on. A hint never gives away the answer. Try it now, or skip it.",
+                Show(UIKit.PopupTone.Info, "STEP 3 OF 5  ·  HINT", "Need a nudge?",
+                    "Press <b>HINT</b> to see what to focus on. It never gives the answer away.",
                     "SKIP HINT", () => Go(Step.Answer));
                 break;
             case Step.Answer:
                 Show(UIKit.PopupTone.Info, "STEP 4 OF 5  ·  ANSWER", choice ? "Choose the best answer" : "Scam or legitimate?",
-                    choice ? "Click the <b>safest, most accurate</b> choice. Your answer is submitted as soon as you click it. The A-D order changes every time you play, so read them all."
-                           : $"Click <color={UIKit.HexDanger}><b>SCAM</b></color> if it tries to trick you, or <color={UIKit.HexSafe}><b>LEGITIMATE</b></color> if it is real and safe. Your answer is submitted as soon as you click.",
+                    choice ? "Click the <b>safest</b> answer. Read all four first: one click submits it."
+                           : $"Click <color={UIKit.HexDanger}><b>SCAM</b></color> or <color={UIKit.HexSafe}><b>LEGITIMATE</b></color>. One click submits it.",
                     null, null);
                 break;
             case Step.Feedback:
                 Show(UIKit.PopupTone.Info, "STEP 5 OF 5  ·  FEEDBACK", "Read the feedback",
-                    $"<color={UIKit.HexSafe}>✓</color> means correct, <color={UIKit.HexDanger}>×</color> means not quite. " +
-                    "<b>Why</b> explains the warning signs, and the clue list shows what you found and what you missed.",
+                    $"<color={UIKit.HexSafe}>✓</color> correct   <color={UIKit.HexDanger}>×</color> not quite\n" +
+                    "<b>Why</b> explains the warning signs and the clues you found or missed.",
                     "GOT IT", () => { if (guided != null && guided.HasChoices) Go(Step.CaseReview); else HideCard(); });
                 break;
             case Step.CaseReview:
                 Show(UIKit.PopupTone.Info, "CASE REVIEW", "Your case report",
-                    "On the left, the <b>Case Review</b> now sums up the case:\n" +
-                    "•  the <b>correct answer</b>\n" +
-                    $"•  the <b>clues to notice</b> (<color={UIKit.HexSafe}>✓</color> found, <color={UIKit.HexWarning}>•</color> missed)\n" +
-                    "•  <b>what you learned</b>\n" +
-                    "Every case question in this room ends with one. Press <b>CONTINUE</b> when you're done.",
+                    "On the left: the <b>correct answer</b>, the <b>clues</b> " +
+                    $"(<color={UIKit.HexSafe}>✓</color> found, <color={UIKit.HexWarning}>•</color> missed) and <b>what you learned</b>.\n" +
+                    "Press <b>CONTINUE</b> when you're ready.",
                     "GOT IT", HideCard);
                 break;
             case Step.Practice:
                 Show(UIKit.PopupTone.Success, "TRAINING COMPLETE", "You know the basics",
-                    "Answer the other questions the same way: <b>investigate</b>, use a <b>hint</b> if you need one, then <b>answer</b>. Good luck, investigator!",
+                    "Same steps every time: <b>1</b> check clues   <b>2</b> hint if needed   <b>3</b> answer. Good luck!",
                     "GOT IT", HideCard);
                 break;
             case Step.VerdictIntro:
                 Show(UIKit.PopupTone.Info, "NEW TYPE OF QUESTION", "Scam or legitimate?",
-                    "This one is a real message to judge. Check the underlined details and use HINT if you need it, then press " +
+                    "Check the underlined clues (and HINT if needed), then click " +
                     $"<color={UIKit.HexDanger}><b>SCAM</b></color> or <color={UIKit.HexSafe}><b>LEGITIMATE</b></color>.",
                     "GOT IT", HideCard);
                 break;
@@ -305,8 +297,8 @@ public class TutorialCoach : MonoBehaviour
     void RefreshWaiting(bool force)
     {
         bool arrived = quiz.PendingMessage != null;
-        string bodyText = arrived ? "Press <b>E</b> to open it. Text messages open on your phone; emails and web pages open on a computer - look at the monitor and press <b>E</b>."
-                                  : "Explore the room. When the alert appears at the bottom of the screen, press <b>E</b> to open it.";
+        string bodyText = arrived ? $"<b>Text?</b> Press {K("E")} to open it on your phone.\n<b>Email or web page?</b> Look at a computer screen and press {K("E")}."
+                                  : $"Explore the room. When a new message pops up, press {K("E")} to open it.";
         if (!force && bodyText == shownBody) return;
         Show(UIKit.PopupTone.Info, "GET READY", arrived ? "Your first question has arrived" : "Your first question is on its way", bodyText, null, null);
     }

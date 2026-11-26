@@ -5,19 +5,39 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Loads the 30 validated curriculum questions (Assets/Editor/CurriculumQuestions.json, generated from
-/// Docs/Curriculum_Question_Bank.md) into the five room assets: six questions per room, in the bank's order
-/// (Room 1 = Q1-Q6 ... Room 5 = Q25-Q30). The game shuffles them per attempt; the assets keep the bank order.
+/// Loads the 30 validated curriculum questions (Assets/Editor/CurriculumQuestions.json) into the room assets.
+/// Each room has its own number of questions (the layout is set by CurriculumRoomLayout: 10 rooms of 3, easiest
+/// first). The game shuffles them per attempt; the assets keep the file's order.
 /// Replaces each room's scored messages, briefing, objectives, case notes, case files, lessons and the star /
-/// unlock scores (worked out from the room's own scoring rules). Older inbox emails and scoring rules are kept.
+/// unlock scores (worked out from the room's own scoring rules and size). Older inbox emails and scoring rules are kept.
 /// Menu: Tools > Scam Sense > Curriculum > Load Questions into Rooms.
 /// </summary>
 public static class CurriculumQuestionsImporter
 {
     public const string JsonPath = "Assets/Editor/CurriculumQuestions.json";
-    public const int QuestionsPerRoom = 6;
+    /// <summary>A room needs at least this many questions (and at most MaxQuestionsPerRoom) to make a real case.</summary>
+    public const int MinQuestionsPerRoom = 2, MaxQuestionsPerRoom = 8;
 
-    [Serializable] public class InspectData { public string id, field, match, label, finding, linkAddress, clueId; }
+    /// <summary>
+    /// Correct answers needed for 1 star and for 2 stars / unlocking, out of <paramref name="n"/> questions:
+    /// about half for 1 star, about 60% (never all of them) to unlock. 3 questions: 1 / 2. 6 questions: 3 / 4.
+    /// </summary>
+    public static (int oneStar, int unlock) CorrectNeeded(int n)
+    {
+        int unlock = Mathf.Clamp(Mathf.CeilToInt(n * 0.6f), 1, Mathf.Max(1, n - 1));
+        int one = Mathf.Clamp(n / 2, 1, unlock);
+        return (one, unlock);
+    }
+
+    [Serializable] public class InspectData { public string id, field, match, label, finding, linkAddress, clueId, part; }
+    [Serializable] public class ItemData { public string key, role, label, text; }
+    [Serializable] public class ActivityData
+    {
+        public string kind, title, instruction;
+        public ItemData[] items;
+        public int minClues = 1;
+        public string[] outcomes;
+    }
     [Serializable] public class EvidenceData { public string id, title, whyItMatters; public bool supportsVerdict; }
     [Serializable] public class QuestionData
     {
@@ -29,6 +49,8 @@ public static class CurriculumQuestionsImporter
         public string hint;
         public InspectData[] inspectables;
         public EvidenceData[] evidence;
+        // Interactive activity (optional): simulated app, clue gate and decision outcomes
+        public ActivityData activity;
     }
     [Serializable] public class RoomData
     {
@@ -41,7 +63,13 @@ public static class CurriculumQuestionsImporter
         public string firstQuestion, briefingTitle, briefing;
         public string[] objectives;
     }
-    [Serializable] public class FileData { public string source; public RoomData[] rooms; }
+    [Serializable] public class FileData
+    {
+        public string source;
+        public RoomData[] rooms;
+        /// <summary>Validated questions not used in any room right now (kept for future rooms; never loaded into a level).</summary>
+        public QuestionData[] reserve;
+    }
 
     public static FileData Load()
     {
@@ -81,46 +109,49 @@ public static class CurriculumQuestionsImporter
     /// <summary>Writes one room's questions and texts into its level asset (no saving).</summary>
     public static void Apply(LevelDefinition level, RoomData room)
     {
-        if (room.questions == null || room.questions.Length != QuestionsPerRoom)
-            throw new InvalidDataException($"Room {room.room} must have exactly {QuestionsPerRoom} questions");
+        int n = room.questions != null ? room.questions.Length : 0;
+        if (n < MinQuestionsPerRoom || n > MaxQuestionsPerRoom)
+            throw new InvalidDataException($"Room {room.room} has {n} questions (a room needs {MinQuestionsPerRoom}-{MaxQuestionsPerRoom})");
 
         level.messages = new List<ScamMessage>();
         foreach (var q in room.questions) level.messages.Add(ToMessage(q, room.tutorial));
         level.tutorial = room.tutorial;
         level.tutorialFirstQuestion = room.tutorial ? room.firstQuestion ?? "" : "";
 
-        // Scores from the room's own rules: 3 / 4 / 6 correct answers (allowing the penalties of the misses).
+        // Scores from the room's own rules and size. Unlocking: about 60% right always unlocks, even if every right
+        // answer ran over its reading time (each still earns at least minCorrectPoints) and the misses cost points.
         var s = level.scoring ?? new LevelScoring();
-        int b = s.basePoints, p = s.wrongPenalty;
-        level.oneStarScore = Mathf.Max(1, 3 * b - 3 * p);
-        level.twoStarScore = Mathf.Max(level.oneStarScore, 4 * b - 2 * p);
-        level.threeStarScore = Mathf.Max(level.twoStarScore, QuestionsPerRoom * b);
+        int b = s.basePoints, p = s.wrongPenalty, slow = Mathf.Min(b, Mathf.Max(0, s.minCorrectPoints));
+        var (k1, k2) = CorrectNeeded(n);
+        level.oneStarScore = Mathf.Max(1, k1 * slow - (n - k1) * p);
+        level.twoStarScore = Mathf.Max(level.oneStarScore, k2 * slow - (n - k2) * p);
+        level.threeStarScore = Mathf.Max(level.twoStarScore, n * b);
         level.minScoreToUnlockNext = level.twoStarScore;
 
         int choiceCount = 0;
         foreach (var q in room.questions) if (q.choices != null && q.choices.Length >= 2) choiceCount++;
-        int verdictCount = QuestionsPerRoom - choiceCount;
-        string mix = verdictCount == 0 ? "six case questions, each with four answer choices"
-                   : $"{Count(choiceCount)} case question{(choiceCount == 1 ? "" : "s")} with four answer choices and " +
-                     $"{Count(verdictCount)} message{(verdictCount == 1 ? "" : "s")} or web page{(verdictCount == 1 ? "" : "s")} to judge as SCAM or LEGITIMATE";
-        level.briefingText = $"{room.intro} This room has six questions: {mix}. They arrive in a different order on every attempt, " +
-                             "and the answer choices are shuffled too, so read each one carefully instead of remembering positions.";
+        int verdictCount = n - choiceCount;
+        // Short and beginner-friendly: what the room teaches, then what kind of questions to expect.
+        string mix = verdictCount == 0 ? $"{n} questions with answer choices (A-D)"
+                   : choiceCount == 0 ? $"{n} messages to judge as SCAM or LEGITIMATE"
+                   : $"{n} questions: {choiceCount} with answer choices (A-D) and {verdictCount} to judge as SCAM or LEGITIMATE";
+        level.briefingText = $"{room.intro}\nYou'll get {mix}. Take your time and read each one carefully.";
         bool last = string.IsNullOrEmpty(level.nextLevelId);
         level.objectives = new[]
         {
-            "Answer all six questions in this room.",
-            "Read the whole situation before you choose.",
-            last ? $"Score {level.minScoreToUnlockNext} or more to complete the investigation."
-                 : $"Score {level.minScoreToUnlockNext} or more to unlock the next room."
+            $"Answer all {n} questions.",
+            "Read the whole situation before you choose. Stuck? Press HINT.",
+            last ? $"Score {level.minScoreToUnlockNext}+ to finish the investigation."
+                 : $"Score {level.minScoreToUnlockNext}+ to unlock the next room."
         };
-        // Tutorial room: its own intro briefing and objectives ({unlock} = the unlock score).
+        // Tutorial room: its own intro briefing and objectives ({unlock} = the unlock score, {count} = questions).
         if (!string.IsNullOrEmpty(room.briefingTitle)) level.briefingTitle = room.briefingTitle;
         if (!string.IsNullOrEmpty(room.briefing)) level.briefingText = room.briefing;
         if (room.objectives != null && room.objectives.Length > 0)
         {
             level.objectives = new string[room.objectives.Length];
             for (int i = 0; i < room.objectives.Length; i++)
-                level.objectives[i] = room.objectives[i].Replace("{unlock}", level.minScoreToUnlockNext.ToString());
+                level.objectives[i] = room.objectives[i].Replace("{unlock}", level.minScoreToUnlockNext.ToString()).Replace("{count}", n.ToString());
         }
         level.caseNotes = room.caseNotes ?? new string[0];
         level.lessons = room.lessons ?? new string[0];
@@ -133,14 +164,36 @@ public static class CurriculumQuestionsImporter
         {
             new CaseFile { title = "Case Notes", body = notes },
             new CaseFile { title = "How This Room Works", body =
-                "Six questions are waiting in this room. They arrive one at a time, in a different order on every attempt.\n\n" +
-                "Case questions have four answer choices, shuffled each attempt. Pick the safest and most accurate one.\n\n" +
-                "Messages and web pages are judged as SCAM or LEGITIMATE.\n\n" +
-                $"Score {level.minScoreToUnlockNext} or more to {(last ? "complete the investigation" : "unlock the next room")}." }
+                $"1. {n} questions arrive one at a time, in a new order each attempt.\n\n" +
+                "2. Case questions: pick the safest, most accurate answer (A-D).\n\n" +
+                "3. Messages and web pages: choose SCAM or LEGITIMATE.\n\n" +
+                "4. Not sure? Press HINT to see what to look at. After each answer you'll see why it was right or wrong.\n\n" +
+                $"Goal: score {level.minScoreToUnlockNext}+ to {(last ? "finish the investigation" : "unlock the next room")}." }
         };
     }
 
     static string Count(int n) => n switch { 1 => "one", 2 => "two", 3 => "three", 4 => "four", 5 => "five", _ => n.ToString() };
+
+    /// <summary>The question's interactive activity (Kind None when it has none).</summary>
+    public static MessageActivity ToActivity(ActivityData a)
+    {
+        if (a == null || string.IsNullOrEmpty(a.kind) || a.items == null || a.items.Length == 0) return new MessageActivity();
+        var act = new MessageActivity
+        {
+            kind = (ActivityKind)Enum.Parse(typeof(ActivityKind), a.kind),
+            title = a.title ?? "",
+            instruction = a.instruction ?? "",
+            minClues = Mathf.Max(0, a.minClues),
+            outcomes = a.outcomes ?? new string[0],
+        };
+        foreach (var i in a.items)
+            act.items.Add(new ActivityItem
+            {
+                key = i.key ?? "", label = i.label ?? "", text = i.text ?? "",
+                role = string.IsNullOrEmpty(i.role) ? ActivityRole.Text : (ActivityRole)Enum.Parse(typeof(ActivityRole), i.role)
+            });
+        return act;
+    }
 
     public static ScamMessage ToMessage(QuestionData q, bool tutorial = false)
     {
@@ -152,7 +205,8 @@ public static class CurriculumQuestionsImporter
                 inspectables.Add(new MessageInspectable
                 {
                     id = i.id, field = (InspectField)Enum.Parse(typeof(InspectField), i.field), match = i.match ?? "",
-                    label = i.label ?? "", finding = i.finding ?? "", linkAddress = i.linkAddress ?? "", clueId = i.clueId ?? ""
+                    label = i.label ?? "", finding = i.finding ?? "", linkAddress = i.linkAddress ?? "", clueId = i.clueId ?? "",
+                    part = i.part ?? ""
                 });
         var evidence = new List<MessageEvidence>();
         if (q.evidence != null)
@@ -160,6 +214,7 @@ public static class CurriculumQuestionsImporter
                 evidence.Add(new MessageEvidence { id = e.id, title = e.title, whyItMatters = e.whyItMatters, supportsVerdict = e.supportsVerdict });
         return new ScamMessage
         {
+            activity = ToActivity(q.activity),
             hint = q.hint ?? "",
             inspectables = inspectables,
             evidence = evidence,

@@ -177,7 +177,28 @@ public class SupabaseClient
     public Task UpdateAsync(string pathAndQuery, string jsonObject) =>
         SendAsync("PATCH", "/rest/v1/" + pathAndQuery, jsonObject, prefer: "return=minimal");
 
-    public Task DeleteAsync(string pathAndQuery) => SendAsync("DELETE", "/rest/v1/" + pathAndQuery, null, prefer: "return=minimal");
+    public Task DeleteAsync(string pathAndQuery) => SendAsync("DELETE","/rest/v1/" + pathAndQuery, null, prefer: "return=minimal");
+
+    /// <summary>Calls a database function: POST /rest/v1/rpc/{function} with named arguments as a JSON object. Returns the JSON result.</summary>
+    public Task<string> RpcAsync(string function, string jsonArgs = null) =>
+        SendAsync("POST", "/rest/v1/rpc/" + function, string.IsNullOrEmpty(jsonArgs) ? "{}" : jsonArgs);
+
+    /// <summary>
+    /// Reads every row of a query, page by page (the API returns at most 1000 rows per request).
+    /// <paramref name="pathAndQuery"/> must contain an order=... so pages don't overlap.
+    /// </summary>
+    public async Task<List<T>> SelectAllAsync<T>(string pathAndQuery, int pageSize = 1000, int maxRows = 50000)
+    {
+        var all = new List<T>();
+        string sep = pathAndQuery.Contains("?") ? "&" : "?";
+        for (int offset = 0; offset < maxRows; offset += pageSize)
+        {
+            var page = ParseArray<T>(await SelectAsync($"{pathAndQuery}{sep}limit={pageSize}&offset={offset}"));
+            all.AddRange(page);
+            if (page.Count < pageSize) break;
+        }
+        return all;
+    }
 
     /// <summary>Reads a JSON array into a list (JsonUtility needs an object at the top level).</summary>
     public static List<T> ParseArray<T>(string jsonArray)

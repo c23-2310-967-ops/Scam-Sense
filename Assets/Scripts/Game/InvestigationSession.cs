@@ -53,6 +53,10 @@ public class InvestigationSession
 
     public bool WasInspected(string inspectId) => inspected.Contains(inspectId);
     public bool IsDiscovered(string clueId) => discovered.Exists(c => c.id == clueId);
+    /// <summary>Key clues (supporting the answer) found so far.</summary>
+    public int KeyFound => discovered.FindAll(c => c.supportsVerdict).Count;
+    /// <summary>Key clues the message has in total.</summary>
+    public int KeyTotal => Message.evidence != null ? Message.evidence.FindAll(c => c.supportsVerdict).Count : 0;
     /// <summary>Evaluates the clues once, with the verdict the player gave. Later calls return the same result.</summary>
     public Result Submit(MessageVerdict verdict)
     {
@@ -76,8 +80,10 @@ public class InvestigationSession
             if (string.IsNullOrEmpty(i.id) || !ids.Add(i.id)) problems.Add($"inspectable id '{i.id}' is empty or repeated");
             if (!string.IsNullOrEmpty(i.clueId) && (m.evidence == null || !m.evidence.Exists(c => c.id == i.clueId)))
                 problems.Add($"inspectable '{i.id}' points to missing clue '{i.clueId}'");
-            string text = FieldText(m, i.field);
-            if (string.IsNullOrEmpty(text)) problems.Add($"inspectable '{i.id}': the {i.field} field is empty");
+            string text = FieldText(m, i.field, i.part);
+            if (string.IsNullOrEmpty(text)) problems.Add(i.field == InspectField.Activity
+                ? $"inspectable '{i.id}': activity item '{i.part}' is missing or empty"
+                : $"inspectable '{i.id}': the {i.field} field is empty");
             else if (!string.IsNullOrEmpty(i.match) && !text.Contains(i.match)) problems.Add($"inspectable '{i.id}': '{i.match}' is not in the {i.field} text");
         }
         if (m.evidence != null)
@@ -86,7 +92,8 @@ public class InvestigationSession
         return problems;
     }
 
-    public static string FieldText(ScamMessage m, InspectField f) =>
-        f == InspectField.Sender ? m.sender : f == InspectField.SenderDetail ? m.senderDetail : f == InspectField.Subject ? m.subject
+    public static string FieldText(ScamMessage m, InspectField f, string part = null) =>
+        f == InspectField.Activity ? (m.HasActivity ? m.activity.Item(part)?.text : null)
+        : f == InspectField.Sender ? m.sender : f == InspectField.SenderDetail ? m.senderDetail : f == InspectField.Subject ? m.subject
         : f == InspectField.Link ? m.link : m.body;
 }

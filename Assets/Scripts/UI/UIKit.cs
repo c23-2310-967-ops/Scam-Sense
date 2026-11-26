@@ -815,6 +815,17 @@ public static class UIKit
         return sb.ToString();
     }
 
+    /// <summary>A key drawn as a highlighted key cap inside rich text ("E", "Esc", "W A S D"). Same look in every screen.</summary>
+    public static string Key(string key) => $"<mark=#38BDF840><b> {key} </b></mark>";
+
+    /// <summary>Numbered step for instruction lists: cyan number, then the text (one short line each).</summary>
+    public static string Step(int n, string text) => $"<color={HexAccent}><b>{n}</b></color>   {text}";
+
+    /// <summary>One-line control strip ("[W A S D] Move   [Mouse] Look ..."), shared by the briefing and How to Play.</summary>
+    public static string ControlStrip(bool includeTab = true) =>
+        $"{Key("W A S D")} Move     {Key("Mouse")} Look     {Key("E")} Use / open" +
+        (includeTab ? $"     {Key("Tab")} Tasks" : "") + $"     {Key("Esc")} Pause";
+
     public static string VerdictWord(MessageVerdict v) => v == MessageVerdict.Scam ? "SCAM" : "LEGITIMATE";
 
     /// <summary>

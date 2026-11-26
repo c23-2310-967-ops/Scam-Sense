@@ -73,3 +73,12 @@ public interface IInvestigationDock
 {
     bool TryGetDockArea(out UnityEngine.Rect screenArea);
 }
+
+/// <summary>
+/// A presenter that shows inspection results inside its own layout (the activity's evidence board) instead of the
+/// floating finding card. Asked once per inspection; returning false falls back to the finding card.
+/// </summary>
+public interface IInvestigationInline
+{
+    bool ShowFinding(ScamMessage msg, MessageInspectable part, MessageEvidence clue, InvestigationSession.InspectOutcome outcome);
+}

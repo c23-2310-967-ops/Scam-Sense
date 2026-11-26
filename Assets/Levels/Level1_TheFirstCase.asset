@@ -16,92 +16,25 @@ MonoBehaviour:
   levelNumber: 1
   displayName: The First Case
   sceneName: Game
-  description: "Your first day on the case. Texts and emails arrive while you explore
-    the house \u2014 decide which are scams."
+  description: A fake delivery text, a phishing email, and two real emails that are
+    safe.
   previewImage: {fileID: 21300000, guid: 3c2461ec3d7cb3f4195d1800bbe3a169, type: 3}
   briefingTitle: WELCOME, INVESTIGATOR
-  briefingText: 'You just joined the Cybercrime Investigation Unit. Scammers send
-    fake texts, emails and posts to steal money, passwords and personal details,
-    and your job is to catch them.
+  briefingText: 'You just joined the Cybercrime Investigation Unit. Your job: catch
+    fake texts, emails and posts before they steal money, passwords or personal details.
 
 
-    This first room is your training case. A
-    guide will show you how to investigate, use hints and answer. Six questions are
-    waiting, and they arrive in a different order every time you play.'
+    This
+    is your training case. A guide will walk you through your first question.'
   caseNotes:
   - You have not ordered anything this month.
+  - You reserved a book at Riverside Public Library on Monday.
+  - You signed up for Saturday's park clean-up. Sam is the volunteer team's organiser.
   objectives:
   - Follow the guide on your first question.
-  - Answer all six questions in this room.
-  - Score 380 or more to unlock the next room.
+  - Answer all 4 questions.
+  - Score 230+ to unlock the next room.
   messages:
-  - id: E01
-    channel: 5
-    sender: Case Review
-    senderDetail: 
-    subject: Multiple Choice
-    body: Ana typed her student login into a fake "school portal" page. The scammer
-      can now read her grades, messages and personal details. <b>Which part of the
-      CIA Triad was broken?</b>
-    link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: Confidentiality means only authorized people can see information.
-      The scammer was never authorized, so confidentiality is broken. Integrity would
-      be broken if the scammer <i>changed</i> her data, and availability if she were
-      <i>locked out</i>. Being tricked into giving the password away does not make
-      the access authorized.
-    trigger: 0
-    readingSeconds: 0
-    stationId: 
-    requestedAction: 
-    linkNote: 
-    clues: []
-    inspectables:
-    - id: page
-      field: 3
-      match: fake "school portal" page
-      label: The page
-      finding: It only looks like the school portal. Whatever Ana typed went straight
-        to the scammer.
-      linkAddress: 
-      clueId: fake
-    - id: access
-      field: 3
-      match: read her grades, messages and personal details
-      label: What the scammer can do
-      finding: The scammer can now look at Ana's private information. Was anything
-        changed or locked - or only seen?
-      linkAddress: 
-      clueId: seen
-    evidence:
-    - id: fake
-      title: Fake login page
-      whyItMatters: Fake pages copy real ones to collect what you type.
-      supportsVerdict: 1
-    - id: seen
-      title: Private details exposed
-      whyItMatters: Someone who isn't allowed can now read Ana's information.
-      supportsVerdict: 1
-    consequence:
-      kind: 4
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 1
-      recheckDetails: []
-    choices:
-    - Availability
-    - Integrity
-    - Confidentiality
-    - None, because she typed it in herself
-    correctChoice: 2
-    feedback: 'Correct. A stolen password breaks <b>confidentiality</b>: someone
-      who shouldn''t see your data now can.'
-    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 3:
-      Fundamentals of Information Security (CIA Triad)"
-    hint: 'Think about what happened to Ana''s information: was it changed, locked
-      away, or seen by someone who shouldn''t see it?'
   - id: E02
     channel: 0
     sender: +63 917 555 0142
@@ -112,10 +45,10 @@ MonoBehaviour:
     link: http://swiftparcel-redeliver.example/pay
     correctVerdict: 0
     scenarioContext: You have not ordered anything this month.
-    explanation: 'You are not expecting a package. It comes from a regular mobile
-      number, sets a 12-hour deadline, and links to a domain that isn''t the courier''s.
-      The small fee is bait: the real goal is your card or e-wallet details. Couriers
-      don''t collect fees through random text links.'
+    explanation: You didn't order anything, so there is no package. The text comes
+      from a random mobile number, rushes you with a 12-hour deadline, and links
+      to a site that isn't the courier's. The small fee is bait to get your card
+      or e-wallet details.
     trigger: 3
     readingSeconds: 0
     stationId: 
@@ -131,6 +64,7 @@ MonoBehaviour:
         text from their own name or a short code.
       linkAddress: 
       clueId: number
+      part: 
     - id: claim
       field: 3
       match: Your package is ON HOLD
@@ -139,6 +73,7 @@ MonoBehaviour:
         package?
       linkAddress: 
       clueId: noorder
+      part: 
     - id: fee
       field: 3
       match: "Pay the \u20B129 redelivery fee"
@@ -146,6 +81,7 @@ MonoBehaviour:
       finding: 'A small fee is bait: the real goal is your card or e-wallet details.'
       linkAddress: 
       clueId: fee
+      part: 
     - id: deadline
       field: 3
       match: within 12 hours
@@ -153,6 +89,7 @@ MonoBehaviour:
       finding: A short deadline pushes you to act before you think.
       linkAddress: 
       clueId: urgent
+      part: 
     - id: link
       field: 4
       match: 
@@ -161,6 +98,7 @@ MonoBehaviour:
         it starts with http (not secure).
       linkAddress: http://swiftparcel-redeliver.example/pay
       clueId: link
+      part: 
     evidence:
     - id: number
       title: Ordinary mobile number
@@ -191,12 +129,19 @@ MonoBehaviour:
       recheckDetails: []
     choices: []
     correctChoice: 0
-    feedback: "Scam. No order, a small 'fee' and a 12-hour deadline. They want your
-      payment details, not \u20B129."
+    feedback: Scam! No order + a small fee + a rush deadline = a fake delivery text.
+      Don't tap the link.
     curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 16:
       Information Security Best Practices (user awareness)"
     hint: 'Compare the text with your case notes: were you expecting a package? Then
       check who sent it and where the link goes.'
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: E03
     channel: 5
     sender: Case Review
@@ -213,11 +158,10 @@ MonoBehaviour:
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: 'It pretends to be a trusted sender, creates fear with "deleted
-      in 24 hours", and asks you to sign in through a link. That combination is phishing.
-      The domain is a lookalike: <b>uphs1</b> with the number 1 in place of the letter
-      <b>l</b>. Real storage warnings don''t need you to "verify" your password through
-      an email link.'
+    explanation: <b>Phishing</b> is a fake message that tricks you into giving away
+      your password. This one copies the school (<b>uphs1</b> uses the number 1,
+      not the letter l), scares you with a deadline and asks you to sign in. Real
+      storage warnings never ask for your password.
     trigger: 0
     readingSeconds: 0
     stationId: 
@@ -226,36 +170,49 @@ MonoBehaviour:
     clues: []
     inspectables:
     - id: address
-      field: 3
-      match: helpdesk@uphs1-binan.example
+      field: 5
+      match: uphs1-binan.example
       label: Sender address
       finding: 'Look closely: uphs1 uses the number 1 instead of the letter l. It''s
         a lookalike of the school''s real domain.'
       linkAddress: 
       clueId: lookalike
+      part: from
     - id: subject
-      field: 3
+      field: 5
       match: Mailbox 98% full
       label: Subject
       finding: Full mailboxes really happen. On its own this isn't a warning sign
         - look at what the email asks you to do.
       linkAddress: 
       clueId: 
+      part: subject
     - id: deadline
-      field: 3
+      field: 5
       match: DELETED in 24 hours
       label: Threat
       finding: A scary deadline pushes you to act fast without checking.
       linkAddress: 
       clueId: urgent
+      part: body
     - id: request
-      field: 3
+      field: 5
       match: sign in to verify your account
       label: What it asks
       finding: It wants your password through a link. Real IT staff never ask you
         to 'verify' your password by email.
       linkAddress: 
       clueId: creds
+      part: body
+    - id: button
+      field: 5
+      match: VERIFY MY ACCOUNT
+      label: The button
+      finding: 'It leads to a sign-in page from an email link - the way fake pages
+        collect passwords. (Simulated: nothing opens.)'
+      linkAddress: 
+      clueId: creds
+      part: button
     evidence:
     - id: lookalike
       title: Lookalike sender domain
@@ -282,179 +239,154 @@ MonoBehaviour:
     - Denial-of-service attack
     - A normal storage warning
     correctChoice: 0
-    feedback: 'Phishing. Look closely: <b>uphs1</b>, not uphsl. A fake sender plus
-      a fake deadline plus ''sign in here'' means phishing.'
+    feedback: 'Phishing! Look closely: <b>uphs1</b>, not uphsl. Fake sender + scary
+      deadline + "sign in here" = phishing.'
     curriculumRef: "Computer Security (BIT1225) \u2014 Introduction to Computer Security:
       \"types of security threats\u2026 in both personal and organizational contexts\""
     hint: Check the sender's address letter by letter, then ask yourself what the
       email wants you to do.
-  - id: E04
-    channel: 5
-    sender: Case Review
-    senderDetail: 
-    subject: What Should You Do?
-    body: 'A caller says: "This is ExampleBank''s fraud department. Someone is using
-      your card right now. We just sent you a 6-digit code. Read it to me so we can
-      block the transaction."'
+    activity:
+      kind: 1
+      title: "Campus Mail  \xB7  Inbox"
+      instruction: 'Check the email: who sent it, the subject, and what it asks you
+        to do.'
+      items:
+      - key: from
+        role: 0
+        label: From
+        text: Campus IT Helpdesk <helpdesk@uphs1-binan.example>
+      - key: subject
+        role: 0
+        label: Subject
+        text: 'Mailbox 98% full: verify now'
+      - key: body
+        role: 1
+        label: 
+        text: Your school mailbox will be DELETED in 24 hours. Click below and sign
+          in to verify your account.
+      - key: button
+        role: 7
+        label: 
+        text: VERIFY MY ACCOUNT
+      minClues: 0
+      outcomes: []
+  - id: L01
+    channel: 1
+    sender: Riverside Public Library
+    senderDetail: notices@riversidelibrary.example
+    subject: Your reserved book is ready for pickup
+    body: The book you reserved is now available at the front desk. It will be held
+      for 7 days. Log in to your library account if you need more time.
     link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: A one-time code (OTP) proves that <i>you</i> are approving something.
-      Whoever has it can approve a login or payment as you, so the caller is probably
-      the one making the transaction. A real bank never asks you to read an OTP aloud.
-      Calling back on a number you already trust is the safe way to check.
-    trigger: 0
+    correctVerdict: 1
+    scenarioContext: You reserved a book at Riverside Public Library on Monday.
+    explanation: You reserved a book this week, so this email is expected. It comes
+      from the library's own address, gives you 7 days, and only asks you to pick
+      the book up at the front desk. It doesn't ask for a password, money or a code,
+      and there's no link to click.
+    trigger: 2
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
     clues: []
     inspectables:
+    - id: sender
+      field: 1
+      match: 
+      label: Sender address
+      finding: 'The address ends in the library''s own name: riversidelibrary.example.'
+      linkAddress: 
+      clueId: sender
+      part: 
     - id: claim
       field: 3
-      match: This is ExampleBank's fraud department
-      label: Who they say they are
-      finding: Anyone can claim to be your bank on the phone. You didn't call them
-        - they called you.
+      match: The book you reserved is now available
+      label: The news
+      finding: Your case notes say you reserved a book this week. This is exactly
+        what you were waiting for.
       linkAddress: 
-      clueId: claim
-    - id: urgent
+      clueId: expected
+      part: 
+    - id: pickup
       field: 3
-      match: right now
-      label: Pressure
-      finding: Creating panic stops you from thinking clearly.
+      match: at the front desk
+      label: What it asks
+      finding: You pick the book up in person. No link, no payment, no password.
       linkAddress: 
-      clueId: urgent
-    - id: otp
+      clueId: noask
+      part: 
+    - id: login
       field: 3
-      match: Read it to me
-      label: The request
-      finding: That code is your one-time password (OTP). Whoever has it can approve
-        logins and payments as you.
+      match: Log in to your library account
+      label: Account
+      finding: It tells you to use your own account if you need more time. It doesn't
+        send you a login link.
       linkAddress: 
-      clueId: otp
+      clueId: noask
+      part: 
+    - id: time
+      field: 3
+      match: held for 7 days
+      label: Time
+      finding: Seven days is plenty of time. Nothing pushes you to act right now.
+      linkAddress: 
+      clueId: calm
+      part: 
     evidence:
-    - id: claim
-      title: Unverified caller
-      whyItMatters: A caller's name or claim proves nothing.
+    - id: sender
+      title: The library's own address
+      whyItMatters: The sender matches the library you used.
       supportsVerdict: 1
-    - id: urgent
-      title: Panic and urgency
-      whyItMatters: Urgency is used to stop you from checking.
+    - id: expected
+      title: You were expecting it
+      whyItMatters: You reserved a book, so this news makes sense.
       supportsVerdict: 1
-    - id: otp
-      title: Asks for your OTP
-      whyItMatters: No real bank ever asks you to read out a one-time code.
+    - id: noask
+      title: Asks for nothing secret
+      whyItMatters: No link, money, password or code is requested.
+      supportsVerdict: 1
+    - id: calm
+      title: No pressure
+      whyItMatters: Real notices give you time instead of rushing you.
       supportsVerdict: 1
     consequence:
-      kind: 4
+      kind: 0
       alertTitle: 
       alertBody: 
       overlookedClue: 
-      followUp: 1
+      followUp: 0
       recheckDetails: []
-    choices:
-    - Read the code quickly to stop the fraud
-    - Give only the first three digits
-    - Ask them to email you instead
-    - Hang up and call the number on the back of your card or in the official app
-    correctChoice: 3
-    feedback: Hang up. <b>No real bank asks for your OTP.</b> Call back using the
-      number on your card.
-    curriculumRef: "Computer Security (BIT1225) \u2014 Authentication and Access
-      Control"
-    hint: Who should ever see your one-time code? And how could you check that the
-      caller is really your bank?
-  - id: E05
-    channel: 5
-    sender: Case Review
-    senderDetail: 
-    subject: Scenario-Based
-    body: 'A stranger in a gaming chat sends you <b>FreeSkins_Generator.exe</b> and
-      says: "Turn off your antivirus first. It gives a false alarm on this tool."'
+    choices: []
+    correctChoice: 0
+    feedback: Legitimate! It matches what you did, there's no rush, and it asks for
+      nothing secret.
+    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 16:
+      Information Security Best Practices (user awareness)"
+    hint: 'Check your case notes: did you do something that explains this email?
+      Then look at what it asks you to do.'
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
+  - id: L02
+    channel: 1
+    sender: Sam (Volunteer Team)
+    senderDetail: sam@greenparkvolunteers.example
+    subject: 'Saturday clean-up: meeting point'
+    body: Hi everyone, we'll meet at the park entrance at 9:00 on Saturday. Bring
+      gloves and water. See you there!
     link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: 'Asking you to turn off your antivirus is a major warning sign:
-      the file is built to get past it. Fake "generators" are a common way to spread
-      trojans and information stealers, which take saved passwords and logged-in
-      sessions. Scanning afterwards is too late, and sending it to a friend puts
-      them at risk.'
-    trigger: 0
-    readingSeconds: 0
-    stationId: 
-    requestedAction: 
-    linkNote: 
-    clues: []
-    inspectables:
-    - id: stranger
-      field: 3
-      match: A stranger in a gaming chat
-      label: Sender
-      finding: You don't know this person, and the offer came out of nowhere.
-      linkAddress: 
-      clueId: stranger
-    - id: file
-      field: 3
-      match: FreeSkins_Generator.exe
-      label: The file
-      finding: .exe files are programs that run on your computer. Free 'generators'
-        are a common way to spread malware.
-      linkAddress: 
-      clueId: exe
-    - id: av
-      field: 3
-      match: Turn off your antivirus first
-      label: The request
-      finding: A real tool never needs your protection switched off. Malware does.
-      linkAddress: 
-      clueId: disable
-    evidence:
-    - id: stranger
-      title: Unknown sender
-      whyItMatters: Files from strangers can't be trusted.
-      supportsVerdict: 1
-    - id: exe
-      title: A program file
-      whyItMatters: Running an .exe gives it control of your computer.
-      supportsVerdict: 1
-    - id: disable
-      title: Asks you to disable antivirus
-      whyItMatters: That request exists to get malware past your protection.
-      supportsVerdict: 1
-    consequence:
-      kind: 4
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 1
-      recheckDetails: []
-    choices:
-    - Turn off the antivirus just for a minute and run it
-    - Run it, then scan your PC afterwards
-    - Don't download it, and block or report the sender
-    - Send it to a friend to test first
-    correctChoice: 2
-    feedback: Don't run it. Anyone who asks you to switch off your antivirus is trying
-      to get past it.
-    curriculumRef: "Computer Security (BIT1225) \u2014 Malware and Threats: \"preventing,
-      detecting, and removing malware, including\u2026 anti-malware tools\""
-    hint: Why would a safe program need your antivirus switched off?
-  - id: E06
-    channel: 2
-    sender: Viral post
-    senderDetail: 
-    subject: FIND YOUR STAR NAME
-    body: Comment your first pet's name + the street you grew up on + your birth
-      month!
-    link: 
-    correctVerdict: 0
-    scenarioContext: Is this harmless fun or a scam? LEGITIMATE = harmless fun, SCAM
-      = data harvesting.
-    explanation: Pet names, childhood streets and birth months are common answers
-      to account security questions. Posting them publicly gives scammers what they
-      need to reset your passwords or make an impersonation more convincing. The
-      "game" is how they collect the answers.
+    correctVerdict: 1
+    scenarioContext: You signed up for Saturday's park clean-up. Sam is the volunteer
+      team's organiser.
+    explanation: 'You signed up for this clean-up, and Sam is the organiser. The
+      email only gives the meeting time and place and what to bring. There is no
+      link, no payment, no password and no pressure. Not every message is a scam:
+      real ones match what you expect and ask for nothing risky.'
     trigger: 2
     readingSeconds: 0
     stationId: 
@@ -465,50 +397,48 @@ MonoBehaviour:
     - id: sender
       field: 0
       match: 
-      label: Who posted it
-      finding: A viral post from someone you don't know. It's made to be shared widely.
+      label: Sender
+      finding: Sam is the organiser of the clean-up you joined (see your case notes).
       linkAddress: 
-      clueId: 
-    - id: comment
+      clueId: known
+      part: 
+    - id: group
       field: 3
-      match: Comment your
-      label: Where you answer
-      finding: Comments are public. Anyone - including scammers - can read them.
+      match: Hi everyone
+      label: Greeting
+      finding: It's written to the whole team, like a normal group update.
       linkAddress: 
-      clueId: public
-    - id: pet
+      clueId: known
+      part: 
+    - id: details
       field: 3
-      match: first pet's name
-      label: It asks for
-      finding: A very common answer to account security questions.
+      match: we'll meet at the park entrance at 9:00 on Saturday
+      label: The details
+      finding: The time and place of the event you signed up for.
       linkAddress: 
-      clueId: secq
-    - id: street
+      clueId: expected
+      part: 
+    - id: bring
       field: 3
-      match: street you grew up on
-      label: It asks for
-      finding: Another classic security-question answer.
+      match: Bring gloves and water
+      label: What it asks
+      finding: Harmless, normal instructions. It asks for no money, password or code,
+        and has no link.
       linkAddress: 
-      clueId: secq
-    - id: month
-      field: 3
-      match: birth month
-      label: It asks for
-      finding: Part of your birthday, which is often used to confirm who you are.
-      linkAddress: 
-      clueId: personal
+      clueId: noask
+      part: 
     evidence:
-    - id: public
-      title: Public answers
-      whyItMatters: Anything posted in comments is visible to everyone.
+    - id: known
+      title: From someone you know
+      whyItMatters: Sam is the organiser of the clean-up you joined.
       supportsVerdict: 1
-    - id: secq
-      title: Security-question answers
-      whyItMatters: These answers are used to reset passwords.
+    - id: expected
+      title: You were expecting it
+      whyItMatters: It's about the event you signed up for.
       supportsVerdict: 1
-    - id: personal
-      title: Personal details
-      whyItMatters: Birthdays help scammers pretend to be you.
+    - id: noask
+      title: Asks for nothing secret
+      whyItMatters: No link, money, password or code is requested.
       supportsVerdict: 1
     consequence:
       kind: 0
@@ -519,124 +449,43 @@ MonoBehaviour:
       recheckDetails: []
     choices: []
     correctChoice: 0
-    feedback: Data harvesting. Those are classic <b>security-question answers</b>.
-      Don't post them.
-    curriculumRef: "Social and Professional Issues (BIT2105) \u2014 Weeks 10\u201311:
-      Ethics for IT Users (\"responsible use of\u2026 social media\")"
-    hint: Look at the three things the post asks for. Where else are those exact
-      answers used?
-  inboxExtras:
-  - id: old_library
-    channel: 1
-    sender: Riverside Public Library
-    senderDetail: 
-    subject: Your reserved book is ready for pickup
-    body: The book you reserved is now available at the front desk. It will be held
-      for 7 days. Log in to your library account if you need more time.
-    link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: 
-    trigger: 0
-    readingSeconds: 0
-    stationId: 
-    requestedAction: 
-    linkNote: 
-    clues: []
-    inspectables: []
-    evidence: []
-    consequence:
+    feedback: Legitimate! It's from the organiser you know and only shares the meeting
+      details.
+    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 16:
+      Information Security Best Practices (user awareness)"
+    hint: Who is Sam? Check your case notes, then look at what the email asks you
+      to do.
+    activity:
       kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-    choices: []
-    correctChoice: 0
-    feedback: 
-    curriculumRef: 
-    hint: 
-  - id: old_team
-    channel: 1
-    sender: Sam (Volunteer Team)
-    senderDetail: 
-    subject: 'Saturday clean-up: meeting point'
-    body: Hi everyone, we'll meet at the park entrance at 9:00 on Saturday. Bring
-      gloves and water. See you there!
-    link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: 
-    trigger: 0
-    readingSeconds: 0
-    stationId: 
-    requestedAction: 
-    linkNote: 
-    clues: []
-    inspectables: []
-    evidence: []
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-    choices: []
-    correctChoice: 0
-    feedback: 
-    curriculumRef: 
-    hint: 
-  - id: old_receipt
-    channel: 1
-    sender: Example Delivery
-    senderDetail: 
-    subject: Receipt for your desk lamp order
-    body: Thank you for your order of 1 x desk lamp. You can track this order in
-      the official Example Delivery app.
-    link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: 
-    trigger: 0
-    readingSeconds: 0
-    stationId: 
-    requestedAction: 
-    linkNote: 
-    clues: []
-    inspectables: []
-    evidence: []
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-    choices: []
-    correctChoice: 0
-    feedback: 
-    curriculumRef: 
-    hint: 
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
+  inboxExtras: []
   caseFiles:
   - title: Case Notes
-    body: "\u2022 You have not ordered anything this month."
+    body: "\u2022 You have not ordered anything this month.\n\u2022 You reserved
+      a book at Riverside Public Library on Monday.\n\u2022 You signed up for Saturday's
+      park clean-up. Sam is the volunteer team's organiser."
   - title: How This Room Works
-    body: 'Six questions are waiting in this room. They arrive one at a time, in
-      a different order on every attempt.
+    body: '1. 4 questions arrive one at a time, in a new order each attempt.
 
 
-      Case questions have four answer
-      choices, shuffled each attempt. Pick the safest and most accurate one.
+      2.
+      Case questions: pick the safest, most accurate answer (A-D).
 
 
-      Messages
-      and web pages are judged as SCAM or LEGITIMATE.
+      3. Messages
+      and web pages: choose SCAM or LEGITIMATE.
 
 
-      Score 380 or more to
-      unlock the next room.'
+      4. Not sure? Press HINT to
+      see what to look at. After each answer you''ll see why it was right or wrong.
+
+
+      Goal:
+      score 230+ to unlock the next room.'
   firstMessageDelay: 8
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 4
@@ -645,7 +494,7 @@ MonoBehaviour:
     speedBonus: 0
     fastWindow: 0.35
     wrongPenalty: 10
-    recoveryPoints: 20
+    recoveryPoints: 25
     baseReadingSeconds: 25
     secondsPerWord: 0.6
     secondsPerDetail: 4
@@ -655,22 +504,20 @@ MonoBehaviour:
     overtimeStepSeconds: 15
     overtimePenaltyPerStep: 0
     maxTimePenalty: 0
-    minCorrectPoints: 100
-  oneStarScore: 270
-  twoStarScore: 380
-  threeStarScore: 600
-  minScoreToUnlockNext: 380
+    minCorrectPoints: 80
+  oneStarScore: 140
+  twoStarScore: 230
+  threeStarScore: 400
+  minScoreToUnlockNext: 230
   nextLevelId: level_2
   nextSceneName: Room2_InvestigationOffice
   lessons:
-  - Connect a common scam outcome to the security principle it violates.
-  - 'Recognize the common signs of a fake delivery text: unexpected, urgent, a small
-    fee and an odd link.'
-  - Name phishing and spot a lookalike domain.
-  - 'Treat an OTP like a key: never share it, and verify callers through a channel
-    you choose.'
-  - Recognize that a request to disable security tools is a red flag.
-  - Recognize that harmless-looking posts can collect personal data.
+  - 'Spot a fake delivery text: unexpected, rushed, a small fee and a strange link.'
+  - Name phishing and spot a fake look-alike address.
+  - 'Recognise a real notice: it matches something you did, gives you time and asks
+    for nothing secret.'
+  - 'Know that not every message is a scam: a real one from someone you know just
+    shares details.'
   learningSummary: 
   performanceHigh: 
   performanceModerate: 

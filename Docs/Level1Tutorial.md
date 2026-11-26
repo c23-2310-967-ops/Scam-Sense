@@ -49,8 +49,8 @@ Levels 2–5 keep the original light sheet unchanged. The style is chosen by `Le
 ## Hint and underline features
 
 - **Underlines** use the existing message-investigation system: blue underlined details, a finding card, a gold ★ for key clues, and the feedback's clue list.
-  - In the other rooms, only emails are investigated.
   - In the tutorial room, every message type is investigated: case questions, texts and web pages.
+  - Since the interactive activities update, the other rooms also investigate the messages and activities that carry clue data (see `InteractiveActivities.md`). E03, E04 and E05 are now played as an email, a call transcript and a chat. E03 is still the guided question, and its answers are never locked.
 - **HINT** (`HintControl`) appears on the phone pop-up and the computer screen, but only for messages with a `hint` (Level 1's six questions).
   - Each hint is recorded once and shown as *Hints* on the results screen.
   - Hints cost no points.

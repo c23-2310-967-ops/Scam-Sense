@@ -142,12 +142,12 @@
 | Question ID | E01 |
 | Question Type | Multiple Choice |
 | Difficulty | Easy |
-| Question/Scenario | Ana typed her student login into a fake "school portal" page. The scammer can now read her grades, messages and personal details. **Which part of the CIA Triad was broken?** |
+| Question/Scenario | Ana typed her student login into a fake "school portal" page. The scammer can now read her grades, messages and personal details. **Which security goal was broken?**<br>*CIA Triad: Confidentiality = kept private · Integrity = kept unchanged · Availability = ready to use* |
 | Choices | A. Availability<br>B. Integrity<br>C. Confidentiality<br>D. None, because she typed it in herself |
 | Correct Answer | **C. Confidentiality** |
-| Explanation | Confidentiality means only authorized people can see information. The scammer was never authorized, so confidentiality is broken. Integrity would be broken if the scammer *changed* her data, and availability if she were *locked out*. Being tricked into giving the password away does not make the access authorized. |
-| Learning Objective | Connect a common scam outcome to the security principle it violates. |
-| Game Feedback | "Correct. A stolen password breaks **confidentiality**: someone who shouldn't see your data now can." |
+| Explanation | **Confidentiality** means keeping information private. A stranger can now read Ana's grades and messages, so her privacy is broken. Integrity would mean her data was *changed*. Availability would mean she was *locked out*. |
+| Learning Objective | Name the security goal that a scam breaks. |
+| Game Feedback | "Confidentiality! Ana's info wasn't changed or locked. It was **seen** by someone who shouldn't see it." |
 | Curriculum Link | **Direct**: Week 3 asks students to "explain the CIA Triad". The fake portal is only the setting. |
 | Unity Use | [Needs MC mode]. Works well as a results-screen question after a Level 1 credential-phishing message. |
 
@@ -162,9 +162,9 @@
 | Question/Scenario | **Case note:** You have not ordered anything this month.<br>**SMS from +63 917 555 0142:** "SwiftParcel: Your package is ON HOLD due to an incomplete address. Pay the ₱29 redelivery fee within 12 hours or it will be returned: http://swiftparcel-redeliver.example/pay" |
 | Choices | Scam / Legitimate |
 | Correct Answer | **Scam** |
-| Explanation | You are not expecting a package. It comes from a regular mobile number, sets a 12-hour deadline, and links to a domain that isn't the courier's. The small fee is bait: the real goal is your card or e-wallet details. Couriers don't collect fees through random text links. |
-| Learning Objective | Recognize the common signs of a fake delivery text: unexpected, urgent, a small fee and an odd link. |
-| Game Feedback | "Scam. No order, a small 'fee' and a 12-hour deadline. They want your payment details, not ₱29." |
+| Explanation | You didn't order anything, so there is no package. The text comes from a random mobile number, rushes you with a 12-hour deadline, and links to a site that isn't the courier's. The small fee is bait to get your card or e-wallet details. |
+| Learning Objective | Spot a fake delivery text: unexpected, rushed, a small fee and a strange link. |
+| Game Feedback | "Scam! No order + a small fee + a rush deadline = a fake delivery text. Don't tap the link." |
 | Curriculum Link | **Application**: Week 16 covers "develop user awareness strategies". This is a standard awareness case that the syllabus doesn't name specifically. |
 | Unity Use | [Fits now] `channel = SMS`, `correctVerdict = Scam`, put the no-order fact in `caseNotes`. |
 
@@ -179,9 +179,9 @@
 | Question/Scenario | **Email from:** Campus IT Helpdesk &lt;helpdesk@uphs1-binan.example&gt;<br>**Subject:** Mailbox 98% full: verify now<br>"Your school mailbox will be DELETED in 24 hours. Click below and sign in to verify your account." **What kind of threat is this?** |
 | Choices | A. Phishing<br>B. Ransomware<br>C. Denial-of-service attack<br>D. A normal storage warning |
 | Correct Answer | **A. Phishing** |
-| Explanation | It pretends to be a trusted sender, creates fear with "deleted in 24 hours", and asks you to sign in through a link. That combination is phishing. The domain is a lookalike: **uphs1** with the number 1 in place of the letter **l**. Real storage warnings don't need you to "verify" your password through an email link. |
-| Learning Objective | Name phishing and spot a lookalike domain. |
-| Game Feedback | "Phishing. Look closely: **uphs1**, not uphsl. A fake sender plus a fake deadline plus 'sign in here' means phishing." |
+| Explanation | **Phishing** is a fake message that tricks you into giving away your password. This one copies the school (**uphs1** uses the number 1, not the letter l), scares you with a deadline and asks you to sign in. Real storage warnings never ask for your password. |
+| Learning Objective | Name phishing and spot a fake look-alike address. |
+| Game Feedback | "Phishing! Look closely: **uphs1**, not uphsl. Fake sender + scary deadline + "sign in here" = phishing." |
 | Curriculum Link | **Application**: the ILO asks students to "identify and explain various types of security threats". Phishing is one such threat, though the syllabus doesn't name it. |
 | Unity Use | [Fits now] as a Scam email, using the `senderDetail` inspectable for the domain. [Needs MC mode] to ask for the threat name. |
 
@@ -196,9 +196,9 @@
 | Question/Scenario | A caller says: "This is ExampleBank's fraud department. Someone is using your card right now. We just sent you a 6-digit code. Read it to me so we can block the transaction." |
 | Choices | A. Read the code quickly to stop the fraud<br>B. Give only the first three digits<br>C. Ask them to email you instead<br>D. Hang up and call the number on the back of your card or in the official app |
 | Correct Answer | **D** |
-| Explanation | A one-time code (OTP) proves that *you* are approving something. Whoever has it can approve a login or payment as you, so the caller is probably the one making the transaction. A real bank never asks you to read an OTP aloud. Calling back on a number you already trust is the safe way to check. |
-| Learning Objective | Treat an OTP like a key: never share it, and verify callers through a channel you choose. |
-| Game Feedback | "Hang up. **No real bank asks for your OTP.** Call back using the number on your card." |
+| Explanation | A one-time code (**OTP**) is like a key: whoever has it can approve payments as you. A real bank never asks you to read it out. Hang up and call the number on your card, a number you already trust. |
+| Learning Objective | Never share an OTP, and call back on a number you trust. |
+| Game Feedback | "Hang up! **No real bank asks for your OTP.** Call back on the number on your card." |
 | Curriculum Link | **Application**: the topic is "Authentication and Access Control". The syllabus focuses on access-control models, so using OTPs as an authentication factor applies the authentication part to a phone scam. |
 | Unity Use | [Needs MC mode], or a future phone-call mechanic (see Part 5). |
 
@@ -213,9 +213,9 @@
 | Question/Scenario | A stranger in a gaming chat sends you **FreeSkins_Generator.exe** and says: "Turn off your antivirus first. It gives a false alarm on this tool." |
 | Choices | A. Turn off the antivirus just for a minute and run it<br>B. Run it, then scan your PC afterwards<br>C. Don't download it, and block or report the sender<br>D. Send it to a friend to test first |
 | Correct Answer | **C** |
-| Explanation | Asking you to turn off your antivirus is a major warning sign: the file is built to get past it. Fake "generators" are a common way to spread trojans and information stealers, which take saved passwords and logged-in sessions. Scanning afterwards is too late, and sending it to a friend puts them at risk. |
-| Learning Objective | Recognize that a request to disable security tools is a red flag. |
-| Game Feedback | "Don't run it. Anyone who asks you to switch off your antivirus is trying to get past it." |
+| Explanation | A safe program never needs your antivirus turned off. Fake "free skins" tools often hide malware that steals your saved passwords. Scanning afterwards is too late, and sending it to a friend puts them at risk. |
+| Learning Objective | Treat any request to turn off security tools as a warning sign. |
+| Game Feedback | "Don't run it! When someone asks you to turn off your antivirus, they want to get past it." |
 | Curriculum Link | **Direct**: the objective explicitly covers malware prevention and anti-malware tools. |
 | Unity Use | [Fits now] as a Scam `Chat` message on the pocket phone. [Needs MC mode] for the four options. |
 
@@ -230,9 +230,9 @@
 | Question/Scenario | A viral post: "✨ FIND YOUR STAR NAME ✨ Comment your **first pet's name** + the **street you grew up on** + your **birth month**!" Is this harmless fun or a scam? |
 | Choices | Legitimate (harmless fun) / Scam (data harvesting) |
 | Correct Answer | **Scam (data harvesting)** |
-| Explanation | Pet names, childhood streets and birth months are common answers to account security questions. Posting them publicly gives scammers what they need to reset your passwords or make an impersonation more convincing. The "game" is how they collect the answers. |
-| Learning Objective | Recognize that harmless-looking posts can collect personal data. |
-| Game Feedback | "Data harvesting. Those are classic **security-question answers**. Don't post them." |
+| Explanation | Pet names, old streets and birth months are common answers to password-reset questions. Posting them gives scammers what they need to get into your accounts. The "fun game" is how they collect them. |
+| Learning Objective | Know that fun-looking posts can collect your personal info. |
+| Game Feedback | "Scam! Those are common **security-question answers**. Keep them off public posts." |
 | Curriculum Link | **Application**: Ethics for IT Users covers responsible social media use. Data-harvesting posts are an applied case. |
 | Unity Use | [Fits now] as a `Website` or `Chat` message with `correctVerdict = Scam`. |
 
@@ -245,11 +245,11 @@
 | Question Type | Multiple Choice |
 | Difficulty | Easy |
 | Question/Scenario | A raffle booth at the mall asks you to fill in a form to join. **Which of these is the biggest privacy warning sign?** |
-| Choices | A. They ask for a photo of your ID and your birthdate just to join, and there is no privacy notice explaining why<br>B. The raffle is free to join<br>C. The staff wear company shirts<br>D. The draw is next week |
+| Choices | A. They want a photo of your ID and your birthdate just to join, with no notice saying why<br>B. The raffle is free to join<br>C. The staff wear company shirts<br>D. The draw is next week |
 | Correct Answer | **A** |
-| Explanation | The Data Privacy Act's principles include **transparency** (tell people why data is collected), **legitimate purpose** and **proportionality** (collect only what is needed). A raffle needs a way to contact you, not your ID and birthdate, and an ID photo plus a birthdate can be used for identity theft. With no notice, you can't know what happens to your data. |
-| Learning Objective | Check whether a request for personal data is proportional and explained before handing it over. |
-| Game Feedback | "An ID photo for a raffle? Too much. Ask **why they need it** and look for a privacy notice." |
+| Explanation | A raffle only needs a way to contact you, not your ID and birthdate. Together, those can be used to pretend to be you. The **Data Privacy Act** says they must explain why they collect data and take only what they need. |
+| Learning Objective | Share personal data only when it's really needed and the reason is explained. |
+| Game Feedback | "Too much! An ID photo for a raffle? Ask **why they need it** and look for a privacy notice." |
 | Curriculum Link | **Direct**: Week 15 asks students to "explain the principles and provisions of the Data Privacy Act of 2012". |
 | Unity Use | [Needs MC mode]. |
 
@@ -261,12 +261,12 @@
 | Question ID | E08 |
 | Question Type | Multiple Choice |
 | Difficulty | Easy |
-| Question/Scenario | **Which of your accounts deserves the strongest protection, because a scammer who controls it can take over many of your other accounts?** |
+| Question/Scenario | A scammer who gets into one account may use it to get into your others. **Which account needs the strongest protection?** |
 | Choices | A. Your online game account<br>B. Your main email account, which receives password-reset links<br>C. Your music streaming account<br>D. An old forum account you no longer use |
 | Correct Answer | **B** |
-| Explanation | Most services send password resets to your email. Whoever controls that inbox can reset the passwords of your other accounts, including social media, e-wallets and school accounts. That makes it your most valuable information asset, so it needs a unique password and MFA first. |
-| Learning Objective | Value accounts by what else they unlock. |
-| Game Feedback | "Your **email** is the master key. Every 'Forgot password' link goes there." |
+| Explanation | "Forgot password" links go to your email. Whoever controls your email can reset your other accounts: social media, e-wallets and school. Protect it first with a unique password and MFA (a second check, like a code). |
+| Learning Objective | Protect first the account that unlocks all the others. |
+| Game Feedback | "Your **email** is the master key. Every "Forgot password" link goes there." |
 | Curriculum Link | **Direct**: Week 9 covers identifying assets and evaluating their value and protection needs, applied here to personal accounts. |
 | Unity Use | [Needs MC mode]. |
 
@@ -281,9 +281,9 @@
 | Question/Scenario | While browsing, a full-screen red page appears and beeps: "⚠ SYSTEM SECURITY ALERT ⚠ Your computer is INFECTED and LOCKED. Call Certified Support at 1-800-555-0199 now. DO NOT restart your computer." |
 | Choices | Scam / Legitimate |
 | Correct Answer | **Scam** |
-| Explanation | This is a tech-support scam. Real security warnings and updates come from your operating system's own settings and security app, not from a web page with a phone number. The "support" agent will ask for remote access or payment. Close the tab. If it won't close, end the browser with Task Manager. |
-| Learning Objective | Know where real security alerts and updates come from. |
-| Game Feedback | "Scam. Real alerts come from your **system settings**, never from a web page asking you to call." |
+| Explanation | This is a **tech-support scam**. Real warnings come from your computer's own security app, not from a web page with a phone number. The "support" person will ask for money or control of your PC. Close the tab. If it's stuck, close the browser with Task Manager. |
+| Learning Objective | Know where real security alerts come from. |
+| Game Feedback | "Scam! Real alerts come from your **computer's settings**, never from a web page that tells you to call." |
 | Curriculum Link | **Application**: the OS Security topic covers patch management and configuration through official system tools. Fake alerts pretend to be those tools. |
 | Unity Use | [Fits now] `channel = Website`, `correctVerdict = Scam`. |
 
@@ -296,11 +296,11 @@
 | Question Type | What Should You Do? |
 | Difficulty | Easy |
 | Question/Scenario | You paid ₱1,500 to an online seller through PayLite. The seller then blocked you and never shipped. **What should you do first?** |
-| Choices | A. Delete the chat so you can move on<br>B. Post the seller's photo and threaten them publicly<br>C. Send another payment because they say it "unlocks" your refund<br>D. Save screenshots of the chat, the seller's profile link and the payment receipt with its reference number, then report to PayLite and the authorities |
+| Choices | A. Delete the chat so you can move on<br>B. Post the seller's photo and threaten them publicly<br>C. Send another payment because they say it "unlocks" your refund<br>D. Save proof (the chat, the seller's profile and the receipt with its reference number), then report to PayLite and the police |
 | Correct Answer | **D** |
-| Explanation | Evidence is what lets the platform, your e-wallet and the police act. Reference numbers and the seller's account details can help trace the money. Deleting the chat destroys proof. Public threats can backfire on you legally. "Pay more to get a refund" is a second scam. |
-| Learning Objective | Preserve and document evidence before doing anything else. |
-| Game Feedback | "Save the evidence first: chat, profile and **reference number**. Then report it." |
+| Explanation | Proof is what lets PayLite and the police help you, and the reference number can help trace the money. Deleting the chat destroys proof. Public threats can get you in trouble. "Pay more to get a refund" is a second scam. |
+| Learning Objective | Save proof before doing anything else. |
+| Game Feedback | "Save the proof first: chat, profile and **reference number**. Then report it." |
 | Curriculum Link | **Application**: the topic teaches "proper procedures for collection, preservation, and documentation" of digital evidence, applied to a victim's own report. |
 | Unity Use | [Needs MC mode]. Good as a results-screen or consequence follow-up after a missed scam. |
 
@@ -317,9 +317,9 @@
 | Question/Scenario | **Case note:** One minute ago, you clicked "Forgot password" on NovaCloud yourself. **Trusted domains (case files):** novacloud.example<br>**Email from:** NovaCloud &lt;no-reply@novacloud.example&gt;<br>"We received a request to reset your password. This link expires in 15 minutes: https://novacloud.example/reset?t=8f3k… If you didn't request this, you can ignore this email." |
 | Choices | Scam / Legitimate |
 | Correct Answer | **Legitimate** |
-| Explanation | You started this action yourself a minute ago. The sender and link domain match the trusted domain exactly. The email doesn't ask for your password or any personal details, and it tells you it's safe to ignore if you didn't ask for it. A reset email that proves you own the inbox is how authentication is supposed to work. |
-| Learning Objective | Avoid "everything is a scam" thinking: confirm real messages with evidence. |
-| Game Feedback | "Legitimate. You asked for it, the domain matches, and it doesn't ask for your password." |
+| Explanation | You asked for this reset yourself a minute ago. The address matches the trusted one exactly, and it doesn't ask for your password. It even says you can ignore it if you didn't ask. Not every message is a scam! |
+| Learning Objective | Real messages exist too: check the facts before calling something a scam. |
+| Game Feedback | "Legitimate! You asked for it, the address matches, and it doesn't ask for your password." |
 | Curriculum Link | **Application**: authentication is one of the principles in Weeks 7–8, and here it is used to show what a *genuine* identity check looks like. |
 | Unity Use | [Fits now] `channel = Email`, `correctVerdict = Legitimate`, with the trusted domain on a `CaseFile`. |
 
@@ -334,9 +334,9 @@
 | Question/Scenario | A message links to: **https://examplebank.example.account-verify.example/login**. **Which is true?** |
 | Choices | A. It's ExampleBank's site because "examplebank" appears first<br>B. It's safe because it uses HTTPS<br>C. It's a subdomain trick: the real domain is account-verify.example<br>D. It's a misspelled (typosquatted) bank domain |
 | Correct Answer | **C** |
-| Explanation | A domain is read **from the right**, ending just before the first single "/". Here that is `account-verify.example`, and everything to its left is a subdomain the attacker chose. This is not typosquatting, because nothing is misspelled. HTTPS only encrypts the connection (see M03). |
-| Learning Objective | Find the real domain in a URL by reading right to left. |
-| Game Feedback | "Read the domain **right to left**: account-verify.example. The bank's name is just a decoy subdomain." |
+| Explanation | To find the real website, read the address **from right to left**, up to the first single "/". Here it is **account-verify.example**. The "examplebank" in front is a decoy the scammer added. Nothing is misspelled, and HTTPS doesn't make it safe. |
+| Learning Objective | Find the real website in a link by reading right to left. |
+| Game Feedback | "Read **right to left**: the real site is account-verify.example. The bank's name is just a decoy." |
 | Curriculum Link | **Application**: the topic covers web security. Deceptive URLs are a user-side web threat that the syllabus doesn't name. |
 | Unity Use | [Fits now] as a Scam message with the URL as the `link` inspectable. [Needs MC mode] for the four options. |
 
@@ -351,9 +351,9 @@
 | Question/Scenario | A login page shows a padlock and starts with **https://**. **What does the padlock actually prove?** |
 | Choices | A. The site is owned by the real company<br>B. Data between you and *this* site is encrypted, but the site itself could still be fake<br>C. The site has been checked by the government<br>D. The site cannot contain malware |
 | Correct Answer | **B** |
-| Explanation | HTTPS (TLS) protects data *in transit* so others on the network can't read or change it. Certificates are easy for anyone to get for their own domain, so scam sites often have padlocks too. The padlock tells you the connection is private, not who you're talking to. You still have to check the domain. |
-| Learning Objective | Correct the common belief that a padlock means a site is safe. |
-| Game Feedback | "The padlock means **encrypted**, not **trustworthy**. Fake sites have padlocks too. Check the domain." |
+| Explanation | The padlock (HTTPS) means your connection is private, so others can't read what you send. It doesn't say who owns the site. Anyone can get a padlock, scam sites too, so you still need to check the address. |
+| Learning Objective | Know that a padlock doesn't mean a site is real. |
+| Game Feedback | "Padlock = **private connection**, not **safe site**. Fake sites have padlocks too." |
 | Curriculum Link | **Direct**: the topic covers protocols that "secure data in transit" (TLS). |
 | Unity Use | [Needs MC mode]. Pairs well with M02 in the same room. |
 
@@ -366,11 +366,11 @@
 | Question Type | Identify the Threat |
 | Difficulty | Medium |
 | Question/Scenario | **SMS from an unknown number:** "Ma, si Migs 'to. Nasira phone ko, bagong number ko 'to. Pa-send naman ₱3,000 sa PayLite 0917 555 0188, emergency lang. Wag ka muna tumawag, wala pa akong load." **What attack is this?** |
-| Choices | A. Impersonation ("new number" family emergency) social engineering<br>B. Malware infection<br>C. A data breach<br>D. A promotional spam message |
+| Choices | A. Impersonation: someone pretending to be family with a "new number"<br>B. Malware infection<br>C. A data breach<br>D. A promotional spam message |
 | Correct Answer | **A** |
-| Explanation | The sender claims to be family on a "new number", invents an emergency, asks for money, and **blocks you from checking** ("don't call yet"). That is social engineering: it exploits trust and urgency rather than technology. To check, call Migs's *old* number or ask something only the real Migs would know. |
-| Learning Objective | Recognize impersonation that relies on emotion and urgency, and verify through a known channel. |
-| Game Feedback | "Impersonation. New number + emergency + 'don't call' means: **call the old number first.**" |
+| Explanation | A "family member" with a new number, a sudden emergency, a money request and "don't call me" are classic signs. This trick is called **social engineering**: it uses your feelings, not hacking. Call Migs's *old* number, or ask something only he would know. |
+| Learning Objective | Spot scams that use feelings and rush you, and check through a number you know. |
+| Game Feedback | "Impersonation! New number + emergency + "don't call" = **call the old number first.**" |
 | Curriculum Link | **Application**: the topic asks students to "identify major cybersecurity threats". Social engineering is a major threat that the syllabus doesn't name. |
 | Unity Use | [Fits now] as a Scam `SMS` on the pocket phone. |
 
@@ -383,11 +383,11 @@
 | Question Type | What Should You Do? |
 | Difficulty | Medium |
 | Question/Scenario | During your OJT, you typed your work password into a page you opened from an email. A minute later, you notice the address was wrong. |
-| Choices | A. Say nothing, since nothing bad has happened yet<br>B. Forward the email to coworkers to ask if they got it too<br>C. Delete the email so no one finds out<br>D. Change the password through the official site right away, report to IT with the email, and watch for login or MFA prompts you didn't start |
+| Choices | A. Say nothing, since nothing bad has happened yet<br>B. Forward the email to coworkers to ask if they got it too<br>C. Delete the email so no one finds out<br>D. Change your password on the official site now, report it to IT, and watch for sign-ins you didn't make |
 | Correct Answer | **D** |
-| Explanation | Fast reporting limits the damage: IT can lock sessions, block the site and warn others. Changing the password quickly makes the stolen one useless. Hiding the mistake is unprofessional and gives the attacker time. Forwarding spreads the dangerous link. Deleting it removes evidence IT needs. |
-| Learning Objective | Report honestly and quickly after a security mistake. |
-| Game Feedback | "Report it. Mistakes happen, and **hiding them** is what makes them serious." |
+| Explanation | Act fast. Changing your password makes the stolen one useless, and IT can block the fake site and warn others. Hiding it gives the attacker time. Forwarding spreads the bad link, and deleting removes the proof IT needs. |
+| Learning Objective | Report a security mistake quickly and honestly. |
+| Game Feedback | "Report it! Mistakes happen. **Hiding them** is what makes them worse." |
 | Curriculum Link | **Direct**: Weeks 13–14 cover analyzing incidents and recommending "corrective measures". IAS Week 16 covers "incident reporting procedures". |
 | Unity Use | [Needs MC mode]. Fits the existing `WrongAnswerConsequence` follow-up. |
 
@@ -399,12 +399,12 @@
 | Question ID | M06 |
 | Question Type | Multiple Choice |
 | Difficulty | Medium |
-| Question/Scenario | A classmate's school account password was stolen through phishing. **Which control is most likely to stop the attacker from logging in?** |
+| Question/Scenario | A classmate's school account password was stolen through phishing. **Which protection would most likely stop the attacker from logging in?** |
 | Choices | A. A stronger Wi-Fi password at home<br>B. A privacy screen protector<br>C. Multi-factor authentication (MFA) on the account<br>D. Clearing the browser history |
 | Correct Answer | **C** |
-| Explanation | MFA is a **technical control**: the attacker needs a second factor (an app prompt, code or security key) as well as the password. The other choices don't affect a remote login. MFA is not perfect: only approve prompts that you started yourself. |
-| Learning Objective | Pick the control that matches the threat. |
-| Game Feedback | "MFA. A stolen password alone isn't enough, **if you never approve a prompt you didn't start.**" |
+| Explanation | **MFA** (multi-factor authentication) asks for a second check, like a code or an app prompt, as well as the password. So a stolen password alone isn't enough. The other choices don't stop someone logging in from far away. Only approve prompts you started yourself. |
+| Learning Objective | Pick the protection that fits the problem. |
+| Game Feedback | "MFA! A stolen password alone isn't enough, as long as you **never approve a prompt you didn't start**." |
 | Curriculum Link | **Direct**: Week 15 asks students to "select appropriate controls for identified risks". |
 | Unity Use | [Needs MC mode]. |
 
@@ -417,11 +417,11 @@
 | Question Type | Scenario-Based |
 | Difficulty | Medium |
 | Question/Scenario | At a café you see two networks: **Kape_FreeWiFi** and **Kape_Free_WiFi**. After you connect to one, a page says: "Log in with your SocialBook email and password to get internet access." |
-| Choices | A. Don't enter it. Ask the staff for the real network name, and use mobile data for anything sensitive<br>B. Enter it, since cafés often ask you to log in<br>C. Try both networks until one works without a login<br>D. Turn off your firewall so the network connects faster |
+| Choices | A. Don't enter it. Ask staff for the real network, and use mobile data for anything private<br>B. Enter it, since cafés often ask you to log in<br>C. Try both networks until one works without a login<br>D. Turn off your firewall so the network connects faster |
 | Correct Answer | **A** |
-| Explanation | Two networks with almost the same name suggests a fake "evil twin" hotspot. A network page has no reason to ask for a *different* site's password. That is credential harvesting. **A VPN wouldn't help here:** it encrypts your traffic, but it can't protect a password you type into a fake page yourself. Turning off the firewall removes protection. |
-| Learning Objective | Spot fake hotspots and understand the limits of VPNs. |
-| Game Feedback | "Fake hotspot. No Wi-Fi network needs your **social media password**. Ask staff, or use mobile data." |
+| Explanation | Two networks with almost the same name can mean one is a fake hotspot (an "evil twin"). No Wi-Fi needs your *social media* password: that page is stealing it. A VPN wouldn't help, because you'd still be typing your password into a fake page. |
+| Learning Objective | Spot fake Wi-Fi hotspots, and know what a VPN can't do. |
+| Game Feedback | "Fake hotspot! No Wi-Fi needs your **social media password**. Ask staff, or use mobile data." |
 | Curriculum Link | **Application**: the topic evaluates firewalls and VPNs. The question applies this to choosing a network safely. |
 | Unity Use | [Needs MC mode]. Could be a `Website` captured page with `correctVerdict = Scam` [Fits now]. |
 
@@ -436,9 +436,9 @@
 | Question/Scenario | A text appears **in the same thread** as your real past messages from ExampleBank: "ExampleBank: Your account will be suspended TODAY. Update your details at examplebank-ph.example/update" **Trusted domain (case files):** examplebank.example |
 | Choices | Scam / Legitimate |
 | Correct Answer | **Scam** |
-| Explanation | Text sender names (sender IDs) can be faked, and a faked one lands in the same thread as the real sender's messages. Where the message appears doesn't prove where it came from. The evidence is in the content: `examplebank-ph.example` isn't the trusted domain, and it threatens a same-day suspension. Many banks have also announced that they no longer send clickable links by text. |
-| Learning Objective | Learn that what a phone displays is not proof of who sent a message. |
-| Game Feedback | "Scam. Sender names can be **faked**, so the thread proves nothing. Check the link: it's not examplebank.example." |
+| Explanation | Scammers can fake the sender name on a text, so it can land in your real bank's chat. Look at the link instead: **examplebank-ph.example** isn't the bank's real site, and "suspended TODAY" is pressure. Many banks don't send links by text at all. |
+| Learning Objective | Know that the name on your phone doesn't prove who sent a text. |
+| Game Feedback | "Scam! Sender names can be **faked**. Check the link: it's not examplebank.example." |
 | Curriculum Link | **Application**: Mobile Device Forensics teaches analyzing smartphone data. The question applies the idea that phone records need checking. |
 | Unity Use | [Fits now] `channel = SMS`, `correctVerdict = Scam`. A good use of the existing pocket phone. |
 
@@ -451,11 +451,11 @@
 | Question Type | Scenario-Based |
 | Difficulty | Medium |
 | Question/Scenario | You're a student assistant at the IT help desk. A caller says: "This is Dean Reyes. I'm locked out and presenting in five minutes. Reset my password and send it to my personal email, deanreyes.personal@freemail.example. Hurry!" |
-| Choices | A. Do it, because the dean outranks you<br>B. Reset it but send the password by SMS instead<br>C. Give the caller your own login for now<br>D. Follow the identity-verification procedure: call back on the dean's directory number, and send resets only to the official account |
+| Choices | A. Do it, because the dean outranks you<br>B. Reset it but send the password by SMS instead<br>C. Give the caller your own login for now<br>D. Check it's really the dean: call back on the dean's official number, and send resets only to the school account |
 | Correct Answer | **D** |
-| Explanation | This is **pretexting**: a made-up story that uses authority and time pressure to get you to skip procedure. A reset sent to a personal address could hand the account to an attacker. An IT worker's duty is to follow verification even when it's uncomfortable. A real dean would understand. |
-| Learning Objective | Follow verification procedures under pressure from authority and urgency. |
-| Game Feedback | "Verify first. **Authority plus urgency** is the oldest trick there is. Call back on the official number." |
+| Explanation | This is **pretexting**: a made-up story that uses an important name and a rush to make you skip the rules. Sending a reset to a personal email could hand the account to a scammer. Always check first. A real dean will understand. |
+| Learning Objective | Follow the checking steps, even when someone important is rushing you. |
+| Game Feedback | "Check first! **Important person + rush** is an old trick. Call back on the official number." |
 | Curriculum Link | **Direct**: Week 9 asks students to "evaluate the ethical responsibilities of IT professionals in the workplace". |
 | Unity Use | [Needs MC mode]. Could also be a `Chat` message requesting the reset, with `correctVerdict = Scam` [Fits now]. |
 
@@ -470,9 +470,9 @@
 | Question/Scenario | An email titled "Revised grading sheet" has **Grades_Final.docm** attached. When opened, a yellow bar says: "Content is disabled. Click **ENABLE CONTENT** to view the grades." **What's going on?** |
 | Choices | A. A normal Word update<br>B. A macro malware trap: enabling content runs hidden code<br>C. A corrupted file that needs repair<br>D. The document is just read-only |
 | Correct Answer | **B** |
-| Explanation | `.docm` files can contain macros, which are small programs. Office disables them by default for safety. Attackers make the document look empty or blurred so you click "Enable Content", which runs their code and can install malware. A grades file doesn't need macros to display. |
-| Learning Objective | Recognize macro-enabled attachments and the "enable content" trick. |
-| Game Feedback | "Macro trap. **Enable Content = run their code.** Grades don't need macros." |
+| Explanation | A **.docm** file can hold macros, which are small hidden programs. Office turns them off to keep you safe. Clicking "Enable Content" runs the scammer's program. A grades file doesn't need macros to show grades. |
+| Learning Objective | Don't click "Enable Content" on unexpected attachments. |
+| Game Feedback | "Macro trap! **Enable Content = run their program.** Grades don't need macros." |
 | Curriculum Link | **Direct**: the topic covers preventing and detecting malware. Macro malware is one kind. |
 | Unity Use | [Fits now] as a Scam email with an attachment inspectable. [Needs MC mode] for the threat name. |
 
@@ -489,9 +489,9 @@
 | Question/Scenario | You're your student org's treasurer. **Email from:** "Prof. L. Santos" &lt;lsantos.adviser@freemail.example&gt;<br>"Hi! As we discussed at Tuesday's meeting, please send the venue deposit for the **Sept 14 Acquaintance Party** to our new account before 3 PM today. Thanks!"<br>**Case file:** The meeting, the date and the event were all posted on the org's public page. The adviser's school address is lsantos@uphsl-binan.example. |
 | Choices | A. Random spam sent to thousands of people<br>B. Clone phishing (a copy of an earlier real email)<br>C. Spear phishing built from public information gathered beforehand<br>D. Ransomware |
 | Correct Answer | **C** |
-| Explanation | The email uses real names, dates and events, which takes research. That is **reconnaissance**, the first stage of both attacks and penetration tests. A targeted message aimed at one person is **spear phishing**. It isn't clone phishing because no earlier real email was copied. The giveaways are the free-mail address, the "new account" and the same-day deadline. |
-| Learning Objective | Understand that convincing personal details can come from public sources and don't prove the sender is real. |
-| Game Feedback | "Spear phishing. They read your **public page** first. Real details don't mean a real sender." |
+| Explanation | The scammer studied your org's public page first, then wrote an email just for you. That is **spear phishing**: a fake message aimed at one person. Real details don't prove a real sender. The giveaways: a free-mail address, a "new account" and a same-day deadline. |
+| Learning Objective | Know that personal details can come from public pages and don't prove who sent a message. |
+| Game Feedback | "Spear phishing! They read your **public page** first. Real details don't mean a real sender." |
 | Curriculum Link | **Application**: Advanced Pen Testing teaches "reconnaissance", and APT Defense teaches analyzing attacker TTPs. This question looks at reconnaissance from the target's side. |
 | Unity Use | [Fits now] Scam email plus a `CaseFile` with the public post. [Needs MC mode] for the technique name. |
 
@@ -504,11 +504,11 @@
 | Question Type | Scenario-Based |
 | Difficulty | Hard |
 | Question/Scenario | You open a "shared document" link. It takes you to the **real** NovaCloud sign-in page (novacloud.example). After you sign in, a screen appears:<br>"**DocuView Plus** (unverified publisher) wants to: • Read, send and delete your mail • Access your files at any time • Keep access when you're not using it" |
-| Choices | A. Cancel. It's a permission-granting (consent) phishing attempt. Report it and review your connected apps<br>B. Accept, because the sign-in page was real<br>C. Accept, then change your password afterwards to be safe<br>D. Accept just this once |
+| Choices | A. Cancel. It's a trick to get app permissions (consent phishing). Report it and check your connected apps<br>B. Accept, because the sign-in page was real<br>C. Accept, then change your password afterwards to be safe<br>D. Accept just this once |
 | Correct Answer | **A** |
-| Explanation | This attack doesn't steal your password. It gets **you** to give a malicious app permanent access. A document viewer has no reason to send or delete your mail. Changing your password afterwards often **doesn't** remove an app's access, which stays until you remove the app from your account. The sign-in page being real is part of the trick. |
-| Learning Objective | Read app permission requests and know that granting them can bypass passwords. |
-| Game Feedback | "Cancel. The login was real, but the **permissions** were the trap. A viewer doesn't need to send your mail." |
+| Explanation | This trick doesn't steal your password. It gets **you** to give a fake app full access to your mail. A document viewer has no reason to send or delete emails. Changing your password later won't remove the app: you have to remove it from your account. |
+| Learning Objective | Read what an app asks for before you click Allow. |
+| Game Feedback | "Cancel! The sign-in was real, but the **permissions** were the trap. A viewer doesn't need to send your mail." |
 | Curriculum Link | **Application**: Cloud Security covers "identity management" in SaaS. App permission grants are part of identity management. |
 | Unity Use | [Needs MC mode]. A good candidate for a new "consent screen" mini-game (Part 5). |
 
@@ -521,11 +521,11 @@
 | Question Type | What Should You Do? |
 | Difficulty | Hard |
 | Question/Scenario | An email comes from the finance director's **real** address in an existing thread, and it **passes** all email authentication checks: "Our supplier changed banks. Please pay today's invoice (₱480,000) to the new account below. I'm in meetings all day, so don't call, just reply here." |
-| Choices | A. Pay it, since the email passed authentication and came from the real address<br>B. Reply to the email asking the director to confirm<br>C. Pay half now and half after confirming<br>D. Verify through a separate channel you already trust (the director's directory number and the supplier's number on file) before changing any bank details |
+| Choices | A. Pay it, since the email passed authentication and came from the real address<br>B. Reply to the email asking the director to confirm<br>C. Pay half now and half after confirming<br>D. Call the director and the supplier on numbers you already have before changing any bank details |
 | Correct Answer | **D** |
-| Explanation | When the director's account itself has been taken over, every technical check passes because the email really comes from that account. This is business email compromise. Replying goes straight to the attacker. Zero trust means **never trust, always verify** each request, especially a change of bank details, even when it comes from inside. "Don't call" is a warning sign in itself. |
-| Learning Objective | Verify high-risk requests through a separate channel, even when they come from trusted accounts. |
-| Game Feedback | "Verify by **phone, on a number you already have**. A real account can still be controlled by an attacker." |
+| Explanation | The director's account may be controlled by a scammer, so the email passes every check. Replying just reaches the scammer. **Zero trust** means "never trust, always check", especially when bank details change. "Don't call" is a warning sign. |
+| Learning Objective | Double-check risky requests another way, even from trusted accounts. |
+| Game Feedback | "Check by **phone, on a number you already have**. A real account can still be used by a scammer." |
 | Curriculum Link | **Adaptation**: zero trust is taught as a network design principle. Here it is applied to people and procedures. |
 | Unity Use | [Needs MC mode]. Also a good verdict-only Scam message in Level 5 [Fits now]. |
 
@@ -537,12 +537,12 @@
 | Question ID | H04 |
 | Question Type | Multiple Choice |
 | Difficulty | Hard |
-| Question/Scenario | After a phishing wave on campus, IT lists four findings. **Which should be fixed first?** |
+| Question/Scenario | After many phishing emails hit the campus, IT finds four problems. **Which should be fixed first?** |
 | Choices | A. Lab PCs are one month behind on non-security feature updates<br>B. The email administrator account has no MFA, and its password appears in a public breach list<br>C. The spam filter sometimes flags newsletters by mistake<br>D. Some staff haven't attended this year's awareness seminar yet |
 | Correct Answer | **B** |
-| Explanation | Risk = **likelihood × impact**. The admin account is very likely to be exploited, because its password is already public and there's no second factor. The impact is severe: an admin email account controls everyone's mail. The other findings are real but lower on one or both factors. Staff training matters, but it doesn't close an open door right now. |
-| Learning Objective | Rank risks by likelihood and impact instead of by what seems most visible. |
-| Game Feedback | "Fix the admin account first: **public password + no MFA + admin access** means high likelihood and high impact." |
+| Explanation | Fix first the problem that is **most likely** to happen and would do the **most damage**. The admin password is already public and has no MFA, so breaking in is easy, and that account controls everyone's email. The others matter, but they are less urgent. |
+| Learning Objective | Fix risks by how likely and how harmful they are. |
+| Game Feedback | "Admin account first: **public password + no MFA + full control** = most likely and most harmful." |
 | Curriculum Link | **Direct**: Weeks 13–14 cover risk assessment and risk treatment. |
 | Unity Use | [Needs MC mode]. Could be a drag-to-rank risk matrix (Part 5). |
 
@@ -555,11 +555,11 @@
 | Question Type | Scenario-Based |
 | Difficulty | Hard |
 | Question/Scenario | A friend was scammed through a chat app and wants to file a report. **Which way of handling the evidence is best?** |
-| Choices | A. Crop the screenshots to just the scam message and blur the scammer's name for privacy<br>B. Forward everything to a big group chat so more people can confirm it<br>C. Keep the full conversation untouched on the original phone. Take full screenshots showing the sender's profile or number with dates and times, save receipts with reference numbers, share only copies, and note when and how each item was collected<br>D. Uninstall the app to stop the scammer and write down what you remember |
+| Choices | A. Crop the screenshots to just the scam message and blur the scammer's name for privacy<br>B. Forward everything to a big group chat so more people can confirm it<br>C. Keep the original chat untouched, take full screenshots (with names, dates and times), save receipts, share only copies, and note when you saved each one<br>D. Uninstall the app to stop the scammer and write down what you remember |
 | Correct Answer | **C** |
-| Explanation | Evidence has to be **complete** and **unchanged** to be trusted. Cropping removes context, and blurring removes the scammer's identifiers that investigators need. Keeping the original device and noting how you collected each item is a basic **chain of custody**. Uninstalling may delete the chat history. Group chats spread personal data. |
-| Learning Objective | Keep evidence complete, unchanged and documented. |
-| Game Feedback | "Keep the **originals untouched**, share copies, and write down when you saved each one." |
+| Explanation | Investigators can only trust evidence that is **complete** and **unchanged**. Cropping hides context, and blurring hides the scammer's name they need. Keeping the original and noting when you saved each item is called the **chain of custody**. Uninstalling may delete the chat. |
+| Learning Objective | Keep evidence complete, unchanged and recorded. |
+| Game Feedback | "Keep the **originals untouched**, share copies, and note when you saved each one." |
 | Curriculum Link | **Direct**: the topic stresses "the importance of maintaining evidence integrity". The collection topic covers preservation and documentation. |
 | Unity Use | [Needs MC mode]. Good for a Level 4 (Digital Forensics Lab) final case. |
 
@@ -571,12 +571,12 @@
 | Question ID | H06 |
 | Question Type | Identify the Threat |
 | Difficulty | Hard |
-| Question/Scenario | Email header excerpt:<br>`From: "Registrar's Office" <registrar@uphsl-binan.example>`<br>`Reply-To: registrar.office.ph@freemail.example`<br>`Return-Path: <bounce@mailer-xyz.example>`<br>`Authentication-Results: spf=fail; dkim=none; dmarc=fail`<br>`Subject: FINAL reminder: unpaid tuition, account on hold`<br>**What is the strongest evidence that this is spoofed?** |
-| Choices | A. SPF and DMARC fail for the registrar's domain, and replies are redirected to a free-mail address<br>B. The subject mentions tuition<br>C. The display name says "Registrar's Office"<br>D. It was sent at 2:14 AM |
+| Question/Scenario | Email header excerpt:<br>`From: "Registrar's Office" <registrar@uphsl-binan.example>`<br>`Reply-To: registrar.office.ph@freemail.example`<br>`Return-Path: <bounce@mailer-xyz.example>`<br>`Authentication-Results: spf=fail; dkim=none; dmarc=fail`<br>`Subject: FINAL reminder: unpaid tuition, account on hold`<br>**Which clue best proves this email is fake (spoofed)?** |
+| Choices | A. The sender checks (SPF and DMARC) fail, and replies go to a free-mail address<br>B. The subject mentions tuition<br>C. The display name says "Registrar's Office"<br>D. It was sent at 2:14 AM |
 | Correct Answer | **A** |
-| Explanation | The "From" line can say anything, so the display name proves nothing. **SPF/DMARC fail** means the registrar's domain did not authorize the server that sent this email. The **Reply-To** quietly sends your answer to the attacker. The subject and time are only weak signs. |
-| Learning Objective | Use technical header evidence rather than what the email shows on the surface. |
-| Game Feedback | "SPF and DMARC **failed**, and replies go to free-mail. The 'From' name is just text anyone can type." |
+| Explanation | The "From" name can say anything. **SPF and DMARC** are checks that ask: did the school's own mail system really send this? Both **failed**. Reply-To also sends your answer to the scammer. The subject and the time are only weak clues. |
+| Learning Objective | Trust an email's hidden checks, not just what it shows. |
+| Game Feedback | "SPF and DMARC **failed**, and replies go to free-mail. The "From" name is just text anyone can type." |
 | Curriculum Link | **Application**: the topic covers analyzing network evidence for signs of cybercrime. Email headers are network evidence, though the syllabus doesn't name them. |
 | Unity Use | [Fits now] as a Scam email with a "View headers" inspectable (`MessageEvidence`). |
 
@@ -591,9 +591,9 @@
 | Question/Scenario | A "**Scholarship Grant 2027**" form is shared in a student group. It uses the school logo and asks for: full name, student number, birthdate, **mother's maiden name**, front and back of your ID, **a selfie holding your ID**, and your **PayLite MPIN** "for fast release of funds". There is no privacy notice. The only contact is a mobile number. |
 | Choices | Scam / Legitimate |
 | Correct Answer | **Scam** |
-| Explanation | Real scholarship offices sometimes do ask for ID, which is what makes this hard. The deciding signs are: **(1)** no one ever needs your MPIN to *send* you money; **(2)** an ID plus a selfie holding it is exactly what's needed to open accounts in your name; **(3)** there is no privacy notice and no official contact. That breaks the DPA principles of **transparency** and **proportionality**. Check through the scholarship office's official channel. |
-| Learning Objective | Separate normal data requests from identity-theft collection using DPA principles. |
-| Game Feedback | "Scam. **No one needs your MPIN to pay you.** With ID + selfie + MPIN, they can become you." |
+| Explanation | Real scholarships may ask for an ID, which makes this tricky. But **no one needs your MPIN to send you money**, and an ID plus a selfie holding it is all a scammer needs to open accounts as you. There is no privacy notice and only a mobile number, so check with the scholarship office directly. |
+| Learning Objective | Tell a normal data request from identity theft. |
+| Game Feedback | "Scam! **No one needs your MPIN to pay you.** With your ID, selfie and MPIN, they can become you." |
 | Curriculum Link | **Direct**: Week 15 covers applying the Data Privacy Act's "requirements in protecting personal… information". |
 | Unity Use | [Fits now] `channel = Website` captured form, `correctVerdict = Scam`, each field clickable. |
 
@@ -606,11 +606,11 @@
 | Question Type | What Should You Do? |
 | Difficulty | Hard |
 | Question/Scenario | After you open an email attachment on a lab PC, your files start changing to **.locked** and a note demands cryptocurrency. **What do you do first?** |
-| Choices | A. Pay quickly before the price goes up<br>B. Disconnect the PC from the network (unplug the cable or turn off Wi-Fi), leave it on, stop using it, and report to IT or the incident team immediately<br>C. Restart, run a cleanup tool and delete the ransom note<br>D. Copy your files to your USB drive to save them |
+| Choices | A. Pay quickly before the price goes up<br>B. Unplug it from the network (or turn off Wi-Fi), leave it on, stop using it, and report to IT right away<br>C. Restart, run a cleanup tool and delete the ransom note<br>D. Copy your files to your USB drive to save them |
 | Correct Answer | **B** |
-| Explanation | First, **contain** it: cutting the network connection stops it spreading to shared drives and other PCs. Leaving the PC on keeps evidence in memory for investigators. Follow your organization's response plan if it says otherwise. Paying doesn't guarantee you'll get your files back. Restarting or cleaning can destroy evidence. Copying to a USB can spread the infection or copy already-locked files. |
-| Learning Objective | Know the first response steps: contain, preserve evidence, report. |
-| Game Feedback | "**Disconnect, don't shut down, report.** Containment first; investigators need the evidence." |
+| Explanation | First, stop it spreading: cut the network so it can't reach other PCs. Leave the PC on so investigators keep the evidence. Paying doesn't promise your files back, restarting can erase evidence, and a USB can carry the infection. |
+| Learning Objective | Know the first steps: stop the spread, keep the evidence, report. |
+| Game Feedback | "**Disconnect, keep it on, report.** Stop the spread first. Investigators need the evidence." |
 | Curriculum Link | **Direct**: the objective covers incident response and collecting evidence in security incidents. |
 | Unity Use | [Needs MC mode]. Good as a `SecurityIncident` consequence after a wrong answer on M10. |
 
@@ -625,9 +625,9 @@
 | Question/Scenario | The canteen's "Scan to pay with PayLite" poster looks normal, but up close the QR code is a **sticker placed on top of** the printed one. Scanning it opens **paylite-merchant-pay.example/canteen** in your browser and asks for your mobile number and **MPIN**. |
 | Choices | Scam / Legitimate |
 | Correct Answer | **Scam** |
-| Explanation | This is QR code phishing. A sticker over the original is the physical clue. A real merchant QR opens **inside the e-wallet app** and shows the merchant's name for you to confirm. It never asks for your MPIN on a web page. Also tell the canteen staff, so the next person doesn't get caught. |
-| Learning Objective | Treat QR codes like links: check where they lead, and look for physical tampering. |
-| Game Feedback | "Scam. Sticker over sticker, a browser page and an MPIN request. Real payments happen **inside the app**." |
+| Explanation | This is **QR code phishing**. The sticker over the real code is the clue you can see. A real payment QR opens **inside your e-wallet app** and shows the shop's name. It never asks for your MPIN on a web page. Tell the canteen staff too. |
+| Learning Objective | Treat QR codes like links, and look for stickers placed on top. |
+| Game Feedback | "Scam! A sticker, a web page and an MPIN request. Real payments happen **inside the app**." |
 | Curriculum Link | **Application**: Week 17 asks students to "analyze major cybersecurity incidents… derive lessons learned". QR fraud is a real-world case that the syllabus doesn't name. |
 | Unity Use | [Fits now] as an inspectable poster or `Website` message. Physical inspection suits Scam Sense's first-person rooms well. |
 
@@ -640,11 +640,11 @@
 | Question Type | Scenario-Based |
 | Difficulty | Hard |
 | Question/Scenario | You find a fake school login page. Its admin page is publicly open and shows a list of **student passwords** it has captured. **What is the ethical action?** |
-| Choices | A. Download the list and message each victim yourself<br>B. Post the link on the freedom wall to warn everyone<br>C. Test it with your own real password to confirm it works<br>D. Report it right away to the school's IT or security office with screenshots and the URL written in a non-clickable form (e.g., hxxp://), without logging in or using the captured data |
+| Choices | A. Download the list and message each victim yourself<br>B. Post the link on the freedom wall to warn everyone<br>C. Test it with your own real password to confirm it works<br>D. Report it to the school's IT office with screenshots and the web address, without logging in or using the stolen data |
 | Correct Answer | **D** |
-| Explanation | The ACM Code of Ethics asks computing professionals to **avoid harm (1.2)**, **respect privacy (1.6)** and **access computing resources only when authorized (2.8)**. Downloading the list means handling other people's stolen data without authorization. Posting the link sends more victims to it. Testing it hands over your own password. Reporting lets the people with authority act. |
-| Learning Objective | Respond to discovered wrongdoing within your authority and without causing more harm. |
-| Game Feedback | "Report it, don't touch it. Good intentions don't make **unauthorized access** okay." |
+| Explanation | Using stolen passwords, even to help, is not allowed and can hurt the victims more. Posting the link sends more people to the fake page, and testing it gives away your own password. Report it: IT has the right to act. (ACM Code of Ethics: avoid harm, respect privacy, use only what you're allowed to.) |
+| Learning Objective | Report wrongdoing without causing more harm. |
+| Game Feedback | "Report it, don't touch it. Good intentions don't make **using stolen data** okay." |
 | Curriculum Link | **Direct**: Week 16 covers applying "the ACM Code of Ethics… in addressing ethical issues in computing practice". |
 | Unity Use | [Needs MC mode]. Strong final-room ethics question. |
 

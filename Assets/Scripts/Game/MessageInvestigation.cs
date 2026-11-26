@@ -23,6 +23,7 @@ public class MessageInvestigation : MonoBehaviour
     /// <summary>Response time pauses briefly after each newly inspected detail (reading the finding is free).</summary>
     public static bool PausesTimer => Active != null && Active.session != null && Time.time < Active.pauseUntil;
     const float ReadingAllowance = 6f;
+    static readonly string DefaultHint = $"Click or tap the <color=#7DD3FC><u>highlighted details</u></color> to inspect them";
 
     const string HexLink = "#7DD3FC", HexClue = "#FBBF24", HexSeen = "#C9D4E3";
     static readonly Color Muted = new Color32(0xC9, 0xD4, 0xE3, 255);
@@ -54,17 +55,12 @@ public class MessageInvestigation : MonoBehaviour
     // ---------- Lifecycle (called by QuizManager) ----------
 
     /// <summary>
-    /// Emails with investigation data are investigated in every room. Other channels (texts, web pages and case
-    /// questions) are investigated only in the tutorial room, where the guide teaches underlined clues - so no
-    /// other room changes behaviour, whatever data its messages carry.
+    /// A message is investigated when it carries investigation data: emails, web pages and texts with clickable
+    /// details, interactive activities, and the Level 1 tutorial questions. Case-terminal reports never are.
+    /// Messages without data behave exactly as before.
     /// </summary>
-    public static bool Investigates(ScamMessage msg)
-    {
-        if (msg == null || !msg.HasInvestigation || msg.channel == MessageChannel.Case) return false;
-        if (msg.channel == MessageChannel.Email) return true;
-        var quiz = QuizLevel;
-        return quiz != null && quiz.tutorial && quiz.messages.Contains(msg);
-    }
+    public static bool Investigates(ScamMessage msg) =>
+        msg != null && msg.HasInvestigation && msg.channel != MessageChannel.Case;
 
     /// <summary>The level being played (null outside a level).</summary>
     static LevelDefinition QuizLevel
@@ -87,7 +83,7 @@ public class MessageInvestigation : MonoBehaviour
         session = new InvestigationSession(msg);
         pauseUntil = 0f;
         root.gameObject.SetActive(true);
-        hint.gameObject.SetActive(true);
+        hint.gameObject.SetActive(!msg.HasActivity);   // activities carry their own instruction
         ShowCard(false);
     }
 
@@ -206,7 +202,13 @@ public class MessageInvestigation : MonoBehaviour
     /// inspectable details of that field as underlined links when the message is being investigated.
     /// Not yet inspected = cyan; inspected clue = gold with ★; inspected neutral detail = grey with ✓.
     /// </summary>
-    public static string Mark(ScamMessage msg, InspectField field, string text)
+    public static string Mark(ScamMessage msg, InspectField field, string text) => Mark(msg, field, null, text);
+
+    /// <summary><see cref="Mark"/> for one item of an interactive activity (inspectables with that <c>part</c>).</summary>
+    public static string MarkActivity(ScamMessage msg, ActivityItem item) =>
+        item == null ? "" : Mark(msg, InspectField.Activity, item.key, item.text);
+
+    static string Mark(ScamMessage msg, InspectField field, string partKey, string text)
     {
         if (string.IsNullOrEmpty(text)) return "";
         var a = Active;
@@ -217,7 +219,7 @@ public class MessageInvestigation : MonoBehaviour
         var spans = new List<(int start, int length, MessageInspectable part)>();
         foreach (var p in msg.inspectables)
         {
-            if (p.field != field) continue;
+            if (p.field != field || (field == InspectField.Activity && p.part != partKey)) continue;
             int start = string.IsNullOrEmpty(p.match) ? 0 : text.IndexOf(p.match, StringComparison.Ordinal);
             int length = string.IsNullOrEmpty(p.match) ? text.Length : p.match.Length;
             if (start < 0) continue;
@@ -306,7 +308,8 @@ public class MessageInvestigation : MonoBehaviour
 
     // ---------- Inspecting ----------
 
-    void Inspect(string id)
+    /// <summary>Inspects a detail by id (what clicking its underlined words does).</summary>
+    public void Inspect(string id)
     {
         if (session == null) return;
         var outcome = session.Inspect(id, out var part, out var clue, out bool first);
@@ -314,6 +317,13 @@ public class MessageInvestigation : MonoBehaviour
         if (first && !session.Submitted) pauseUntil = Time.time + ReadingAllowance;
         hint.gameObject.SetActive(false);   // the player has found the highlighted details; free the space for the card
         foreach (var (text, build) in binds) if (text != null) text.text = build();
+
+        // Activities show the finding on their own evidence board.
+        if (dock is IInvestigationInline inline && inline.ShowFinding(session.Message, part, clue, outcome))
+        {
+            ShowCard(false);
+            return;
+        }
 
         cardLabel.text = part.label;
         cardStatus.text =
@@ -351,7 +361,7 @@ public class MessageInvestigation : MonoBehaviour
     {
         root = UIKit.CreateCanvas(transform, "Investigation Canvas", 35);   // above the HUD and phone pop-up, below results
 
-        hint = UIKit.Text(root, "Hint", $"Click or tap the <color={HexLink}><u>highlighted details</u></color> to inspect them", 19, Muted, TextAlignmentOptions.BottomRight);
+        hint = UIKit.Text(root, "Hint", DefaultHint, 19, Muted, TextAlignmentOptions.BottomRight);
         UIKit.Place(hint.rectTransform, new Vector2(1, 0.5f), new Vector2(1, 0f), new Vector2(-28, 190), new Vector2(520, 30));
 
         // Finding card: what the inspected detail shows (and, for links, where it really goes)

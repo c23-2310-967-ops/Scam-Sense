@@ -126,6 +126,13 @@ public class ScamMessage
     [Tooltip("Optional HINT text: points the player to what matters without giving the answer. Empty = no HINT button.")]
     [TextArea(1, 3)] public string hint = "";
 
+    [Header("Interactive activity (optional): a simulated app the player investigates before answering")]
+    [Tooltip("Kind None = the question is shown as a plain case sheet (unchanged).")]
+    public MessageActivity activity = new MessageActivity();
+
+    /// <summary>True if the question is played as an interactive activity (simulated email, browser, chat...).</summary>
+    public bool HasActivity => activity != null && activity.kind != ActivityKind.None && activity.items != null && activity.items.Count > 0;
+
     /// <summary>True if the HINT button is offered while this message is open.</summary>
     public bool HasHint => !string.IsNullOrEmpty(hint);
 
@@ -143,4 +150,56 @@ public class ScamMessage
     public bool HasDetails =>
         !string.IsNullOrEmpty(senderDetail) || !string.IsNullOrEmpty(requestedAction) ||
         !string.IsNullOrEmpty(linkNote) || (clues != null && clues.Length > 0);
+}
+
+/// <summary>The simulated app an activity shows. Each kind draws its own frame; items are drawn by their role.</summary>
+public enum ActivityKind { None, Email, Browser, Chat, Call, Social, Form, Network, Files, Evidence }
+
+/// <summary>How one line of an activity is drawn.</summary>
+public enum ActivityRole
+{
+    Field,      // "Label: value" row (email From/Subject, form fields, header lines)
+    Text,       // a paragraph (email body, page text, post)
+    Incoming,   // chat bubble / call line from the other person
+    Outgoing,   // chat bubble from the player
+    File,       // attachment or file row with an icon
+    Banner,     // warning / yellow bar
+    Row,        // list row (Wi-Fi network, finding, evidence item)
+    Button,     // a simulated button (never does anything real)
+    Note        // small grey note
+}
+
+/// <summary>One line of an activity. Inspectables point to it with <c>part = key</c>.</summary>
+[System.Serializable]
+public class ActivityItem
+{
+    public string key = "";
+    public ActivityRole role = ActivityRole.Text;
+    [Tooltip("Field rows: the label (\"From\"). Bubbles/call lines: who is speaking. Rows: a short tag on the right.")]
+    public string label = "";
+    [TextArea(1, 4)] public string text = "";
+}
+
+/// <summary>
+/// An interactive activity for a question: a simulated environment (email, browser, chat, call, form, Wi-Fi list,
+/// file explorer or evidence board). Its items are investigated with the normal clue system (inspectables with
+/// field Activity). The question, choices, answer and explanation are not changed by it.
+/// </summary>
+[System.Serializable]
+public class MessageActivity
+{
+    public ActivityKind kind = ActivityKind.None;
+    [Tooltip("Shown on the activity's title bar, e.g. 'Campus Mail' or a page address.")]
+    public string title = "";
+    [Tooltip("One short instruction, e.g. 'Inspect the email. Find the clues before you decide.'")]
+    public string instruction = "";
+    public System.Collections.Generic.List<ActivityItem> items = new System.Collections.Generic.List<ActivityItem>();
+    [Tooltip("Key clues to find before the answers unlock (the player can still choose to answer early).")]
+    public int minClues = 1;
+    [Tooltip("Decision challenges: what happens next after each choice (original choice order). Empty = no outcome line.")]
+    public string[] outcomes;
+
+    public ActivityItem Item(string key) => items?.Find(i => i.key == key);
+    public bool HasOutcomes => outcomes != null && outcomes.Length > 0;
+    public string Outcome(int choice) => HasOutcomes && choice >= 0 && choice < outcomes.Length ? outcomes[choice] : "";
 }

@@ -51,17 +51,23 @@ public class ResultsUI : MonoBehaviour
         title.text = $"CASE CLOSED  ·  LEVEL {r.levelNumber}: {r.levelName.ToUpperInvariant()}";
         scoreText.text = $"<size=76><b>{r.score}</b></size><size=36><color={UIKit.HexSecondary}> / {r.maxScore} points</color></size>";
         int total = r.totalMessages > 0 ? r.totalMessages : r.correct + r.incorrect;
+        // Three headline numbers first, the details in a quieter second line (nothing removed, just ranked).
         statsText.text =
-            $"<color={UIKit.HexSafe}>✓</color> Correct <b>{r.correct} / {total}</b>     " +
-            $"<color={UIKit.HexWarning}>×</color> Incorrect <b>{r.incorrect} / {total}</b>     " +
-            $"Stars <b>{r.stars} / 3</b>     Best score <b>{r.bestScore}</b>     Passing score <b>{r.requiredScore}</b>\n" +
-            $"Case grade <color={UIKit.HexAccent}><b>{r.caseGrade}</b></color>   ·   Accuracy <b>{Mathf.RoundToInt(r.accuracy * 100f)}%</b>   ·   " +
-            $"Evidence found <b>{r.evidenceFound}</b>   ·   Corrected <b>{r.recovered}/{r.incorrect}</b>   ·   Hints <b>{r.hintsUsed}</b>   ·   " +
-            $"Avg response <b>{UIKit.FormatSeconds(r.averageAnswerTime)}</b>";
+            $"<color={UIKit.HexSafe}>✓</color> <b>{r.correct} of {total}</b> correct" +
+            $"<color={UIKit.HexSecondary}>      ·      </color>Accuracy <b>{Mathf.RoundToInt(r.accuracy * 100f)}%</b>" +
+            $"<color={UIKit.HexSecondary}>      ·      </color>Grade <color={UIKit.HexAccent}><b>{r.caseGrade}</b></color>\n" +
+            $"<size=80%><color={UIKit.HexSecondary}>Wrong {r.incorrect}   ·   Corrected {r.recovered}/{r.incorrect}   ·   Evidence {r.evidenceFound}   ·   " +
+            $"Hints {r.hintsUsed}   ·   Avg time {UIKit.FormatSeconds(r.averageAnswerTime)}   ·   Stars {r.stars}/3   ·   " +
+            $"Best {r.bestScore}   ·   Pass {r.requiredScore}</color></size>";
         performanceText.text = r.performanceMessage;
 
+        // The unlock box also says what to do next.
         string icon = r.nextRoomUnlocked ? $"<color={UIKit.HexSafe}>✓</color>  " : $"<color={UIKit.HexDanger}>×</color>  ";
-        unlockText.text = icon + r.unlockMessage;
+        string next = !r.hasNextRoom ? "Replay any room to beat your best score."
+                    : r.nextRoomUnlocked && r.nextSceneAvailable ? "Next: press <b>NEXT ROOM</b>."
+                    : r.nextRoomUnlocked ? "The next room is coming soon."
+                    : $"Next: press <b>REPLAY LEVEL</b> and reach <b>{r.requiredScore}</b> points.";
+        unlockText.text = icon + r.unlockMessage + $"\n<size=85%><color={UIKit.HexSecondary}>{next}</color></size>";
         Color c = r.nextRoomUnlocked ? UIKit.Safe : UIKit.Danger;
         unlockBox.color = new Color(c.r * 0.25f, c.g * 0.25f, c.b * 0.25f, 0.95f);
         unlockOutline.effectColor = c;

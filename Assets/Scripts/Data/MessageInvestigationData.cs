@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 /// <summary>Which part of a message an inspectable detail lives in.</summary>
-public enum InspectField { Sender, SenderDetail, Subject, Body, Link }
+public enum InspectField { Sender, SenderDetail, Subject, Body, Link, Activity }
 
 /// <summary>
 /// A detail of a message the player can click/tap to inspect (part of a ScamMessage's investigation data).
@@ -25,6 +25,8 @@ public class MessageInspectable
     public string linkAddress = "";
     [Tooltip("Evidence revealed by inspecting this (a MessageEvidence id). Empty = a neutral detail, not evidence.")]
     public string clueId = "";
+    [Tooltip("Activity details only: the key of the activity item the words are in.")]
+    public string part = "";
 
     public bool IsLink => field == InspectField.Link || !string.IsNullOrEmpty(linkAddress);
 }
