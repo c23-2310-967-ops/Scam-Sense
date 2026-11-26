@@ -79,6 +79,16 @@ public class CloudAccountService : MonoBehaviour
     public string StatusText =>
         !SignedIn ? "OFFLINE" : (syncing ? "SYNCING" : LocalDataManager.PendingSync || GameResultLog.PendingFor(LocalDataManager.ProfileId).Count > 0 ? "SYNC PENDING" : "ONLINE");
 
+    /// <summary>Raised after queued runs reached the server (the student's records can be reloaded).</summary>
+    public event Action ResultsUploaded;
+
+    /// <summary>The signed-in Supabase client (ClassroomService uses the same session). Null before initialisation.</summary>
+    public SupabaseClient Client => client;
+    /// <summary>The signed-in user's id, or null.</summary>
+    public string UserId => SignedIn ? client.UserId : null;
+    /// <summary>True for an email account (not a guest, not offline).</summary>
+    public bool IsAccount => SignedIn && CurrentMode == Mode.Player;
+
     SupabaseClient client;
     bool syncing;
     float retryTimer;
@@ -438,14 +448,9 @@ public class CloudAccountService : MonoBehaviour
             if (!SamePlayer(uid)) { abandoned = true; return; }
             LocalDataManager.MarkSynced(revision);
 
-            // 4) Finished runs (history). run_id makes a retried upload harmless.
+            // 4) Finished runs (history + per-question results). run_id makes a retried upload harmless.
             var pending = new List<GameResultLog.Row>(GameResultLog.PendingFor(uid));
-            if (pending.Count > 0)
-            {
-                foreach (var p in pending) p.user_id = uid;
-                await client.UpsertAsync("game_results", SupabaseClient.ToJsonArray(pending), "user_id,run_id", ignoreDuplicates: true);
-                GameResultLog.MarkUploaded(uid, pending);
-            }
+            if (pending.Count > 0) await UploadRunsAsync(uid, pending);
             LastSyncError = null;
         }
         catch (Exception e)
@@ -462,6 +467,81 @@ public class CloudAccountService : MonoBehaviour
 
         // The player changed mid-sync: sync the new player's own save instead (never the old one's data).
         if (abandoned && SignedIn) _ = SyncAsync();
+    }
+
+    [Serializable] class SubmitResult { public string status; public int attempt_number; }
+
+    /// <summary>
+    /// Uploads queued runs one by one through submit_game_result, which validates each run, stamps the student's
+    /// class and attempt number, and stores its per-question rows. Stored (or already stored) runs leave the queue;
+    /// a run the server refuses as invalid is dropped with a warning (it could never be accepted); anything else
+    /// (offline, server error, expired session) stops here and is retried by the next sync.
+    /// Before the classroom migration is applied (no such function yet) the old direct insert is used.
+    /// </summary>
+    async Task UploadRunsAsync(string uid, List<GameResultLog.Row> pending)
+    {
+        var done = new List<GameResultLog.Row>();
+        try
+        {
+            for (int i = 0; i < pending.Count; i++)
+            {
+                if (!SamePlayer(uid)) return;
+                var run = pending[i];
+                run.user_id = uid;
+                GameResultLog.UploadOutcome outcome;
+                try
+                {
+                    string json = await client.RpcAsync("submit_game_result", GameResultLog.SubmitBody(run));
+                    var res = JsonUtility.FromJson<SubmitResult>(json);
+                    outcome = GameResultLog.OutcomeForStatus(res != null ? res.status : null);
+                }
+                catch (SupabaseException se) when (IsMissingFunction(se))
+                {
+                    await LegacyUploadAsync(uid, pending.GetRange(i, pending.Count - i));
+                    done.AddRange(pending.GetRange(i, pending.Count - i));
+                    return;
+                }
+                catch (SupabaseException se)
+                {
+                    outcome = GameResultLog.OutcomeForError(se.Status, se.IsNetwork);
+                    if (outcome == GameResultLog.UploadOutcome.Retry) throw;
+                    Debug.LogWarning($"CloudAccountService: the server refused run {run.run_id} ({run.level_id}) and it was dropped: {se.Message}");
+                }
+                if (outcome == GameResultLog.UploadOutcome.Retry)
+                    throw new SupabaseException("The server didn't confirm the result upload.", 0, null, isNetwork: true);
+                done.Add(run);
+            }
+        }
+        finally
+        {
+            if (done.Count > 0) { GameResultLog.MarkUploaded(uid, done); ResultsUploaded?.Invoke(); }
+        }
+    }
+
+    /// <summary>PostgREST's answer when a database function doesn't exist (the migration isn't applied yet).</summary>
+    static bool IsMissingFunction(SupabaseException se) =>
+        se.Status == 404 && ((se.Code ?? "").Contains("PGRST202") || (se.Message ?? "").Contains("Could not find the function"));
+
+    [Serializable]
+    class LegacyResultRow
+    {
+        public string user_id, run_id, level_id, completed_at;
+        public int score, max_score, stars, correct_answers, total_questions;
+        public bool passed;
+        public float total_answer_seconds;
+    }
+
+    async Task LegacyUploadAsync(string uid, List<GameResultLog.Row> runs)
+    {
+        var rows = new List<LegacyResultRow>();
+        foreach (var r in runs)
+            rows.Add(new LegacyResultRow
+            {
+                user_id = uid, run_id = r.run_id, level_id = r.level_id, completed_at = r.completed_at, score = r.score, max_score = r.max_score,
+                stars = r.stars, correct_answers = r.correct_answers, total_questions = r.total_questions, passed = r.passed,
+                total_answer_seconds = r.total_answer_seconds,
+            });
+        await client.UpsertAsync("game_results", SupabaseClient.ToJsonArray(rows), "user_id,run_id", ignoreDuplicates: true);
     }
 
     static LocalDataManager.LevelProgress ToLocal(LevelRow r) => new LocalDataManager.LevelProgress
@@ -605,6 +685,9 @@ public class CloudAccountService : MonoBehaviour
 
     static bool IsNetworkError(Exception e) => e is SupabaseException se && se.IsNetwork;
 
+    /// <summary>A player-friendly message for any account / database error (shared with ClassroomService).</summary>
+    public static string FriendlyError(Exception e) => Friendly(e);
+
     static string Friendly(Exception e)
     {
         if (!(e is SupabaseException se)) return "Something went wrong: " + e.Message;
@@ -625,7 +708,7 @@ public class CloudAccountService : MonoBehaviour
         if (Has("rate_limit") || se.Status == 429) return "Too many attempts. Wait a minute and try again.";
         if (Has("refresh_token") || Has("session_not_found") || Has("bad_jwt")) return "Your saved session expired. Please sign in again.";
         if (se.Status == 404 || Has("pgrst205") || Has("relation") || Has("schema cache"))
-            return "The game's database tables aren't set up yet. (Developer: run supabase/migrations/20261020022638_scam_sense_schema.sql.)";
+            return "The game's database isn't fully set up yet. (Developer: run every file in supabase/migrations, in order.)";
         if (Has("42501") || Has("row-level security")) return "The server refused to save this data (permission). Please sign in again.";
         return "Request failed: " + se.Message;
     }

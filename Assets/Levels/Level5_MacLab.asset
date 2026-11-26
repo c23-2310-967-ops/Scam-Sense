@@ -16,572 +16,793 @@ MonoBehaviour:
   levelNumber: 5
   displayName: The Compromised Campus Network
   sceneName: Room5_MacLab
-  description: Suspicious messages have been reported in the university MacLab. Investigate
-    the flagged workstations and decide what's real.
+  description: Keeping evidence safe, the hidden checks inside an email, identity-theft
+    forms, ransomware, fake QR codes and the right way to report.
   previewImage: {fileID: 21300000, guid: ec2bc026c46543c4788ea2715af04007, type: 3}
   briefingTitle: 'LEVEL 5: THE COMPROMISED CAMPUS NETWORK'
-  briefingText: "A series of suspicious emails and messages has been reported in
-    MacLab 3 at UPHSL Bi\xF1an. Five workstations have been flagged. Go to each one,
-    investigate the message on screen, and decide whether it is a scam or legitimate.
-    The instructor's computer holds the university's official contacts and policies
-    - compare before you decide."
+  briefingText: 'In this room: keeping evidence safe, the hidden checks inside an
+    email, identity-theft forms, ransomware, fake QR codes and the right way to report.
+
+    You''ll
+    get 6 questions: 4 with answer choices (A-D) and 2 to judge as SCAM or LEGITIMATE.
+    Take your time and read each one carefully.'
   caseNotes:
-  - "You are a UPHSL Bi\xF1an student helping the campus security team in MacLab
-    3."
-  - Your campus account is active - you passed the account check last month.
-  - You did not apply for any scholarship or grant this term.
-  - Your tuition for this term is fully paid (receipt on file).
+  - A "Scholarship Grant 2027" form is shared in a student group. It uses the school
+    logo.
+  - The canteen's "Scan to pay with PayLite" poster looks normal, but up close the
+    QR code is a sticker placed on top of the printed one.
   objectives:
-  - Investigate the five flagged workstations in the MacLab.
-  - Classify every reported message as SCAM or LEGITIMATE.
-  - Check the official records on the instructor's computer at the front.
+  - Answer all 6 questions.
+  - Read the whole situation before you choose. Stuck? Press HINT.
+  - Score 870+ to finish the investigation.
   messages:
-  - id: l5_account_verification
-    channel: 1
-    sender: UPHSL IT Services
-    senderDetail: it-services@uphsl-binan-accounts.example
-    subject: 'Final notice: your campus account will be suspended'
-    body: Our system shows your UPHSL Campus Account failed the annual security verification.
-      Your email, LMS and campus Wi-Fi access will be suspended in 12 hours. Verify
-      your username and password now to keep your access.
-    link: uphsl-binan-accounts.example/verify
+  - id: H05
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Scenario-Based
+    body: A friend was scammed through a chat app and wants to file a report. <b>Which
+      way of handling the evidence is best?</b>
+    link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: The address uses uphsl-binan-accounts.example, not the university's
-      own uphsl-binan.example. There was no earlier notice, a 12-hour suspension
-      threat adds pressure, and it asks for your password through its own link. UPHSL
-      IT never asks for passwords by email - check your account by opening the student
-      portal yourself.
-    trigger: 2
-    readingSeconds: 0
-    stationId: MAC-31
-    requestedAction: Enter your username and password on a linked page within 12
-      hours.
-    linkNote: uphsl-binan-accounts.example/verify (training placeholder, never opened).
-    clues:
-    - Claims to be UPHSL IT Services.
-    - 'Deadline: 12 hours.'
-    - Compare the domain with Official Contacts on the instructor's computer.
-    inspectables:
-    - id: name
-      field: 0
-      match: 
-      label: Display name
-      finding: It says 'UPHSL IT Services' - but anyone can type any display name.
-      linkAddress: 
-      clueId: displayname
-    - id: address
-      field: 1
-      match: 
-      label: Sender address
-      finding: uphsl-binan-accounts.example is not the university's domain. Official
-        mail comes only from uphsl-binan.example (Official Contacts on the instructor's
-        computer).
-      linkAddress: 
-      clueId: domain
-    - id: subject
-      field: 2
-      match: Final notice
-      label: Subject
-      finding: '''Final notice'' - but there was no first notice. Pressure in the
-        subject line is a common trick.'
-      linkAddress: 
-      clueId: pressure
-    - id: deadline
-      field: 3
-      match: suspended in 12 hours
-      label: Deadline
-      finding: A 12-hour suspension threat is there to make you act before you check.
-      linkAddress: 
-      clueId: deadline
-    - id: creds
-      field: 3
-      match: Verify your username and password
-      label: What it asks
-      finding: It wants your username and password. The Campus IT Security Notice
-        says IT never asks for passwords by email.
-      linkAddress: 
-      clueId: credentials
-    - id: link
-      field: 4
-      match: 
-      label: Link
-      finding: The link really goes to uphsl-binan-accounts.example/verify - a look-alike
-        sign-in page, not the student portal.
-      linkAddress: https://uphsl-binan-accounts.example/verify
-      clueId: link
-    evidence:
-    - id: domain
-      title: Look-alike sender domain
-      whyItMatters: uphsl-binan-accounts.example is not uphsl-binan.example.
-      supportsVerdict: 1
-    - id: pressure
-      title: '''Final notice'' with no first notice'
-      whyItMatters: Invented urgency stops people from checking.
-      supportsVerdict: 1
-    - id: deadline
-      title: 12-hour suspension threat
-      whyItMatters: Threats and short deadlines are pressure tactics.
-      supportsVerdict: 1
-    - id: credentials
-      title: Asks for your password
-      whyItMatters: Real IT teams never ask for passwords by email.
-      supportsVerdict: 1
-    - id: link
-      title: Link to a look-alike page
-      whyItMatters: Sign in only through the portal you already know.
-      supportsVerdict: 1
-    - id: displayname
-      title: Official-sounding name
-      whyItMatters: A display name is just text - on its own it proves nothing.
-      supportsVerdict: 0
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-  - id: l5_lab_reminder
-    channel: 0
-    sender: UPHSL Campus Alerts
-    senderDetail: Saved contact
-    subject: 
-    body: 'UPHSL Alerts: MacLab 3 is reserved today 1:00-4:00 PM for the CCS cybersecurity
-      workshop. Bring your student ID. No reply needed.'
-    link: 
-    correctVerdict: 1
-    scenarioContext: Fictional training example. The workshop is on this week's campus
-      schedule.
-    explanation: It comes from the saved UPHSL Campus Alerts contact, matches the
-      workshop listed in This Week on Campus, has no link and asks for nothing. This
-      is a fictional example - an unexpected request for a code, a password or a
-      payment would still need checking.
-    trigger: 1
+    explanation: Investigators can only trust evidence that is <b>complete</b> and
+      <b>unchanged</b>. Cropping hides context, and blurring hides the scammer's
+      name they need. Keeping the original and noting when you saved each item is
+      called the <b>chain of custody</b>. Uninstalling may delete the chat.
+    trigger: 0
     readingSeconds: 0
     stationId: 
-    requestedAction: Nothing - it's a reminder.
-    linkNote: No link.
-    clues:
-    - From the saved contact UPHSL Campus Alerts.
-    - No link, no reply needed.
-    - Compare with This Week on Campus.
-    inspectables: []
-    evidence: []
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables:
+    - id: chat
+      field: 5
+      match: untouched on the original phone
+      label: Original chat
+      finding: Complete, unchanged evidence on the original device can be trusted.
+      linkAddress: 
+      clueId: complete
+      part: chat
+    - id: shots
+      field: 5
+      match: profile and number, with dates and times
+      label: Full screenshots
+      finding: Identifiers and timestamps are what investigators need to trace the
+        scammer.
+      linkAddress: 
+      clueId: ids
+      part: shots
+    - id: receipt
+      field: 5
+      match: reference numbers
+      label: Receipts
+      finding: Reference numbers can help trace the money.
+      linkAddress: 
+      clueId: ids
+      part: receipt
+    - id: crop
+      field: 5
+      match: cropped screenshot with the scammer's name blurred
+      label: Edited copy
+      finding: Cropping removes context and blurring hides identifiers. Edited evidence
+        is weaker evidence.
+      linkAddress: 
+      clueId: edited
+      part: crop
+    - id: log
+      field: 5
+      match: when and how each item was collected
+      label: Collection note
+      finding: 'This is a basic chain of custody: it shows the evidence wasn''t changed.'
+      linkAddress: 
+      clueId: custody
+      part: log
+    evidence:
+    - id: complete
+      title: Complete and unchanged
+      whyItMatters: Evidence has to be complete to be trusted.
+      supportsVerdict: 1
+    - id: ids
+      title: Identifiers kept
+      whyItMatters: Names, numbers and references are the leads.
+      supportsVerdict: 1
+    - id: edited
+      title: Edits weaken evidence
+      whyItMatters: Don't crop or blur; share copies instead.
+      supportsVerdict: 1
+    - id: custody
+      title: Chain of custody
+      whyItMatters: Record when and how each item was collected.
+      supportsVerdict: 1
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Crop the screenshots to just the scam message and blur the scammer's name for
+      privacy
+    - Forward everything to a big group chat so more people can confirm it
+    - Keep the original chat untouched, take full screenshots (with names, dates
+      and times), save receipts, share only copies, and note when you saved each
+      one
+    - Uninstall the app to stop the scammer and write down what you remember
+    correctChoice: 2
+    feedback: Keep the <b>originals untouched</b>, share copies, and note when you
+      saved each one.
+    curriculumRef: "Cyber Forensics (BIT2226) \u2014 Legal Aspects of Cyber Forensics
+      (\"maintaining evidence integrity\"). Supporting: Digital Evidence and Evidence
+      Collection"
+    hint: Investigators need evidence that is complete and unchanged.
+    activity:
+      kind: 9
+      title: Your friend's evidence folder
+      instruction: Check each item. Which evidence can investigators trust?
+      items:
+      - key: chat
+        role: 6
+        label: original
+        text: Full chat with the scammer, untouched on the original phone
+      - key: shots
+        role: 6
+        label: screenshots
+        text: Full screenshots showing the profile and number, with dates and times
+      - key: receipt
+        role: 6
+        label: receipts
+        text: Payment receipts with reference numbers
+      - key: crop
+        role: 6
+        label: edited copy
+        text: A cropped screenshot with the scammer's name blurred
+      - key: log
+        role: 8
+        label: 
+        text: A note of when and how each item was collected
+      minClues: 2
+      outcomes:
+      - Investigators can't confirm the cropped images - and the blurred name was
+        the lead they needed.
+      - Your friend's personal data spreads through the group, and copies get changed
+        along the way.
+      - Investigators get complete, unchanged evidence with a clear record of how
+        it was collected.
+      - Uninstalling may wipe the chat history, leaving the report to rest on memory
+        alone.
+  - id: H06
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Identify the Threat
+    body: 'Email header excerpt:
+
+      From: "Registrar''s Office" <noparse><</noparse>registrar@uphsl-binan.example<noparse>></noparse>
+
+      Reply-To:
+      registrar.office.ph@freemail.example
+
+      Return-Path: <noparse><</noparse>bounce@mailer-xyz.example<noparse>></noparse>
+
+      Authentication-Results:
+      spf=fail; dkim=none; dmarc=fail
+
+      Subject: FINAL reminder: unpaid tuition,
+      account on hold
+
+      <b>Which clue best proves this email is fake (spoofed)?</b>'
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 'The "From" name can say anything. <b>SPF and DMARC</b> are checks
+      that ask: did the school''s own mail system really send this? Both <b>failed</b>.
+      Reply-To also sends your answer to the scammer. The subject and the time are
+      only weak clues.'
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables:
+    - id: display
+      field: 5
+      match: '"Registrar''s Office"'
+      label: Display name
+      finding: The From line can say anything. A display name proves nothing.
+      linkAddress: 
+      clueId: 
+      part: from
+    - id: spf
+      field: 5
+      match: spf=fail
+      label: SPF
+      finding: 'SPF fail: the registrar''s domain did not authorize the server that
+        sent this email.'
+      linkAddress: 
+      clueId: authfail
+      part: auth
+    - id: dmarc
+      field: 5
+      match: dmarc=fail
+      label: DMARC
+      finding: 'DMARC fail: the email doesn''t line up with the registrar''s own
+        domain policy.'
+      linkAddress: 
+      clueId: authfail
+      part: auth
+    - id: reply
+      field: 5
+      match: freemail.example
+      label: Reply-To
+      finding: Replies quietly go to a free-mail address - straight to the attacker.
+      linkAddress: 
+      clueId: replyto
+      part: reply
+    - id: ret
+      field: 5
+      match: mailer-xyz.example
+      label: Return-Path
+      finding: A different bounce domain. Worth noting, but the authentication results
+        tell you more.
+      linkAddress: 
+      clueId: 
+      part: ret
+    - id: subject
+      field: 5
+      match: FINAL reminder
+      label: Subject
+      finding: Pressure is a weak sign on its own. Real reminders can sound urgent
+        too.
+      linkAddress: 
+      clueId: 
+      part: subject
+    - id: time
+      field: 5
+      match: 2:14 AM
+      label: Time sent
+      finding: Odd hours are a weak sign. Emails are sent at all hours.
+      linkAddress: 
+      clueId: 
+      part: time
+    evidence:
+    - id: authfail
+      title: SPF and DMARC fail
+      whyItMatters: The domain didn't authorize the sender.
+      supportsVerdict: 1
+    - id: replyto
+      title: Reply-To goes to free mail
+      whyItMatters: Your answer would go to the attacker.
+      supportsVerdict: 1
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - The sender checks (SPF and DMARC) fail, and replies go to a free-mail address
+    - The subject mentions tuition
+    - The display name says "Registrar's Office"
+    - It was sent at 2:14 AM
+    correctChoice: 0
+    feedback: SPF and DMARC <b>failed</b>, and replies go to free-mail. The "From"
+      name is just text anyone can type.
+    curriculumRef: "Cyber Forensics (BIT2226) \u2014 Network Forensics and Cybercrime
+      Investigation (\"identify signs of cybercrimes\")"
+    hint: The "From" name is just text. Which lines are checks the mail system actually
+      ran?
+    activity:
+      kind: 1
+      title: "Message source  \xB7  headers"
+      instruction: Check each header line. Which one is strong proof?
+      items:
+      - key: from
+        role: 0
+        label: From
+        text: '"Registrar''s Office" <registrar@uphsl-binan.example>'
+      - key: reply
+        role: 0
+        label: Reply-To
+        text: registrar.office.ph@freemail.example
+      - key: ret
+        role: 0
+        label: Return-Path
+        text: bounce@mailer-xyz.example
+      - key: auth
+        role: 0
+        label: Authentication-Results
+        text: spf=fail; dkim=none; dmarc=fail
+      - key: subject
+        role: 0
+        label: Subject
+        text: 'FINAL reminder: unpaid tuition, account on hold'
+      - key: time
+        role: 0
+        label: Sent
+        text: 2:14 AM
+      minClues: 2
+      outcomes: []
+  - id: H07
+    channel: 2
+    sender: Scholarship Grant 2027 form
+    senderDetail: 
+    subject: Scholarship Grant 2027
+    body: 'Please provide: full name, student number, birthdate, mother''s maiden
+      name, front and back of your ID, a selfie holding your ID, and your PayLite
+      MPIN "for fast release of funds".
+
+
+      There is no privacy notice. The only
+      contact is a mobile number.'
+    link: 
+    correctVerdict: 0
+    scenarioContext: A "Scholarship Grant 2027" form is shared in a student group.
+      It uses the school logo.
+    explanation: Real scholarships may ask for an ID, which makes this tricky. But
+      <b>no one needs your MPIN to send you money</b>, and an ID plus a selfie holding
+      it is all a scammer needs to open accounts as you. There is no privacy notice
+      and only a mobile number, so check with the scholarship office directly.
+    trigger: 2
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: The form
+      finding: Shared in a student group and using the school logo. Logos are easy
+        to copy.
+      linkAddress: 
+      clueId: 
+      part: 
+    - id: maiden
+      field: 3
+      match: mother's maiden name
+      label: It asks for
+      finding: A classic security-question answer, used to reset accounts.
+      linkAddress: 
+      clueId: secq
+      part: 
+    - id: selfie
+      field: 3
+      match: a selfie holding your ID
+      label: It asks for
+      finding: ID photos plus a selfie let someone open accounts as you.
+      linkAddress: 
+      clueId: idtheft
+      part: 
+    - id: mpin
+      field: 3
+      match: your PayLite MPIN
+      label: It asks for
+      finding: Your MPIN is like your e-wallet password. Nobody legitimate asks for
+        it.
+      linkAddress: 
+      clueId: mpin
+      part: 
+    - id: notice
+      field: 3
+      match: There is no privacy notice.
+      label: Privacy notice
+      finding: No notice means no explanation of why the data is collected or what
+        happens to it.
+      linkAddress: 
+      clueId: notice
+      part: 
+    - id: contact
+      field: 3
+      match: The only contact is a mobile number.
+      label: Contact
+      finding: No office, no official address - nobody accountable.
+      linkAddress: 
+      clueId: notice
+      part: 
+    evidence:
+    - id: mpin
+      title: Asks for your MPIN
+      whyItMatters: Never share it with anyone.
+      supportsVerdict: 1
+    - id: idtheft
+      title: ID plus selfie
+      whyItMatters: Everything needed to pretend to be you.
+      supportsVerdict: 1
+    - id: secq
+      title: Security-question answer
+      whyItMatters: Used to take over accounts.
+      supportsVerdict: 1
+    - id: notice
+      title: No privacy notice, no real contact
+      whyItMatters: Nobody is accountable for your data.
+      supportsVerdict: 1
     consequence:
       kind: 0
       alertTitle: 
       alertBody: 
       overlookedClue: 
-      followUp: 0
+      followUp: 1
       recheckDetails: []
-  - id: l5_scholarship
-    channel: 1
-    sender: UPHSL Scholarship & Grants Office
-    senderDetail: grants@uphsl-scholarship-awards.example
-    subject: Congratulations! You've been pre-selected for a $2,000 grant
-    body: You have been pre-selected for the 2026 Excellence Grant. To release your
-      funds, complete the claim form with your student number, date of birth, bank
-      account details and a photo of your ID within 48 hours. A $15 processing fee
-      applies.
-    link: uphsl-scholarship-awards.example/claim
+    choices: []
+    correctChoice: 0
+    feedback: Scam! <b>No one needs your MPIN to pay you.</b> With your ID, selfie
+      and MPIN, they can become you.
+    curriculumRef: "Social and Professional Issues (BIT2105) \u2014 Week 15: Data
+      Privacy Act (RA 10173)"
+    hint: Look at the PIN request. Does anyone need that to send you money?
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
+  - id: H08
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: What Should You Do?
+    body: After you open an email attachment on a lab PC, your files start changing
+      to <b>.locked</b> and a note demands cryptocurrency. <b>What do you do first?</b>
+    link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: You never applied for a grant, the address is uphsl-scholarship-awards.example
-      instead of the university's domain, it asks for your bank details and an ID
-      photo on an unverified site, gives a 48-hour deadline and charges a fee to
-      receive money. The real Scholarships office uses the student portal and never
-      charges fees.
+    explanation: 'First, stop it spreading: cut the network so it can''t reach other
+      PCs. Leave the PC on so investigators keep the evidence. Paying doesn''t promise
+      your files back, restarting can erase evidence, and a USB can carry the infection.'
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables:
+    - id: locked
+      field: 5
+      match: .locked
+      label: File names
+      finding: Your files are being encrypted right now. This is ransomware.
+      linkAddress: 
+      clueId: ransomware
+      part: f1
+    - id: locked2
+      field: 5
+      match: .locked
+      label: More files
+      finding: It's spreading through your files while you watch.
+      linkAddress: 
+      clueId: ransomware
+      part: f2
+    - id: readme
+      field: 5
+      match: README_RESTORE_FILES.txt
+      label: New file
+      finding: The ransom note. Don't delete it - it's evidence.
+      linkAddress: 
+      clueId: 
+      part: note
+    - id: pay
+      field: 5
+      match: Pay in cryptocurrency
+      label: The demand
+      finding: Paying doesn't guarantee you'll get your files back.
+      linkAddress: 
+      clueId: 
+      part: ransom
+    - id: net
+      field: 5
+      match: shared drives
+      label: Network
+      finding: While connected, ransomware can spread to shared drives and other
+        PCs. Cutting the connection contains it.
+      linkAddress: 
+      clueId: contain
+      part: net
+    - id: power
+      field: 5
+      match: PC is on
+      label: Power
+      finding: Leaving it on keeps evidence in memory for investigators. Restarting
+        can destroy it.
+      linkAddress: 
+      clueId: evidence
+      part: power
+    evidence:
+    - id: ransomware
+      title: Files being encrypted
+      whyItMatters: Ransomware is active on this PC.
+      supportsVerdict: 1
+    - id: contain
+      title: Still on the network
+      whyItMatters: Disconnect first to stop it spreading.
+      supportsVerdict: 1
+    - id: evidence
+      title: Evidence in memory
+      whyItMatters: Leave the PC on and report it.
+      supportsVerdict: 1
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Pay quickly before the price goes up
+    - Unplug it from the network (or turn off Wi-Fi), leave it on, stop using it,
+      and report to IT right away
+    - Restart, run a cleanup tool and delete the ransom note
+    - Copy your files to your USB drive to save them
+    correctChoice: 1
+    feedback: <b>Disconnect, keep it on, report.</b> Stop the spread first. Investigators
+      need the evidence.
+    curriculumRef: "Computer Security (BIT1225) \u2014 Incident Response and Forensics"
+    hint: First stop it from spreading, and keep the evidence.
+    activity:
+      kind: 8
+      title: "Lab PC  \xB7  Documents"
+      instruction: Check what's happening on this PC, then choose your first step.
+      items:
+      - key: f1
+        role: 4
+        label: changed just now
+        text: Thesis_Draft.docx.locked
+      - key: f2
+        role: 4
+        label: changed just now
+        text: Budget.xlsx.locked
+      - key: note
+        role: 4
+        label: new
+        text: README_RESTORE_FILES.txt
+      - key: ransom
+        role: 5
+        label: RANSOM NOTE
+        text: Your files are encrypted. Pay in cryptocurrency to get them back.
+      - key: net
+        role: 6
+        label: network
+        text: "Connected  \xB7  lab network and shared drives"
+      - key: power
+        role: 6
+        label: power
+        text: PC is on
+      minClues: 2
+      outcomes:
+      - The money goes to criminals with no guarantee your files come back - and
+        the infection keeps spreading.
+      - The infection is cut off from shared drives and other PCs, and the evidence
+        in memory is kept for the incident team.
+      - Restarting can destroy evidence in memory, and cleaning up doesn't stop what
+        has already spread.
+      - The USB copy holds already-locked files and may carry the infection to the
+        next computer.
+  - id: H09
+    channel: 2
+    sender: Page opened by the canteen QR code
+    senderDetail: 
+    subject: Scan to pay with PayLite
+    body: Enter your mobile number and MPIN to pay.
+    link: paylite-merchant-pay.example/canteen
+    correctVerdict: 0
+    scenarioContext: The canteen's "Scan to pay with PayLite" poster looks normal,
+      but up close the QR code is a sticker placed on top of the printed one.
+    explanation: This is <b>QR code phishing</b>. The sticker over the real code
+      is the clue you can see. A real payment QR opens <b>inside your e-wallet app</b>
+      and shows the shop's name. It never asks for your MPIN on a web page. Tell
+      the canteen staff too.
     trigger: 2
     readingSeconds: 0
-    stationId: MAC-15
-    requestedAction: Send student number, date of birth, bank details and an ID photo,
-      and pay a $15 fee, within 48 hours.
-    linkNote: uphsl-scholarship-awards.example/claim (training placeholder, never
-      opened).
-    clues:
-    - A grant you never applied for.
-    - Fee plus sensitive personal details.
-    - Compare with Scholarships & Payments.
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
     inspectables:
-    - id: name
+    - id: sticker
       field: 0
       match: 
-      label: Display name
-      finding: '''UPHSL Scholarship & Grants Office'' sounds official - the name
-        alone proves nothing.'
+      label: How you got here
+      finding: The QR code was a sticker placed on top of the printed one (case notes).
+        Someone swapped it.
       linkAddress: 
-      clueId: official
-    - id: address
-      field: 1
-      match: 
-      label: Sender address
-      finding: uphsl-scholarship-awards.example isn't the university. The real office
-        is scholarships@uphsl-binan.example.
-      linkAddress: 
-      clueId: domain
-    - id: offer
-      field: 2
-      match: pre-selected
-      label: The offer
-      finding: '''Pre-selected'' for a grant you never applied for (your case notes).'
-      linkAddress: 
-      clueId: notapplied
-    - id: data
+      clueId: sticker
+      part: 
+    - id: mpin
       field: 3
-      match: student number, date of birth, bank account details and a photo of your
-        ID
-      label: What it asks
-      finding: That's enough to steal your identity and your money. Real scholarship
-        offices never ask for this by email.
+      match: MPIN
+      label: It asks for
+      finding: A web page asking for your MPIN is a phishing page. Enter it only
+        inside the official app.
       linkAddress: 
-      clueId: data
-    - id: deadline
-      field: 3
-      match: within 48 hours
-      label: Deadline
-      finding: A short deadline leaves no time to check.
-      linkAddress: 
-      clueId: deadline
-    - id: fee
-      field: 3
-      match: A $15 processing fee applies
-      label: Fee
-      finding: A genuine grant never costs money to receive.
-      linkAddress: 
-      clueId: fee
+      clueId: mpin
+      part: 
     - id: link
       field: 4
       match: 
-      label: Link
-      finding: uphsl-scholarship-awards.example/claim is an unverified website, not
-        the student portal.
-      linkAddress: https://uphsl-scholarship-awards.example/claim
-      clueId: link
+      label: Address
+      finding: paylite-merchant-pay.example is a separate domain, not the official
+        app.
+      linkAddress: paylite-merchant-pay.example/canteen
+      clueId: domain
+      part: 
     evidence:
-    - id: notapplied
-      title: A grant you never applied for
-      whyItMatters: Unexpected money is the bait.
+    - id: sticker
+      title: QR sticker over the real one
+      whyItMatters: Tampered QR codes send you to fake pages.
+      supportsVerdict: 1
+    - id: mpin
+      title: Asks for your MPIN on a web page
+      whyItMatters: Your MPIN belongs only in the app.
       supportsVerdict: 1
     - id: domain
       title: Unofficial domain
-      whyItMatters: uphsl-scholarship-awards.example is not uphsl-binan.example.
-      supportsVerdict: 1
-    - id: data
-      title: Asks for ID photo and bank details
-      whyItMatters: Identity and banking details are what scammers want.
-      supportsVerdict: 1
-    - id: fee
-      title: Fee to receive money
-      whyItMatters: Real scholarships never charge to pay you.
-      supportsVerdict: 1
-    - id: deadline
-      title: 48-hour deadline
-      whyItMatters: Pressure to act before verifying.
-      supportsVerdict: 1
-    - id: link
-      title: Unverified claim website
-      whyItMatters: Apply and claim only through the student portal.
-      supportsVerdict: 1
-    - id: official
-      title: Official-sounding office name
-      whyItMatters: Names are easy to copy - check the address.
-      supportsVerdict: 0
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-  - id: l5_campus_announcement
-    channel: 1
-    sender: UPHSL Office of Student Affairs
-    senderDetail: studentaffairs@uphsl-binan.example
-    subject: Campus Wi-Fi maintenance this Saturday
-    body: The campus Wi-Fi will be unavailable on Saturday from 6:00 to 9:00 AM for
-      scheduled maintenance. No action is needed from you. The schedule is also posted
-      on the student portal and on the display in the MacLab.
-    link: 
-    correctVerdict: 1
-    scenarioContext: Fictional training example. The sender domain and the schedule
-      match the university's official records.
-    explanation: It comes from studentaffairs@uphsl-binan.example - the university's
-      official domain - it describes an ordinary maintenance window that matches
-      This Week on Campus and the notice on the MacLab display, and it asks for nothing.
-      A fictional example, not a promise that every email in this style is safe.
-    trigger: 2
-    readingSeconds: 0
-    stationId: MAC-20
-    requestedAction: Nothing - plan around the outage.
-    linkNote: No link. It points you to the portal and the MacLab display.
-    clues:
-    - 'Specific time: Saturday 6:00-9:00 AM.'
-    - Asks for nothing.
-    - Compare with the MacLab display and This Week on Campus.
-    inspectables:
-    - id: address
-      field: 1
-      match: 
-      label: Sender address
-      finding: studentaffairs@uphsl-binan.example uses the university's only official
-        domain (Official Contacts).
-      linkAddress: 
-      clueId: domain
-    - id: when
-      field: 3
-      match: Saturday from 6:00 to 9:00 AM
-      label: Details
-      finding: A specific, ordinary maintenance window - nothing to do but plan around
-        it.
-      linkAddress: 
-      clueId: specific
-    - id: noaction
-      field: 3
-      match: No action is needed from you
-      label: What it asks
-      finding: 'It asks for nothing: no link, no password, no payment.'
-      linkAddress: 
-      clueId: noask
-    - id: posted
-      field: 3
-      match: on the display in the MacLab
-      label: Where to check
-      finding: You can confirm it yourself - the same notice is on the display at
-        the front of the lab.
-      linkAddress: 
-      clueId: matches
-    - id: subject
-      field: 2
-      match: 
-      label: Subject
-      finding: Plain and calm. It doesn't prove anything on its own, but there's
-        no pressure.
-      linkAddress: 
-      clueId: 
-    evidence:
-    - id: domain
-      title: Official university domain
-      whyItMatters: uphsl-binan.example is listed in Official Contacts.
-      supportsVerdict: 1
-    - id: specific
-      title: Specific, ordinary details
-      whyItMatters: A real maintenance notice names the date and time.
-      supportsVerdict: 1
-    - id: noask
-      title: Asks for nothing risky
-      whyItMatters: No link, password, code or payment is requested.
-      supportsVerdict: 1
-    - id: matches
-      title: Matches the lab display and records
-      whyItMatters: You can verify it independently.
+      whyItMatters: Not PayLite's own app or site.
       supportsVerdict: 1
     consequence:
       kind: 0
       alertTitle: 
       alertBody: 
       overlookedClue: 
-      followUp: 0
+      followUp: 1
       recheckDetails: []
-  - id: l5_malicious_attachment
-    channel: 1
-    sender: Office of the Registrar
-    senderDetail: registrar@upshl-binan.example
-    subject: Revised enrolment requirements - open the attachment today
-    body: 'Please review the attached revised enrolment requirements before your
-      classes are affected. When the file opens, click Enable Content so the form
-      displays correctly.
-
-      Attachment: Enrolment_Requirements_2026.pdf.exe
-      (48 KB)'
+    choices: []
+    correctChoice: 0
+    feedback: Scam! A sticker, a web page and an MPIN request. Real payments happen
+      <b>inside the app</b>.
+    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 17:
+      Real-World Applications and Case Studies"
+    hint: Look closely at the QR code itself, and think about where a real payment
+      happens.
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
+  - id: H10
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Scenario-Based
+    body: You find a fake school login page. Its admin page is publicly open and
+      shows a list of <b>student passwords</b> it has captured. <b>What is the ethical
+      action?</b>
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: The address is upshl-binan.example - two letters swapped compared
-      with the real uphsl-binan.example. The 'PDF' actually ends in .exe, so it's
-      a program, and 'Enable Content' would let hidden code run. The Registrar posts
-      requirements on the student portal and never sends them as attachments.
-    trigger: 2
+    explanation: 'Using stolen passwords, even to help, is not allowed and can hurt
+      the victims more. Posting the link sends more people to the fake page, and
+      testing it gives away your own password. Report it: IT has the right to act.
+      (ACM Code of Ethics: avoid harm, respect privacy, use only what you''re allowed
+      to.)'
+    trigger: 0
     readingSeconds: 0
-    stationId: MAC-11
-    requestedAction: Open an attached file and click Enable Content.
-    linkNote: No link - the danger is the attachment (simulated, never opened).
-    clues:
-    - Unexpected attachment from 'the Registrar'.
-    - Asks you to Enable Content.
-    - Compare the domain spelling with Official Contacts.
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
     inspectables:
-    - id: name
-      field: 0
-      match: 
-      label: Display name
-      finding: '''Office of the Registrar'' is a real office''s name - copying it
-        is easy.'
+    - id: addr
+      field: 5
+      match: student-portal-login.example
+      label: The address
+      finding: For your report, write it in a non-clickable form, e.g. hxxp://student-portal-login[.]example,
+        so nobody opens it by accident.
       linkAddress: 
-      clueId: official
-    - id: address
-      field: 1
-      match: 
-      label: Sender address
-      finding: 'Look closely: upshl-binan.example - ''upshl'' instead of ''uphsl''.
-        The real domain is uphsl-binan.example.'
+      clueId: report
+      part: addr
+    - id: open
+      field: 5
+      match: No sign-in needed
+      label: Open access
+      finding: Being able to see it doesn't make it yours to use. Using it further
+        would be unauthorized access.
       linkAddress: 
-      clueId: lookalike
-    - id: subject
-      field: 2
-      match: open the attachment today
-      label: Subject
-      finding: An unexpected attachment plus 'today'. Requirements are posted on
-        the student portal (This Week on Campus).
+      clueId: unauth
+      part: open
+    - id: r1
+      field: 5
+      match: student_0417
+      label: Captured entry
+      finding: Real victims' stolen passwords. Handling them breaks their privacy
+        - even to help.
       linkAddress: 
-      clueId: urgent
-    - id: enable
-      field: 3
-      match: click Enable Content
-      label: Instruction
-      finding: '''Enable Content'' switches on macros - a common way documents run
-        hidden code.'
+      clueId: privacy
+      part: r1
+    - id: r2
+      field: 5
+      match: student_0932
+      label: Captured entry
+      finding: Another victim. Their data isn't yours to download or share.
       linkAddress: 
-      clueId: macros
-    - id: file
-      field: 3
-      match: Enrolment_Requirements_2026.pdf.exe
-      label: Attachment
-      finding: 'It ends in .exe: a program pretending to be a PDF. Opening it could
-        install malware. (Simulated - nothing is opened.)'
+      clueId: privacy
+      part: r2
+    - id: download
+      field: 5
+      match: DOWNLOAD LIST
+      label: Download
+      finding: 'Downloading means handling stolen data without authorization. (Simulated:
+        nothing downloads.)'
       linkAddress: 
-      clueId: doubleext
+      clueId: unauth
+      part: download
     evidence:
-    - id: lookalike
-      title: Misspelled university domain
-      whyItMatters: upshl-binan.example imitates uphsl-binan.example.
+    - id: unauth
+      title: No authorization
+      whyItMatters: Access computing resources only when authorized.
       supportsVerdict: 1
-    - id: doubleext
-      title: '''.pdf.exe'' attachment'
-      whyItMatters: A double extension hides a program inside a fake document name.
+    - id: privacy
+      title: Other people's data
+      whyItMatters: Respect privacy; avoid harm.
       supportsVerdict: 1
-    - id: macros
-      title: Asks you to Enable Content
-      whyItMatters: Macros in unexpected files can run malicious code.
+    - id: report
+      title: Report it safely
+      whyItMatters: Screenshots and a non-clickable URL for IT.
       supportsVerdict: 1
-    - id: urgent
-      title: Unexpected attachment with urgency
-      whyItMatters: Real offices post requirements on the portal.
-      supportsVerdict: 1
-    - id: official
-      title: Real office name
-      whyItMatters: A copied name proves nothing.
-      supportsVerdict: 0
     consequence:
-      kind: 0
+      kind: 4
       alertTitle: 
       alertBody: 
       overlookedClue: 
-      followUp: 0
+      followUp: 1
       recheckDetails: []
-  - id: l5_impersonation
-    channel: 1
-    sender: UPHSL Accounting Office
-    senderDetail: uphsl.accountingoffice@quickmail.example
-    subject: 'URGENT: tuition balance - pay today to avoid being dropped'
-    body: Due to an internal audit, tuition payments must now be sent to our new
-      bank account (Account 0042-7781-9930). Settle your remaining balance today
-      or you will be dropped from your classes. Do not call the office - our lines
-      are busy. Reply with your payment receipt.
-    link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: A university office wouldn't use a free quickmail.example address,
-      your tuition is already paid, payment details never change by email, and 'don't
-      call the office' stops you from checking with the real Accounting Office on
-      +1 (555) 010-2200. Threats plus changed bank details are classic impersonation.
-    trigger: 2
-    readingSeconds: 0
-    stationId: MAC-06
-    requestedAction: Send a tuition payment to a new bank account today.
-    linkNote: No link - it wants a bank transfer.
-    clues:
-    - Claims to be the Accounting Office.
-    - New bank account and a same-day threat.
-    - Compare with Scholarships & Payments and your case notes.
-    inspectables:
-    - id: name
-      field: 0
-      match: 
-      label: Display name
-      finding: '''UPHSL Accounting Office'' - a name anyone can type.'
-      linkAddress: 
-      clueId: official
-    - id: address
-      field: 1
-      match: 
-      label: Sender address
-      finding: quickmail.example is a free email service. University offices use
-        uphsl-binan.example.
-      linkAddress: 
-      clueId: freemail
-    - id: bank
-      field: 3
-      match: new bank account
-      label: Payment change
-      finding: A sudden change of bank details is a classic payment-redirection scam.
-        Payment details never change by email.
-      linkAddress: 
-      clueId: newbank
-    - id: balance
-      field: 3
-      match: Settle your remaining balance today
-      label: The claim
-      finding: Your case notes say your tuition is already fully paid.
-      linkAddress: 
-      clueId: paid
-    - id: threat
-      field: 3
-      match: you will be dropped from your classes
-      label: Threat
-      finding: A threat to drop you pushes you to pay before checking.
-      linkAddress: 
-      clueId: threat
-    - id: nocall
-      field: 3
-      match: Do not call the office
-      label: No calls
-      finding: Stopping you from calling is how impostors avoid being caught. Call
-        the number in Official Contacts.
-      linkAddress: 
-      clueId: nocall
-    evidence:
-    - id: freemail
-      title: Free email address
-      whyItMatters: Offices use the university domain, not free mail.
-      supportsVerdict: 1
-    - id: newbank
-      title: Changed bank details
-      whyItMatters: Payment details never change by email.
-      supportsVerdict: 1
-    - id: paid
-      title: Your tuition is already paid
-      whyItMatters: The claim contradicts your own records.
-      supportsVerdict: 1
-    - id: threat
-      title: Threat to drop you from classes
-      whyItMatters: Fear is used to rush payment.
-      supportsVerdict: 1
-    - id: nocall
-      title: '''Do not call the office'''
-      whyItMatters: Impostors block the one check that would expose them.
-      supportsVerdict: 1
-    - id: official
-      title: Office name in the sender
-      whyItMatters: Copied names prove nothing.
-      supportsVerdict: 0
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
+    choices:
+    - Download the list and message each victim yourself
+    - Post the link on the freedom wall to warn everyone
+    - Test it with your own real password to confirm it works
+    - Report it to the school's IT office with screenshots and the web address, without
+      logging in or using the stolen data
+    correctChoice: 3
+    feedback: Report it, don't touch it. Good intentions don't make <b>using stolen
+      data</b> okay.
+    curriculumRef: "Social and Professional Issues (BIT2105) \u2014 Week 16: Professional
+      Organization and ACM Code of Ethics"
+    hint: Which choice helps the victims without you touching the stolen data?
+    activity:
+      kind: 2
+      title: "Admin panel  \xB7  fake school login"
+      instruction: Look at the page, but don't touch anything. What is the right
+        thing to do?
+      items:
+      - key: addr
+        role: 0
+        label: Address
+        text: http://student-portal-login.example/admin
+      - key: open
+        role: 8
+        label: 
+        text: No sign-in needed to view this page.
+      - key: r1
+        role: 6
+        label: captured
+        text: "student_0417  \xB7  \u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+      - key: r2
+        role: 6
+        label: captured
+        text: "student_0932  \xB7  \u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+      - key: hidden
+        role: 8
+        label: 
+        text: Passwords are hidden in this simulation.
+      - key: download
+        role: 7
+        label: 
+        text: DOWNLOAD LIST
+      minClues: 2
+      outcomes:
+      - You're now holding other people's stolen data without authorization, and
+        contacting victims yourself can cause more harm.
+      - The post sends more students to the fake page, and more passwords are captured.
+      - Your own password joins the captured list.
+      - IT takes action with the authority to protect the victims, and you never
+        touched the stolen data.
   inboxExtras:
   - id: l5_old_welcome
     channel: 1
@@ -610,35 +831,42 @@ MonoBehaviour:
       overlookedClue: 
       followUp: 0
       recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: 
+    curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   caseFiles:
-  - title: Campus IT Security Notice
-    body: "<b>UPHSL Bi\xF1an IT Services</b>\n\n\u2022  We will <b>never</b> ask
-      for your password, verification codes or personal details by email, text or
-      chat.\n\u2022  Account checks happen only when <b>you</b> sign in to the student
-      portal (bookmark: portal.uphsl-binan.example).\n\u2022  Never open unexpected
-      attachments, and never click <b>Enable Content</b> on a document you didn't
-      expect.\n\u2022  Report suspicious messages to security@uphsl-binan.example."
-  - title: Official Contacts & Domains
-    body: "The university's only email domain is <b>uphsl-binan.example</b>.\n\n\u2022 
-      IT Services - it@uphsl-binan.example\n\u2022  Student Affairs - studentaffairs@uphsl-binan.example\n\u2022 
-      Registrar - registrar@uphsl-binan.example\n\u2022  Scholarships - scholarships@uphsl-binan.example\n\u2022 
-      Accounting - accounting@uphsl-binan.example \xB7 +1 (555) 010-2200\n\u2022 
-      Campus Alerts - texts from the saved contact \"UPHSL Campus Alerts\"\n\nNot
-      official: uphsl-binan-accounts, uphsl-scholarship-awards, upshl-binan (note
-      the spelling), and any free email service."
-  - title: Scholarships & Payments
-    body: '<b>Scholarships:</b> students apply through the student portal. The office
-      never charges a fee and never asks for bank details or ID photos by email.
+  - title: Case Notes
+    body: "\u2022 A \"Scholarship Grant 2027\" form is shared in a student group.
+      It uses the school logo.\n\u2022 The canteen's \"Scan to pay with PayLite\"
+      poster looks normal, but up close the QR code is a sticker placed on top of
+      the printed one."
+  - title: How This Room Works
+    body: '1. 6 questions arrive one at a time, in a new order each attempt.
 
 
-      <b>Tuition:</b>
-      paid only through the student portal or at the campus cashier. Payment details
-      never change by email - if in doubt, call Accounting on +1 (555) 010-2200.'
-  - title: This Week on Campus
-    body: "\u2022  <b>Today 1:00-4:00 PM</b> - MacLab 3 reserved for the CCS cybersecurity
-      workshop.\n\u2022  <b>Saturday 6:00-9:00 AM</b> - scheduled campus Wi-Fi maintenance
-      (no action needed).\n\u2022  Enrolment requirements for next term are posted
-      on the student portal - not sent as attachments."
+      2.
+      Case questions: pick the safest, most accurate answer (A-D).
+
+
+      3. Messages
+      and web pages: choose SCAM or LEGITIMATE.
+
+
+      4. Not sure? Press HINT to
+      see what to look at. After each answer you''ll see why it was right or wrong.
+
+
+      Goal:
+      score 870+ to finish the investigation.'
   firstMessageDelay: 8
   delayBetweenMessages: {x: 8, y: 14}
   minimumActivityDelay: 4
@@ -646,42 +874,37 @@ MonoBehaviour:
     basePoints: 300
     speedBonus: 30
     fastWindow: 0.35
-    wrongPenalty: 60
-    recoveryPoints: 70
+    wrongPenalty: 45
+    recoveryPoints: 75
     baseReadingSeconds: 20
     secondsPerWord: 0.5
     secondsPerDetail: 3
-    minReadingSeconds: 40
-    maxReadingSeconds: 120
+    minReadingSeconds: 45
+    maxReadingSeconds: 150
     caseExtraSeconds: 75
     overtimeStepSeconds: 10
     overtimePenaltyPerStep: 10
-    maxTimePenalty: 70
-    minCorrectPoints: 230
-  oneStarScore: 1
-  twoStarScore: 1380
-  threeStarScore: 1560
-  minScoreToUnlockNext: 1380
+    maxTimePenalty: 60
+    minCorrectPoints: 240
+  oneStarScore: 585
+  twoStarScore: 870
+  threeStarScore: 1800
+  minScoreToUnlockNext: 870
   nextLevelId: 
   nextSceneName: 
   lessons:
-  - Universities send mail from one official domain - look-alike domains and free
-    email accounts are red flags.
-  - No real IT team asks for your password or a verification code by email or text.
-  - Grants you never applied for, fees to receive money and requests for ID photos
-    or bank details are scams.
-  - A file ending in .exe isn't a document, and 'Enable Content' on an unexpected
-    file is a trap.
-  - Changed bank details, threats and 'don't call us' are signs of impersonation
-    - verify with the office's known number.
-  - Genuine notices match official records and ask for nothing risky.
-  learningSummary: 'You investigated a campus-wide phishing wave: look-alike and
-    free-mail senders, a credential trap, a fake grant, a disguised executable and
-    a payment-redirection scam - and you recognised the genuine notices by checking
-    them against official records.'
+  - Keep evidence complete, unchanged and recorded.
+  - Trust an email's hidden checks, not just what it shows.
+  - Tell a normal data request from identity theft.
+  - 'Know the first steps: stop the spread, keep the evidence, report.'
+  - Treat QR codes like links, and look for stickers placed on top.
+  - Report wrongdoing without causing more harm.
+  learningSummary: 
   performanceHigh: Outstanding! The campus network is secure - every flagged message
     was correctly identified.
   performanceModerate: Good investigation. Review the clues you missed - the official
     records separate the real notices from the fakes.
   performanceLow: Keep practising. Compare every sender, attachment and request with
     the university's official records.
+  tutorial: 0
+  tutorialFirstQuestion: 

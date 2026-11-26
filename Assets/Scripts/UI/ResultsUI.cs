@@ -26,6 +26,10 @@ public class ResultsUI : MonoBehaviour
     private Outline unlockOutline;
     private readonly Image[] stars = new Image[3];
     private Button continueButton, replayButton, menuButton;
+    private PopupAnimator panelAnimator;
+    private PopupIcon resultIcon;
+    private TMP_Text outcomeText;
+    private RectTransform panelRt;
 
     // Career section + promotion card
     private RectTransform careerRow, barFill, promo, promoBadgeRt, promoGlow;
@@ -47,17 +51,23 @@ public class ResultsUI : MonoBehaviour
         title.text = $"CASE CLOSED  ·  LEVEL {r.levelNumber}: {r.levelName.ToUpperInvariant()}";
         scoreText.text = $"<size=76><b>{r.score}</b></size><size=36><color={UIKit.HexSecondary}> / {r.maxScore} points</color></size>";
         int total = r.totalMessages > 0 ? r.totalMessages : r.correct + r.incorrect;
+        // Three headline numbers first, the details in a quieter second line (nothing removed, just ranked).
         statsText.text =
-            $"<color={UIKit.HexSafe}>✓</color> Correct <b>{r.correct} / {total}</b>     " +
-            $"<color={UIKit.HexWarning}>×</color> Incorrect <b>{r.incorrect} / {total}</b>     " +
-            $"Stars <b>{r.stars} / 3</b>     Best score <b>{r.bestScore}</b>     Passing score <b>{r.requiredScore}</b>\n" +
-            $"Case grade <color={UIKit.HexAccent}><b>{r.caseGrade}</b></color>   ·   Accuracy <b>{Mathf.RoundToInt(r.accuracy * 100f)}%</b>   ·   " +
-            $"Evidence found <b>{r.evidenceFound}</b>   ·   Corrected <b>{r.recovered}/{r.incorrect}</b>   ·   Hints <b>{r.hintsUsed}</b>   ·   " +
-            $"Avg response <b>{UIKit.FormatSeconds(r.averageAnswerTime)}</b>";
+            $"<color={UIKit.HexSafe}>✓</color> <b>{r.correct} of {total}</b> correct" +
+            $"<color={UIKit.HexSecondary}>      ·      </color>Accuracy <b>{Mathf.RoundToInt(r.accuracy * 100f)}%</b>" +
+            $"<color={UIKit.HexSecondary}>      ·      </color>Grade <color={UIKit.HexAccent}><b>{r.caseGrade}</b></color>\n" +
+            $"<size=80%><color={UIKit.HexSecondary}>Wrong {r.incorrect}   ·   Corrected {r.recovered}/{r.incorrect}   ·   Evidence {r.evidenceFound}   ·   " +
+            $"Hints {r.hintsUsed}   ·   Avg time {UIKit.FormatSeconds(r.averageAnswerTime)}   ·   Stars {r.stars}/3   ·   " +
+            $"Best {r.bestScore}   ·   Pass {r.requiredScore}</color></size>";
         performanceText.text = r.performanceMessage;
 
+        // The unlock box also says what to do next.
         string icon = r.nextRoomUnlocked ? $"<color={UIKit.HexSafe}>✓</color>  " : $"<color={UIKit.HexDanger}>×</color>  ";
-        unlockText.text = icon + r.unlockMessage;
+        string next = !r.hasNextRoom ? "Replay any room to beat your best score."
+                    : r.nextRoomUnlocked && r.nextSceneAvailable ? "Next: press <b>NEXT ROOM</b>."
+                    : r.nextRoomUnlocked ? "The next room is coming soon."
+                    : $"Next: press <b>REPLAY LEVEL</b> and reach <b>{r.requiredScore}</b> points.";
+        unlockText.text = icon + r.unlockMessage + $"\n<size=85%><color={UIKit.HexSecondary}>{next}</color></size>";
         Color c = r.nextRoomUnlocked ? UIKit.Safe : UIKit.Danger;
         unlockBox.color = new Color(c.r * 0.25f, c.g * 0.25f, c.b * 0.25f, 0.95f);
         unlockOutline.effectColor = c;
@@ -80,7 +90,17 @@ public class ResultsUI : MonoBehaviour
         foreach (var s in stars) { s.color = StarOff; s.rectTransform.localScale = Vector3.one; }
         PrepareCareer(r.career);
 
+        // Completion styling: passed the room's score = success (green ✓), otherwise needs review (amber !).
+        bool passed = r.score >= r.requiredScore;
+        var tone = passed ? UIKit.PopupTone.Success : UIKit.PopupTone.Warning;
+        resultIcon.SetTone(tone);
+        outcomeText.text = passed ? "CASE SOLVED" : "CASE NEEDS REVIEW";
+        outcomeText.color = UIKit.ToneColor(tone);
+        UIKit.TintPanel(panelRt, tone);
+
         root.gameObject.SetActive(true);
+        panelAnimator.Open();
+        resultIcon.Play();
         StartCoroutine(Reveal(r));
     }
 
@@ -305,6 +325,7 @@ public class ResultsUI : MonoBehaviour
         UIKit.Dimmer(root, 0.85f);
 
         var panel = UIKit.Rect("Panel", root);
+        panelRt = panel;
         UIKit.Place(panel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1500, 0));
         UIKit.PanelImage(panel);
         var v = UIKit.Vertical(panel, 36, 12, TextAnchor.UpperCenter);
@@ -312,8 +333,28 @@ public class ResultsUI : MonoBehaviour
         UIKit.FitHeight(panel);
         UIKit.AccentStrip(panel, null, 8f);
 
-        title = UIKit.Text(panel, "Title", "", 30, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
+        panelAnimator = panel.gameObject.AddComponent<PopupAnimator>();
+
+        // Header, centred: outcome icon (✓ passed / ! needs review) beside the outcome and the case title.
+        // One row keeps the panel height almost unchanged, so it still fits 1366x768 screens.
+        var headRow = UIKit.Rect("Header", panel);
+        var hh = headRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+        hh.spacing = 20f;
+        hh.childAlignment = TextAnchor.MiddleCenter;
+        hh.childControlWidth = hh.childControlHeight = true;
+        hh.childForceExpandWidth = hh.childForceExpandHeight = false;
+        resultIcon = UIKit.IconBadge(headRow, UIKit.PopupTone.Success, 52f);   // compact: the results panel is near full height
+        var headText = UIKit.Rect("Text", headRow);
+        var hv = headText.gameObject.AddComponent<VerticalLayoutGroup>();
+        hv.childControlWidth = hv.childControlHeight = true;
+        hv.childForceExpandWidth = hv.childForceExpandHeight = false;
+        hv.spacing = 2f;
+        outcomeText = UIKit.Text(headText, "Outcome", "", 20, UIKit.Safe, TextAlignmentOptions.Left, bold: true);
+        outcomeText.characterSpacing = 4f;
+        outcomeText.textWrappingMode = TextWrappingModes.NoWrap;
+        title = UIKit.Text(headText, "Title", "", 30, UIKit.TextPrimary, TextAlignmentOptions.Left, bold: true);
         title.characterSpacing = 3f;
+        title.textWrappingMode = TextWrappingModes.NoWrap;
 
         var starRow = UIKit.Rect("Stars", panel);
         var h = UIKit.Horizontal(starRow, 26);

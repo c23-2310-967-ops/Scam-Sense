@@ -36,7 +36,8 @@ public class LevelHUD : MonoBehaviour
     private Coroutine tasksRoutine;
 
     private RectTransform root;
-    private TMP_Text levelTitle, objectivesText, notesText, reviewedText, scoreText, caseStatusText, toastText;
+    private TMP_Text levelTitle, objectivesText, notesText, reviewedText, scoreText, caseStatusText, toastText, nextText;
+    private GameObject nextBlock;
     private RectTransform phoneBanner, emailToast;
     private TMP_Text phoneSender, phonePreview, phoneHint, emailSender, emailSubject, emailHint;
     private CanvasGroup phoneGroup, emailGroup, toastGroup;
@@ -104,13 +105,21 @@ public class LevelHUD : MonoBehaviour
 
     public void SetProgress(int reviewed, int total, int score, int maxScore)
     {
-        reviewedText.text = $"Messages reviewed   <color={UIKit.HexAccent}><b>{reviewed} / {total}</b></color>";
+        reviewedText.text = $"Answered   <color={UIKit.HexAccent}><b>{reviewed} / {total}</b></color>";
         scoreText.text = $"Score   <color={UIKit.HexAccent}><b>{score}</b></color> / {maxScore}";
         allReviewed = reviewed >= total && total > 0;
         RefreshObjectives();
     }
 
     public void SetVisible(bool visible) => root.gameObject.SetActive(visible);
+
+    /// <summary>"What to do now" line at the top of the task card (rich text; empty hides it).</summary>
+    public void SetNextStep(string richText)
+    {
+        if (nextText == null) return;
+        nextText.text = $"<color={UIKit.HexAccent}><b>NEXT</b></color>   {richText}";
+        nextBlock.SetActive(!string.IsNullOrEmpty(richText));
+    }
 
     /// <summary>Case status line under the score (e.g. "Security risk missed"); empty hides it.</summary>
     public void SetCaseStatus(string richText)
@@ -161,6 +170,10 @@ public class LevelHUD : MonoBehaviour
         phoneGroup.gameObject.SetActive(false);
         emailGroup.gameObject.SetActive(false);
     }
+
+    /// <summary>A one-time instruction (FirstTimeTips): the toast with a TIP tag, shown a little longer.</summary>
+    public void ShowTip(string text, float seconds = 7f) =>
+        ShowToast($"<color={UIKit.HexAccent}><b>TIP</b></color>   {text}", seconds);
 
     public void ShowToast(string text, float seconds = 3f)
     {
@@ -270,6 +283,16 @@ public class LevelHUD : MonoBehaviour
         levelTitle = UIKit.Text(card, "LevelTitle", "LEVEL", 26, UIKit.TextPrimary, bold: true);
         levelTitle.characterSpacing = 2f;
 
+        // What to do right now (set by QuizManager): the first thing the eye lands on after the level name.
+        var nb = UIKit.Rect("NextStep", card);
+        UIKit.Callout(nb, UIKit.PopupTone.Info);
+        var nv = UIKit.Vertical(nb, 12, 0);
+        nv.padding.left = 16;
+        nextText = UIKit.Text(nb, "Next", "", UIKit.SizeSmall, UIKit.TextPrimary);
+        nextText.lineSpacing = 4f;
+        nextBlock = nb.gameObject;
+        nextBlock.SetActive(false);
+
         UIKit.Header(card, "Objectives", 21);
         objectivesText = UIKit.Text(card, "Objectives", "", 25, UIKit.TextPrimary);
         objectivesText.lineSpacing = 10f;
@@ -352,12 +375,16 @@ public class LevelHUD : MonoBehaviour
 
         // Toast (lower-centre, short info lines)
         var toast = UIKit.Rect("Toast", root);
-        UIKit.Place(toast, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 170), new Vector2(980, 76));
+        UIKit.Place(toast, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 250), new Vector2(1060, 92));   // above the email notification (bottom-right)
         UIKit.PanelImage(toast, new Color(UIKit.Background.r, UIKit.Background.g, UIKit.Background.b, 0.94f)).raycastTarget = false;
         toastGroup = toast.gameObject.AddComponent<CanvasGroup>();
         toastGroup.blocksRaycasts = false;
         toastText = UIKit.Text(toast, "Text", "", 26, UIKit.TextPrimary, TextAlignmentOptions.Center);
         UIKit.Stretch(toastText.rectTransform, 10);
+        toastText.margin = new Vector4(18, 0, 18, 0);
+        toastText.enableAutoSizing = true;   // two-line tips shrink a little instead of overflowing
+        toastText.fontSizeMax = 26f;
+        toastText.fontSizeMin = 20f;
         toast.gameObject.SetActive(false);
 
         if (showCrosshair)

@@ -42,6 +42,7 @@ public class WrongAnswerConsequences : MonoBehaviour
     // Card
     RectTransform root, card, alertBox, edges;
     CanvasGroup cardGroup;
+    PopupIcon headerIcon;
     Image strip, alertBg;
     Outline alertOutline;
     TMP_Text kicker, title, alertCaption, alertHeadline, alertBody, whyHeader, whyText, clueHeader, clueText, statusText, followUpNote;
@@ -83,6 +84,8 @@ public class WrongAnswerConsequences : MonoBehaviour
     /// <summary>The reaction for a wrong answer. A genuine message never gets a fake security incident.</summary>
     public static Reaction ReactionFor(ScamMessage msg)
     {
+        // A choice question has no verdict to fake an incident from: it gets the explanation only.
+        if (msg.HasChoices) return Reaction.FeedbackOnly;
         var kind = msg.consequence != null ? msg.consequence.kind : ConsequenceKind.Auto;
         bool scam = msg.correctVerdict == MessageVerdict.Scam;
         switch (kind)
@@ -146,14 +149,18 @@ public class WrongAnswerConsequences : MonoBehaviour
         string noun = MessageChannels.Noun(m.channel);
         bool scam = m.correctVerdict == MessageVerdict.Scam;
 
-        Color tone = reaction == Reaction.SecurityIncident ? UIKit.Danger : UIKit.Warning;
+        // Red × for a real mistake (trusted a scam, or a wrong answer); amber ! for an over-cautious or incomplete verdict.
+        var popupTone = reaction == Reaction.SecurityIncident || reaction == Reaction.FeedbackOnly ? UIKit.PopupTone.Error : UIKit.PopupTone.Warning;
+        headerIcon.SetTone(popupTone);
+        Color tone = UIKit.ToneColor(popupTone);
         strip.color = tone;
-        kicker.text = "INVESTIGATION ERROR";
+        kicker.text = "NOT QUITE  ·  LET'S LEARN FROM IT";
         kicker.color = tone;
-        title.text = reaction == Reaction.SecurityIncident ? $"You trusted a scam {noun}"
-                   : reaction == Reaction.AccuracyWarning ? $"A genuine {noun} was reported as a scam"
-                   : reaction == Reaction.MissedClue ? "The case conclusion missed key evidence"
-                   : "That verdict was not right";
+        title.text = reaction == Reaction.SecurityIncident ? $"Oops! This {noun} was a scam"
+                   : reaction == Reaction.AccuracyWarning ? $"This {noun} was real, not a scam"
+                   : reaction == Reaction.MissedClue ? "Some key evidence was missed"
+                   : r.IsChoice ? "Not the best answer"
+                   : "Not quite right";
 
         // Simulated consequence (none for FeedbackOnly)
         alertBox.gameObject.SetActive(reaction != Reaction.FeedbackOnly);
@@ -168,24 +175,31 @@ public class WrongAnswerConsequences : MonoBehaviour
             alertCaption.color = tone;
         }
 
-        whyHeader.text = "Why this answer was wrong";
-        whyText.text = $"You chose <b>{UIKit.VerdictWord(r.chosen)}</b>, but this {noun} is " +
-                       $"<color={(scam ? UIKit.HexDanger : UIKit.HexSafe)}><b>{UIKit.VerdictWord(m.correctVerdict)}</b></color>. {m.explanation}";
+        whyHeader.text = "Here's why";
+        whyText.text = r.IsChoice
+            ? $"You chose <b>{m.ChoiceText(r.chosenChoice)}</b>. The best answer is <color={UIKit.HexSafe}><b>{m.ChoiceText(m.correctChoice)}</b></color>. {m.explanation}"
+            : $"You chose <b>{UIKit.VerdictWord(r.chosen)}</b>, but this {noun} is " +
+              $"<color={(scam ? UIKit.HexDanger : UIKit.HexSafe)}><b>{UIKit.VerdictWord(m.correctVerdict)}</b></color>. {m.explanation}";
 
-        if (reaction == Reaction.AccuracyWarning)
+        if (r.IsChoice)
         {
-            clueHeader.text = "Details that support legitimacy";
+            clueHeader.text = "Remember";
+            clueText.text = string.IsNullOrEmpty(m.feedback) ? m.explanation : m.feedback;
+        }
+        else if (reaction == Reaction.AccuracyWarning)
+        {
+            clueHeader.text = "Why it's real";
             clueText.text = LegitimacyDetails(m, eval) +
-                $"\n<color={UIKit.HexSecondary}>Verify through a channel you already trust - the official app, a bookmarked site or a known phone number - instead of judging a message by how it looks.</color>";
+                $"\n<color={UIKit.HexSecondary}>Tip: check through something you already trust (the official app, a saved site or a known number), not by how the message looks.</color>";
         }
         else if (reaction == Reaction.MissedClue)
         {
-            clueHeader.text = "Evidence to look at again";
+            clueHeader.text = "Look again at";
             clueText.text = MissedEvidence(m);
         }
         else
         {
-            clueHeader.text = "The clue you overlooked";
+            clueHeader.text = "The clue you missed";
             clueText.text = OverlookedClue(m, eval);
         }
 
@@ -195,8 +209,8 @@ public class WrongAnswerConsequences : MonoBehaviour
 
         followUpNote.gameObject.SetActive(canFollowUp);
         if (canFollowUp)
-            followUpNote.text = $"<color={UIKit.HexAccent}><b>FOLLOW-UP AVAILABLE</b></color>   Re-check the key details of this {noun} and give your verdict again " +
-                                $"to recover <b>{scoring.RecoveryPointsFor(false)} points</b>.";
+            followUpNote.text = $"<color={UIKit.HexAccent}><b>SECOND CHANCE</b></color>   Check this {noun} again and answer once more " +
+                                $"to win back <b>{scoring.RecoveryPointsFor(false)} points</b>.";
 
         SetButtons(canFollowUp ? "REVIEW EVIDENCE" : "CONTINUE INVESTIGATION", canFollowUp ? onFollowUp : onContinue,
                    canFollowUp ? "CONTINUE WITHOUT REVIEW" : null, canFollowUp ? onContinue : null);
@@ -224,8 +238,8 @@ public class WrongAnswerConsequences : MonoBehaviour
         bool scam = msg.correctVerdict == MessageVerdict.Scam;
         string noun = MessageChannels.Noun(msg.channel);
         trackerObjective.text = scam
-            ? $"The simulated incident started with this {noun}. Re-check its warning signs, then give your verdict again."
-            : $"Re-check the details that show whether this {noun} is genuine, then give your verdict again.";
+            ? $"The trouble started with this {noun}. Find its warning signs, then answer again."
+            : $"Check the details that show this {noun} is real, then answer again.";
         trackerHint.text = "";
         UIKit.SetInteractable(hintButton, true);
         tracker.gameObject.SetActive(true);
@@ -337,29 +351,30 @@ public class WrongAnswerConsequences : MonoBehaviour
         string noun = MessageChannels.Noun(m.channel);
         bool scam = m.correctVerdict == MessageVerdict.Scam;
         Color tone = r.isCorrect ? UIKit.Safe : UIKit.Warning;
+        headerIcon.SetTone(r.isCorrect ? UIKit.PopupTone.Success : UIKit.PopupTone.Warning);
         strip.color = tone;
         kicker.color = tone;
-        kicker.text = r.isCorrect ? "FOLLOW-UP COMPLETE" : "FOLLOW-UP CLOSED";
-        title.text = r.isCorrect ? "✓  Evidence confirmed - case recovered" : "Still not right";
+        kicker.text = r.isCorrect ? "SECOND CHANCE  ·  WELL DONE" : "SECOND CHANCE  ·  KEEP LEARNING";
+        title.text = r.isCorrect ? "You got it this time!" : "Still not right, and that's okay";
 
         alertBox.gameObject.SetActive(r.isCorrect);
         if (r.isCorrect)
         {
-            alertCaption.text = scam ? "THREAT CONTAINED  ·  SIMULATION" : "RECORD CORRECTED  ·  SIMULATION";
+            alertCaption.text = scam ? "THREAT STOPPED  ·  PRACTICE" : "FIXED  ·  PRACTICE";
             alertCaption.color = tone;
-            alertHeadline.text = scam ? $"This {noun} is now reported as a scam" : $"This {noun} is now marked as genuine";
-            alertBody.text = scam ? "In a real incident: change the password at the official site, turn on two-step sign-in and report the message to your IT or security team."
-                                  : "In real life: if a genuine message is ever in doubt, confirm it through the official app or a known contact - then act on it.";
+            alertHeadline.text = scam ? $"This {noun} is now reported as a scam" : $"This {noun} is now marked as real";
+            alertBody.text = scam ? "In real life: change your password on the official site, turn on two-step sign-in, and tell your IT team."
+                                  : "In real life: not sure if a message is real? Check it in the official app or with someone you know, then act.";
             alertBg.color = new Color(tone.r * 0.16f, tone.g * 0.16f, tone.b * 0.16f, 0.96f);
             alertOutline.effectColor = tone;
         }
 
-        whyHeader.text = r.isCorrect ? "The clues that decide it" : "Why";
+        whyHeader.text = r.isCorrect ? "The clues that prove it" : "Here's why";
         whyText.text = r.isCorrect ? KeyClueList(m, eval) : $"This {noun} is <b>{UIKit.VerdictWord(m.correctVerdict)}</b>. {m.explanation}";
         clueHeader.text = "Remember";
         clueText.text = scam
-            ? "Check who really sent it, where any link really goes, and what it asks you to do - before you act."
-            : "Genuine messages match something you did, ask for nothing risky, and point you to the official app or site.";
+            ? "Before you act, check: who really sent it, where the link really goes, and what it asks you to do."
+            : "Real messages match something you did, ask for nothing risky, and point you to the official app or site.";
         statusText.text = $"Case status  <color={(r.isCorrect ? UIKit.HexSafe : UIKit.HexWarning)}><b>{(r.isCorrect ? "RISK RESOLVED" : "NEEDS REVIEW")}</b></color>   ·   " +
                           $"{ScoringSystem.PointsSummary(r)}   ·   Total score <b>{scoring.TotalScore}</b>";
         followUpNote.gameObject.SetActive(false);
@@ -375,16 +390,18 @@ public class WrongAnswerConsequences : MonoBehaviour
     public void UpdateHudStatus()
     {
         if (hud == null || scoring == null) return;
-        int risks = 0, alarms = 0, wrong = 0;
+        int risks = 0, alarms = 0, wrong = 0, missedAnswers = 0;
         foreach (var r in scoring.Results)
         {
             if (r.isCorrect || r.message == null) continue;
             wrong++;
             if (scoring.WasRecovered(r.message.id)) continue;
-            if (r.message.correctVerdict == MessageVerdict.Scam) risks++; else alarms++;
+            if (r.IsChoice) missedAnswers++;   // a wrong choice is neither a missed scam nor a false alarm
+            else if (r.message.correctVerdict == MessageVerdict.Scam) risks++; else alarms++;
         }
         string state = risks > 0 ? $"<color={UIKit.HexDanger}>{risks} security risk{(risks > 1 ? "s" : "")} missed</color>"
                      : alarms > 0 ? $"<color={UIKit.HexWarning}>{alarms} false alarm{(alarms > 1 ? "s" : "")}</color>"
+                     : missedAnswers > 0 ? $"<color={UIKit.HexWarning}>{missedAnswers} answer{(missedAnswers > 1 ? "s" : "")} to review</color>"
                      : wrong > 0 ? $"<color={UIKit.HexSafe}>Recovered - on track</color>"
                      : $"<color={UIKit.HexSafe}>On track</color>";
         hud.SetCaseStatus($"Case status   {state}   <color={UIKit.HexSecondary}>·   accuracy {scoring.CorrectCount}/{scoring.Results.Count}</color>");
@@ -405,6 +422,8 @@ public class WrongAnswerConsequences : MonoBehaviour
         if (effects != null) { StopCoroutine(effects); effects = null; }
         ClearFrames();
         edges.gameObject.SetActive(false);
+        card.localScale = Vector3.one;   // closed mid-entrance: next open starts clean
+        card.anchoredPosition = Vector2.zero;
         cardGroup.gameObject.SetActive(false);
         InteractionGate.RemoveEscapeHandler(this);
         primaryAction = secondaryAction = null;
@@ -445,6 +464,9 @@ public class WrongAnswerConsequences : MonoBehaviour
         ClearFrames();
         cardGroup.gameObject.SetActive(true);
         cardGroup.alpha = 0f;
+        // The card's border takes the tone too, and the header icon plays its entrance (shake for ×, pulse for !, ping for ✓).
+        if (card.TryGetComponent<Outline>(out var border)) border.effectColor = new Color(tone.r, tone.g, tone.b, 0.85f);
+        headerIcon.Play();
         InteractionGate.PushEscapeHandler(this, OnEscape);
         var t = target != null ? target.WarningTarget : null;
         if (warning && t != null)
@@ -456,7 +478,10 @@ public class WrongAnswerConsequences : MonoBehaviour
         effects = StartCoroutine(Effects(warning, tone));
     }
 
-    /// <summary>Fade the card in, then (warnings) a quiet alert, a short shake and two soft red pulses. Under a second.</summary>
+    /// <summary>
+    /// Fade and scale the card in, then (warnings) a quiet alert and two soft pulses on the screen edges.
+    /// The shake now lives on the header icon only, so the text never moves while the player reads. Under a second.
+    /// </summary>
     IEnumerator Effects(bool warning, Color tone)
     {
         edges.gameObject.SetActive(warning);
@@ -465,19 +490,20 @@ public class WrongAnswerConsequences : MonoBehaviour
         const float duration = 0.9f;
         for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
         {
-            cardGroup.alpha = Mathf.Clamp01(t / 0.15f);
+            float k = Mathf.Clamp01(t / 0.2f);
+            cardGroup.alpha = k;
+            card.localScale = Vector3.one * Mathf.Lerp(0.96f, 1f, 1f - (1f - k) * (1f - k) * (1f - k));
             if (warning)
             {
                 float pulse = Mathf.Sin(t / duration * Mathf.PI * 2f);   // two soft pulses
                 float a = pulse * pulse * (1f - t / duration);
                 foreach (var img in edgeImages) img.color = new Color(tone.r, tone.g, tone.b, 0.32f * a);
                 foreach (var img in frameImages) if (img != null) img.color = new Color(tone.r, tone.g, tone.b, img.name == "Fill" ? 0.12f * a : 0.9f * Mathf.Max(a, 0.25f));
-                float shake = t < 0.35f ? Mathf.Sin(t * 70f) * 9f * (1f - t / 0.35f) : 0f;
-                card.anchoredPosition = new Vector2(shake, 0f);
             }
             yield return null;
         }
         cardGroup.alpha = 1f;
+        card.localScale = Vector3.one;
         card.anchoredPosition = Vector2.zero;
         edges.gameObject.SetActive(false);
         ClearFrames();
@@ -524,54 +550,54 @@ public class WrongAnswerConsequences : MonoBehaviour
         string caption, headline, body;
         if (reaction == Reaction.SecurityIncident)
         {
-            caption = "SIMULATED SECURITY INCIDENT";
+            caption = "WHAT COULD HAPPEN  ·  PRACTICE";
             bool link = !string.IsNullOrEmpty(m.link);
             if (m.channel == MessageChannel.Website)
             {
-                headline = "Login details sent to a fake website";
-                body = "The page you trusted copied what was typed into it. Minutes later: <b>new sign-in to your account from an unrecognised device</b>.";
+                headline = "Your login went to a fake site";
+                body = "The fake page saved what you typed. Minutes later, someone <b>signed in to your account from a new device</b>.";
             }
             else if (link && MessageChannels.OnPhone(m.channel))
             {
-                headline = "Suspicious payment attempt on your account";
-                body = $"The link in the {noun} opened a look-alike page that captured your details. Your bank has flagged an <b>unrecognised payment attempt</b>.";
+                headline = "Someone tried to spend your money";
+                body = $"The link in the {noun} opened a fake page that saved your details. Your bank flagged a <b>payment you didn't make</b>.";
             }
             else if (link)
             {
-                headline = "New sign-in from an unrecognised device";
-                body = $"The link in this {noun} led to a look-alike sign-in page. The password entered there was used moments later to <b>sign in to your account from an unknown location</b>.";
+                headline = "Someone signed in as you";
+                body = $"The link in this {noun} opened a fake sign-in page. Your password was used minutes later to <b>sign in from an unknown place</b>.";
             }
             else
             {
-                headline = "Request completed for an impostor";
+                headline = "The scammer got what they wanted";
                 body = string.IsNullOrEmpty(m.requestedAction)
-                    ? $"Acting on this {noun} gave the sender what they wanted. Money, codes or information sent to an impostor usually cannot be recovered."
-                    : $"The request was carried out: <i>{Literal(m.requestedAction.TrimEnd('.', ' '))}</i>. Money, codes or information sent to an impostor usually cannot be recovered.";
+                    ? $"Doing what this {noun} asked gave the scammer what they wanted. Money, codes or info sent to a scammer usually can't be taken back."
+                    : $"You did what it asked: <i>{Literal(m.requestedAction.TrimEnd('.', ' '))}</i>. Money, codes or info sent to a scammer usually can't be taken back.";
             }
             body += $"\n<size=85%><color={UIKit.HexSecondary}>Sender: {Literal(m.sender)}{(string.IsNullOrEmpty(m.senderDetail) ? "" : "  " + Literal(m.senderDetail))}</color></size>";
         }
         else if (reaction == Reaction.AccuracyWarning)
         {
-            caption = "INVESTIGATION ACCURACY WARNING";
-            headline = $"Genuine {noun} blocked";
-            body = "Reporting a real message as a scam has costs too: a missed delivery, a late payment or an ignored colleague. " +
-                   "Good investigators verify before they judge.";
+            caption = "FALSE ALARM  ·  PRACTICE";
+            headline = $"A real {noun} was blocked";
+            body = "Calling a real message a scam has a cost too: a missed delivery, a late payment or an ignored friend. " +
+                   "Check before you judge.";
         }
         else
         {
-            caption = "EVIDENCE OVERLOOKED";
-            headline = "The conclusion does not match the evidence";
-            body = "The case file was submitted before every piece of evidence pointed the same way. Compare the records again before you conclude.";
+            caption = "EVIDENCE MISSED";
+            headline = "The answer doesn't match the evidence";
+            body = "Not all the evidence pointed the same way yet. Compare the records again before you decide.";
         }
         if (c != null && !string.IsNullOrEmpty(c.alertTitle)) headline = c.alertTitle;
         if (c != null && !string.IsNullOrEmpty(c.alertBody)) body = c.alertBody;
-        body += $"\n<size=80%><color={UIKit.HexSecondary}><i>Training simulation - no real account, message or file was affected.</i></color></size>";
+        body += $"\n<size=80%><color={UIKit.HexSecondary}><i>Just practice: nothing real was affected.</i></color></size>";
         return (caption, headline, body);
     }
 
     static string StatusLabel(Reaction r) =>
-        r == Reaction.SecurityIncident ? "SECURITY RISK MISSED" : r == Reaction.AccuracyWarning ? "FALSE ALARM RAISED"
-        : r == Reaction.MissedClue ? "EVIDENCE OVERLOOKED" : "NEEDS REVIEW";
+        r == Reaction.SecurityIncident ? "SCAM MISSED" : r == Reaction.AccuracyWarning ? "FALSE ALARM"
+        : r == Reaction.MissedClue ? "EVIDENCE MISSED" : "NEEDS REVIEW";
 
     static string StatusHex(Reaction r) => r == Reaction.SecurityIncident ? UIKit.HexDanger : UIKit.HexWarning;
 
@@ -672,9 +698,11 @@ public class WrongAnswerConsequences : MonoBehaviour
         strip = UIKit.AddImage(stripRt, UIKit.Danger);
         strip.raycastTarget = false;
 
-        kicker = UIKit.Text(card, "Kicker", "", 20, UIKit.Danger, bold: true);
+        // Header: status icon (× mistake, ! warning, ✓ recovered) + kicker + title
+        var cardHead = UIKit.IconHeader(card, UIKit.PopupTone.Error, out headerIcon, 72f);
+        kicker = UIKit.Text(cardHead, "Kicker", "", 20, UIKit.Danger, bold: true);
         kicker.characterSpacing = 5f;
-        title = UIKit.Text(card, "Title", "", 38, UIKit.TextPrimary, bold: true);
+        title = UIKit.Text(cardHead, "Title", "", 36, UIKit.TextPrimary, bold: true);
 
         alertBox = UIKit.Rect("Alert", card);
         alertBg = UIKit.AddImage(alertBox, new Color(0.2f, 0.05f, 0.05f, 0.96f), rounded: true);

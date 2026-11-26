@@ -40,6 +40,25 @@ public interface IRecheckPresenter
     void SetRecheck(bool answersEnabled, string status);
 }
 
+/// <summary>
+/// Optional: a presenter that can show a choice question (ScamMessage.HasChoices). It shows the choices in the order
+/// QuizManager gives it (shuffled per attempt) and reports the picked choice by its ORIGINAL index, so the answer
+/// check never depends on the order on screen.
+/// </summary>
+public interface IChoicePresenter
+{
+    event Action<int> ChoiceChosen;
+}
+
+/// <summary>What the Level 1 guide (TutorialCoach) points at on a presenter.</summary>
+public enum TutorialFocus { Message, Hint, Answers, Feedback }
+
+/// <summary>Optional: screen areas (pixels) the tutorial guide can frame. False if that part isn't showing.</summary>
+public interface ITutorialTargets
+{
+    bool TryGetTutorialRect(TutorialFocus focus, out UnityEngine.Rect screenRect);
+}
+
 /// <summary>Optional: the part of a presenter that briefly flashes red after a wrong answer.</summary>
 public interface IWarningTarget
 {
@@ -53,4 +72,13 @@ public interface IWarningTarget
 public interface IInvestigationDock
 {
     bool TryGetDockArea(out UnityEngine.Rect screenArea);
+}
+
+/// <summary>
+/// A presenter that shows inspection results inside its own layout (the activity's evidence board) instead of the
+/// floating finding card. Asked once per inspection; returning false falls back to the finding card.
+/// </summary>
+public interface IInvestigationInline
+{
+    bool ShowFinding(ScamMessage msg, MessageInspectable part, MessageEvidence clue, InvestigationSession.InspectOutcome outcome);
 }

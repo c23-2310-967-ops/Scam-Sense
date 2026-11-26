@@ -16,36 +16,42 @@ MonoBehaviour:
   levelNumber: 1
   displayName: The First Case
   sceneName: Game
-  description: "Your first day on the case. Texts and emails arrive while you explore
-    the house \u2014 decide which are scams."
+  description: A fake delivery text, a phishing email, and two real emails that are
+    safe.
   previewImage: {fileID: 21300000, guid: 3c2461ec3d7cb3f4195d1800bbe3a169, type: 3}
-  briefingTitle: CASE BRIEFING
-  briefingText: Welcome to your first case. You will receive messages and emails
-    throughout the day. Some are legitimate, while others may be attempts to deceive
-    you. Examine each message carefully before deciding.
+  briefingTitle: WELCOME, INVESTIGATOR
+  briefingText: 'You just joined the Cybercrime Investigation Unit. Your job: catch
+    fake texts, emails and posts before they steal money, passwords or personal details.
+
+
+    This
+    is your training case. A guide will walk you through your first question.'
   caseNotes:
-  - Earlier today you ordered a desk lamp through the official Example Delivery app.
-  - During this morning's setup, you requested a password change for your Example
-    Cloud Service account.
+  - You have not ordered anything this month.
+  - You reserved a book at Riverside Public Library on Monday.
+  - You signed up for Saturday's park clean-up. Sam is the volunteer team's organiser.
   objectives:
-  - Identify five messages.
-  - Correctly classify each message as SCAM or LEGITIMATE.
-  - Explore the house while waiting for incoming messages.
+  - Follow the guide on your first question.
+  - Answer all 4 questions.
+  - Score 230+ to unlock the next room.
   messages:
-  - id: l1_package_hold
+  - id: E02
     channel: 0
-    sender: Unknown Number
-    senderDetail: +1 (555) 014-2290
+    sender: +63 917 555 0142
+    senderDetail: 
     subject: 
-    body: 'Delivery Alert: Your package is on hold due to incomplete delivery information.
-      Please confirm your details using the link provided.'
-    link: http://parcel-redelivery.example/confirm
+    body: "SwiftParcel: Your package is ON HOLD due to an incomplete address. Pay
+      the \u20B129 redelivery fee within 12 hours or it will be returned:"
+    link: http://swiftparcel-redeliver.example/pay
     correctVerdict: 0
-    scenarioContext: 
-    explanation: The sender is unknown, and the message creates urgency while asking
-      you to use an unfamiliar link. Verify delivery information through the courier's
-      official website or app instead.
-    trigger: 1
+    scenarioContext: You have not ordered anything this month.
+    explanation: You didn't order anything, so there is no package. The text comes
+      from a random mobile number, rushes you with a 12-hour deadline, and links
+      to a site that isn't the courier's. The small fee is bait to get your card
+      or e-wallet details.
+    trigger: 3
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues: []
@@ -53,452 +59,442 @@ MonoBehaviour:
     - id: sender
       field: 0
       match: 
-      label: Sender name
-      finding: Shown only as 'Unknown Number' - it isn't in your contacts and doesn't
-        name any delivery company.
-      linkAddress: 
-      clueId: unknown
-    - id: number
-      field: 1
-      match: 
-      label: Phone number
-      finding: +1 (555) 014-2290 is an ordinary mobile number. Real couriers normally
-        text from a named sender or short code.
+      label: Sender
+      finding: An ordinary mobile number, not a named courier. Real delivery companies
+        text from their own name or a short code.
       linkAddress: 
       clueId: number
-    - id: heading
+      part: 
+    - id: claim
       field: 3
-      match: Delivery Alert
-      label: Heading
-      finding: '''Delivery Alert'' sounds official - but anyone can type a heading.'
-      linkAddress: 
-      clueId: heading
-    - id: hold
-      field: 3
-      match: Your package is on hold
+      match: Your package is ON HOLD
       label: The claim
-      finding: It never says which package, which company or which order.
+      finding: Your case notes say you haven't ordered anything this month - so which
+        package?
       linkAddress: 
-      clueId: vague
-    - id: details
+      clueId: noorder
+      part: 
+    - id: fee
       field: 3
-      match: confirm your details
-      label: What it asks
-      finding: It wants you to 'confirm your details' through a text link. Couriers
-        don't need you to re-enter personal details this way.
+      match: "Pay the \u20B129 redelivery fee"
+      label: The request
+      finding: 'A small fee is bait: the real goal is your card or e-wallet details.'
       linkAddress: 
-      clueId: details
-    - id: link
-      field: 4
-      match: 
-      label: Link
-      finding: parcel-redelivery.example is not a courier you use, and the link is
-        plain http (not secure).
-      linkAddress: http://parcel-redelivery.example/confirm
-      clueId: link
-    evidence:
-    - id: unknown
-      title: Unknown sender
-      whyItMatters: The text doesn't come from any company you recognise.
-      supportsVerdict: 1
-    - id: number
-      title: Ordinary mobile number
-      whyItMatters: Delivery companies don't usually text from random mobile numbers.
-      supportsVerdict: 1
-    - id: vague
-      title: No order or company named
-      whyItMatters: A real delivery update names the company and your parcel.
-      supportsVerdict: 1
-    - id: details
-      title: Asks you to confirm personal details
-      whyItMatters: Scam texts collect personal and payment details through links.
-      supportsVerdict: 1
-    - id: link
-      title: Unfamiliar, insecure link
-      whyItMatters: parcel-redelivery.example isn't a courier you use, and it's plain
-        http.
-      supportsVerdict: 1
-    - id: heading
-      title: Official-sounding heading
-      whyItMatters: Anyone can write 'Delivery Alert' - on its own it isn't evidence.
-      supportsVerdict: 0
-  - id: l1_bank_verify
-    channel: 1
-    sender: "Security Team \u2014 Example Bank"
-    senderDetail: 
-    subject: Immediate Account Verification Required
-    body: We detected an issue with your account. Your access may be restricted today
-      unless you verify your information using the link below.
-    link: http://examplebank-verify.example/login
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: The message pressures you to act quickly and requests account verification
-      through a link. Do not provide sensitive information through unexpected messages.
-      Contact the bank through its official channels.
-    trigger: 2
-    requestedAction: 
-    linkNote: 
-    clues: []
-    inspectables:
-    - id: sender
-      field: 0
-      match: 
-      label: Sender
-      finding: The display name claims to be Example Bank's security team, but no
-        address is shown to back it up - names are easy to fake.
-      linkAddress: 
-      clueId: 
-    - id: subject
-      field: 2
-      match: Immediate
-      label: Subject line
-      finding: '''Immediate'' action required: pressure to act before you think.'
+      clueId: fee
+      part: 
+    - id: deadline
+      field: 3
+      match: within 12 hours
+      label: Deadline
+      finding: A short deadline pushes you to act before you think.
       linkAddress: 
       clueId: urgent
-    - id: issue
-      field: 3
-      match: We detected an issue with your account
-      label: The problem
-      finding: It never says what the issue is or which account.
-      linkAddress: 
-      clueId: vague
-    - id: threat
-      field: 3
-      match: Your access may be restricted today
-      label: Threat
-      finding: Threatens to restrict your access today unless you act.
-      linkAddress: 
-      clueId: threat
-    - id: verify
-      field: 3
-      match: verify your information
-      label: What it asks
-      finding: Asks you to verify your information through a link. Banks tell you
-        to sign in through their app or official site yourself.
-      linkAddress: 
-      clueId: request
+      part: 
     - id: link
       field: 4
       match: 
       label: Link
-      finding: examplebank-verify.example is not Example Bank's own site - it's a
-        separate look-alike domain built to collect logins.
-      linkAddress: http://examplebank-verify.example/login
+      finding: swiftparcel-redeliver.example is not an official courier site, and
+        it starts with http (not secure).
+      linkAddress: http://swiftparcel-redeliver.example/pay
       clueId: link
+      part: 
     evidence:
+    - id: number
+      title: Ordinary mobile number
+      whyItMatters: Couriers don't text from random mobile numbers.
+      supportsVerdict: 1
+    - id: noorder
+      title: No order to deliver
+      whyItMatters: You haven't ordered anything, so there is no real package.
+      supportsVerdict: 1
+    - id: fee
+      title: Asks for a payment
+      whyItMatters: Small fees are used to steal card and e-wallet details.
+      supportsVerdict: 1
     - id: urgent
-      title: '''Immediate'' action required'
-      whyItMatters: Urgency stops you from checking first.
-      supportsVerdict: 1
-    - id: threat
-      title: Threat to restrict your account today
-      whyItMatters: Scammers use threats to rush you.
-      supportsVerdict: 1
-    - id: vague
-      title: Vague 'issue' with no details
-      whyItMatters: Real security emails say what happened.
-      supportsVerdict: 1
-    - id: request
-      title: Asks you to verify information via a link
-      whyItMatters: A bank won't ask you to verify details through an email link.
+      title: Pressure to act fast
+      whyItMatters: Scams rush you so you don't stop to check.
       supportsVerdict: 1
     - id: link
-      title: Look-alike bank domain
-      whyItMatters: examplebank-verify.example isn't the bank's real site.
+      title: Unofficial, insecure link
+      whyItMatters: The link isn't the courier's site and isn't secure.
       supportsVerdict: 1
-  - id: l1_order_confirmed
-    channel: 0
-    sender: Example Delivery
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: Scam! No order + a small fee + a rush deadline = a fake delivery text.
+      Don't tap the link.
+    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 16:
+      Information Security Best Practices (user awareness)"
+    hint: 'Compare the text with your case notes: were you expecting a package? Then
+      check who sent it and where the link goes.'
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
+  - id: E03
+    channel: 5
+    sender: Case Review
     senderDetail: 
-    subject: 
-    body: Your order has been confirmed. Your estimated delivery date is tomorrow.
-      You can view your order status in the official delivery app.
+    subject: Identify the Threat
+    body: '<b>Email from:</b> Campus IT Helpdesk <noparse><</noparse>helpdesk@uphs1-binan.example<noparse>></noparse>
+
+      <b>Subject:</b>
+      Mailbox 98% full: verify now
+
+      "Your school mailbox will be DELETED in
+      24 hours. Click below and sign in to verify your account." <b>What kind of
+      threat is this?</b>'
     link: 
-    correctVerdict: 1
-    scenarioContext: The player previously placed an order, so this message matches
-      an expected transaction.
-    explanation: The message matches an action you took and directs you to the official
-      app rather than an unfamiliar link. In real life, still verify the sender and
-      order details.
-    trigger: 1
-    requestedAction: 
-    linkNote: 
-    clues: []
-    inspectables:
-    - id: sender
-      field: 0
-      match: 
-      label: Sender
-      finding: Example Delivery - the delivery service for the order you placed.
-        (Names can be faked, so check the rest too.)
-      linkAddress: 
-      clueId: known
-    - id: confirmed
-      field: 3
-      match: Your order has been confirmed
-      label: What it says
-      finding: It confirms the order you placed earlier - it matches something you
-        actually did.
-      linkAddress: 
-      clueId: matches
-    - id: date
-      field: 3
-      match: Your estimated delivery date is tomorrow
-      label: Delivery date
-      finding: 'Just information: no deadline, threat or payment.'
-      linkAddress: 
-      clueId: noask
-    - id: app
-      field: 3
-      match: view your order status in the official delivery app
-      label: Next step
-      finding: It sends you to the official app you already use - there's no link
-        to click.
-      linkAddress: 
-      clueId: app
-    evidence:
-    - id: matches
-      title: Matches your real order
-      whyItMatters: You did place an order, so this message is expected.
-      supportsVerdict: 1
-    - id: noask
-      title: Asks for nothing
-      whyItMatters: No payment, details, link or deadline.
-      supportsVerdict: 1
-    - id: app
-      title: Points to the official app
-      whyItMatters: Using the app yourself is the safe way to check.
-      supportsVerdict: 1
-    - id: known
-      title: From the delivery service you used
-      whyItMatters: Consistent with your order - supporting evidence, not proof on
-        its own.
-      supportsVerdict: 1
-  - id: l1_prize
-    channel: 1
-    sender: Rewards Center
-    senderDetail: 
-    subject: Congratulations! You Won a Special Prize!
-    body: You have been selected to receive a free premium reward. Claim your prize
-      immediately by opening the link below. No purchase is required!
-    link: http://rewards-claim.example/prize
     correctVerdict: 0
     scenarioContext: 
-    explanation: The unexpected reward and pressure to claim it immediately are warning
-      signs. Verify promotions independently and avoid unfamiliar claim links.
-    trigger: 2
+    explanation: <b>Phishing</b> is a fake message that tricks you into giving away
+      your password. This one copies the school (<b>uphs1</b> uses the number 1,
+      not the letter l), scares you with a deadline and asks you to sign in. Real
+      storage warnings never ask for your password.
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues: []
     inspectables:
-    - id: sender
-      field: 0
-      match: 
-      label: Sender
-      finding: '''Rewards Center'' - not a company you know, and no address is shown.'
+    - id: address
+      field: 5
+      match: uphs1-binan.example
+      label: Sender address
+      finding: 'Look closely: uphs1 uses the number 1 instead of the letter l. It''s
+        a lookalike of the school''s real domain.'
       linkAddress: 
-      clueId: unknown
+      clueId: lookalike
+      part: from
     - id: subject
-      field: 2
-      match: You Won a Special Prize!
-      label: Subject line
-      finding: You 'won' a prize for a contest you never entered.
-      linkAddress: 
-      clueId: neverentered
-    - id: free
-      field: 3
-      match: free premium reward
-      label: The offer
-      finding: A free premium reward out of nowhere - too good to be true.
-      linkAddress: 
-      clueId: toogood
-    - id: now
-      field: 3
-      match: Claim your prize immediately
-      label: Urgency
-      finding: Pushes you to claim immediately.
-      linkAddress: 
-      clueId: urgency
-    - id: nopurchase
-      field: 3
-      match: No purchase is required!
-      label: Reassurance
-      finding: '''No purchase required'' is meant to lower your guard.'
-      linkAddress: 
-      clueId: nopurchase
-    - id: link
-      field: 4
-      match: 
-      label: Link
-      finding: rewards-claim.example isn't connected to anything you use. Prize links
-        like this lead to pages asking for personal or card details.
-      linkAddress: http://rewards-claim.example/prize
-      clueId: link
-    evidence:
-    - id: neverentered
-      title: A prize you never entered for
-      whyItMatters: You can't win a contest you didn't enter.
-      supportsVerdict: 1
-    - id: unknown
-      title: Unknown sender
-      whyItMatters: '''Rewards Center'' isn''t a company you deal with.'
-      supportsVerdict: 1
-    - id: toogood
-      title: Too good to be true
-      whyItMatters: Free premium rewards out of nowhere are classic bait.
-      supportsVerdict: 1
-    - id: urgency
-      title: '''Claim immediately'''
-      whyItMatters: Urgency stops you from thinking it through.
-      supportsVerdict: 1
-    - id: link
-      title: Unknown prize-claim link
-      whyItMatters: The link isn't connected to any company you use.
-      supportsVerdict: 1
-    - id: nopurchase
-      title: '''No purchase required'''
-      whyItMatters: Real promotions say this too - on its own it proves nothing.
-      supportsVerdict: 0
-  - id: l1_password_done
-    channel: 1
-    sender: Example Cloud Service
-    senderDetail: 
-    subject: Your Password Update Is Complete
-    body: The password update you requested has been completed. If you made this
-      change, no further action is needed. If you did not request it, open the official
-      application and review your account security.
-    link: 
-    correctVerdict: 1
-    scenarioContext: The player previously requested a password change during the
-      simulated setup.
-    explanation: The notification matches an action you requested and gives a safe
-      way to check your account. If you did not make the change, investigate through
-      the official application.
-    trigger: 2
-    requestedAction: 
-    linkNote: 
-    clues: []
-    inspectables:
-    - id: sender
-      field: 0
-      match: 
-      label: Sender
-      finding: Example Cloud Service - the service you changed your password on.
-      linkAddress: 
-      clueId: service
-    - id: subject
-      field: 2
-      match: 
-      label: Subject line
-      finding: A calm, factual subject - no urgency or threats.
+      field: 5
+      match: Mailbox 98% full
+      label: Subject
+      finding: Full mailboxes really happen. On its own this isn't a warning sign
+        - look at what the email asks you to do.
       linkAddress: 
       clueId: 
-    - id: requested
-      field: 3
-      match: The password update you requested
-      label: What it refers to
-      finding: It refers to the password change you really made during setup.
+      part: subject
+    - id: deadline
+      field: 5
+      match: DELETED in 24 hours
+      label: Threat
+      finding: A scary deadline pushes you to act fast without checking.
       linkAddress: 
-      clueId: matches
-    - id: noaction
-      field: 3
-      match: no further action is needed
+      clueId: urgent
+      part: body
+    - id: request
+      field: 5
+      match: sign in to verify your account
       label: What it asks
-      finding: Nothing - no link, code or password is requested.
+      finding: It wants your password through a link. Real IT staff never ask you
+        to 'verify' your password by email.
       linkAddress: 
-      clueId: noask
-    - id: official
-      field: 3
-      match: open the official application
-      label: Advice
-      finding: If it wasn't you, it tells you to open the official app yourself -
-        not to click a link.
+      clueId: creds
+      part: body
+    - id: button
+      field: 5
+      match: VERIFY MY ACCOUNT
+      label: The button
+      finding: 'It leads to a sign-in page from an email link - the way fake pages
+        collect passwords. (Simulated: nothing opens.)'
       linkAddress: 
-      clueId: official
+      clueId: creds
+      part: button
     evidence:
-    - id: matches
-      title: Matches the change you made
-      whyItMatters: You did request a password change, so this notice is expected.
+    - id: lookalike
+      title: Lookalike sender domain
+      whyItMatters: uphs1 is not uphsl - a fake address made to look real.
       supportsVerdict: 1
-    - id: noask
-      title: Asks for nothing
-      whyItMatters: No link, code or password is requested.
+    - id: urgent
+      title: Scary deadline
+      whyItMatters: Threats and short deadlines are pressure tactics.
       supportsVerdict: 1
-    - id: official
-      title: Tells you to use the official app
-      whyItMatters: Genuine services send you to their own app, not a link.
+    - id: creds
+      title: Asks you to sign in through a link
+      whyItMatters: That's how fake pages collect passwords.
       supportsVerdict: 1
-    - id: service
-      title: From the service you used
-      whyItMatters: Consistent with your change - supporting evidence, not proof
-        on its own.
-      supportsVerdict: 1
-  inboxExtras:
-  - id: old_library
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Phishing
+    - Ransomware
+    - Denial-of-service attack
+    - A normal storage warning
+    correctChoice: 0
+    feedback: 'Phishing! Look closely: <b>uphs1</b>, not uphsl. Fake sender + scary
+      deadline + "sign in here" = phishing.'
+    curriculumRef: "Computer Security (BIT1225) \u2014 Introduction to Computer Security:
+      \"types of security threats\u2026 in both personal and organizational contexts\""
+    hint: Check the sender's address letter by letter, then ask yourself what the
+      email wants you to do.
+    activity:
+      kind: 1
+      title: "Campus Mail  \xB7  Inbox"
+      instruction: 'Check the email: who sent it, the subject, and what it asks you
+        to do.'
+      items:
+      - key: from
+        role: 0
+        label: From
+        text: Campus IT Helpdesk <helpdesk@uphs1-binan.example>
+      - key: subject
+        role: 0
+        label: Subject
+        text: 'Mailbox 98% full: verify now'
+      - key: body
+        role: 1
+        label: 
+        text: Your school mailbox will be DELETED in 24 hours. Click below and sign
+          in to verify your account.
+      - key: button
+        role: 7
+        label: 
+        text: VERIFY MY ACCOUNT
+      minClues: 0
+      outcomes: []
+  - id: L01
     channel: 1
     sender: Riverside Public Library
-    senderDetail: 
+    senderDetail: notices@riversidelibrary.example
     subject: Your reserved book is ready for pickup
     body: The book you reserved is now available at the front desk. It will be held
       for 7 days. Log in to your library account if you need more time.
     link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: 
-    trigger: 0
+    correctVerdict: 1
+    scenarioContext: You reserved a book at Riverside Public Library on Monday.
+    explanation: You reserved a book this week, so this email is expected. It comes
+      from the library's own address, gives you 7 days, and only asks you to pick
+      the book up at the front desk. It doesn't ask for a password, money or a code,
+      and there's no link to click.
+    trigger: 2
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
-  - id: old_team
+    inspectables:
+    - id: sender
+      field: 1
+      match: 
+      label: Sender address
+      finding: 'The address ends in the library''s own name: riversidelibrary.example.'
+      linkAddress: 
+      clueId: sender
+      part: 
+    - id: claim
+      field: 3
+      match: The book you reserved is now available
+      label: The news
+      finding: Your case notes say you reserved a book this week. This is exactly
+        what you were waiting for.
+      linkAddress: 
+      clueId: expected
+      part: 
+    - id: pickup
+      field: 3
+      match: at the front desk
+      label: What it asks
+      finding: You pick the book up in person. No link, no payment, no password.
+      linkAddress: 
+      clueId: noask
+      part: 
+    - id: login
+      field: 3
+      match: Log in to your library account
+      label: Account
+      finding: It tells you to use your own account if you need more time. It doesn't
+        send you a login link.
+      linkAddress: 
+      clueId: noask
+      part: 
+    - id: time
+      field: 3
+      match: held for 7 days
+      label: Time
+      finding: Seven days is plenty of time. Nothing pushes you to act right now.
+      linkAddress: 
+      clueId: calm
+      part: 
+    evidence:
+    - id: sender
+      title: The library's own address
+      whyItMatters: The sender matches the library you used.
+      supportsVerdict: 1
+    - id: expected
+      title: You were expecting it
+      whyItMatters: You reserved a book, so this news makes sense.
+      supportsVerdict: 1
+    - id: noask
+      title: Asks for nothing secret
+      whyItMatters: No link, money, password or code is requested.
+      supportsVerdict: 1
+    - id: calm
+      title: No pressure
+      whyItMatters: Real notices give you time instead of rushing you.
+      supportsVerdict: 1
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: Legitimate! It matches what you did, there's no rush, and it asks for
+      nothing secret.
+    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 16:
+      Information Security Best Practices (user awareness)"
+    hint: 'Check your case notes: did you do something that explains this email?
+      Then look at what it asks you to do.'
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
+  - id: L02
     channel: 1
     sender: Sam (Volunteer Team)
-    senderDetail: 
+    senderDetail: sam@greenparkvolunteers.example
     subject: 'Saturday clean-up: meeting point'
     body: Hi everyone, we'll meet at the park entrance at 9:00 on Saturday. Bring
       gloves and water. See you there!
     link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: 
-    trigger: 0
+    correctVerdict: 1
+    scenarioContext: You signed up for Saturday's park clean-up. Sam is the volunteer
+      team's organiser.
+    explanation: 'You signed up for this clean-up, and Sam is the organiser. The
+      email only gives the meeting time and place and what to bring. There is no
+      link, no payment, no password and no pressure. Not every message is a scam:
+      real ones match what you expect and ask for nothing risky.'
+    trigger: 2
+    readingSeconds: 0
+    stationId: 
     requestedAction: 
     linkNote: 
     clues: []
-    inspectables: []
-    evidence: []
-  - id: old_receipt
-    channel: 1
-    sender: Example Delivery
-    senderDetail: 
-    subject: Receipt for your desk lamp order
-    body: Thank you for your order of 1 x desk lamp. You can track this order in
-      the official Example Delivery app.
-    link: 
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: 
-    trigger: 0
-    requestedAction: 
-    linkNote: 
-    clues: []
-    inspectables: []
-    evidence: []
-  caseFiles: []
+    inspectables:
+    - id: sender
+      field: 0
+      match: 
+      label: Sender
+      finding: Sam is the organiser of the clean-up you joined (see your case notes).
+      linkAddress: 
+      clueId: known
+      part: 
+    - id: group
+      field: 3
+      match: Hi everyone
+      label: Greeting
+      finding: It's written to the whole team, like a normal group update.
+      linkAddress: 
+      clueId: known
+      part: 
+    - id: details
+      field: 3
+      match: we'll meet at the park entrance at 9:00 on Saturday
+      label: The details
+      finding: The time and place of the event you signed up for.
+      linkAddress: 
+      clueId: expected
+      part: 
+    - id: bring
+      field: 3
+      match: Bring gloves and water
+      label: What it asks
+      finding: Harmless, normal instructions. It asks for no money, password or code,
+        and has no link.
+      linkAddress: 
+      clueId: noask
+      part: 
+    evidence:
+    - id: known
+      title: From someone you know
+      whyItMatters: Sam is the organiser of the clean-up you joined.
+      supportsVerdict: 1
+    - id: expected
+      title: You were expecting it
+      whyItMatters: It's about the event you signed up for.
+      supportsVerdict: 1
+    - id: noask
+      title: Asks for nothing secret
+      whyItMatters: No link, money, password or code is requested.
+      supportsVerdict: 1
+    consequence:
+      kind: 0
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 0
+      recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: Legitimate! It's from the organiser you know and only shares the meeting
+      details.
+    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Week 16:
+      Information Security Best Practices (user awareness)"
+    hint: Who is Sam? Check your case notes, then look at what the email asks you
+      to do.
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
+  inboxExtras: []
+  caseFiles:
+  - title: Case Notes
+    body: "\u2022 You have not ordered anything this month.\n\u2022 You reserved
+      a book at Riverside Public Library on Monday.\n\u2022 You signed up for Saturday's
+      park clean-up. Sam is the volunteer team's organiser."
+  - title: How This Room Works
+    body: '1. 4 questions arrive one at a time, in a new order each attempt.
+
+
+      2.
+      Case questions: pick the safest, most accurate answer (A-D).
+
+
+      3. Messages
+      and web pages: choose SCAM or LEGITIMATE.
+
+
+      4. Not sure? Press HINT to
+      see what to look at. After each answer you''ll see why it was right or wrong.
+
+
+      Goal:
+      score 230+ to unlock the next room.'
   firstMessageDelay: 8
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 4
-  oneStarScore: 200
-  twoStarScore: 325
-  threeStarScore: 425
-  minScoreToUnlockNext: 325
   scoring:
     basePoints: 100
     speedBonus: 0
     fastWindow: 0.35
     wrongPenalty: 10
-    recoveryPoints: 20
+    recoveryPoints: 25
     baseReadingSeconds: 25
     secondsPerWord: 0.6
     secondsPerDetail: 4
@@ -508,18 +504,23 @@ MonoBehaviour:
     overtimeStepSeconds: 15
     overtimePenaltyPerStep: 0
     maxTimePenalty: 0
-    minCorrectPoints: 100
+    minCorrectPoints: 80
+  oneStarScore: 140
+  twoStarScore: 230
+  threeStarScore: 400
+  minScoreToUnlockNext: 230
   nextLevelId: level_2
   nextSceneName: Room2_InvestigationOffice
   lessons:
-  - Check who really sent a message. Unknown numbers and vague senders deserve a
-    closer look.
-  - Urgency and threats ("today", "immediately", "restricted") are pressure tactics.
-  - Don't use links in unexpected messages. Open the official app or website yourself.
-  - Unexpected prizes and rewards are classic bait.
-  - A message that matches something you actually did, and points to the official
-    app, is more likely legitimate - but still verify.
+  - 'Spot a fake delivery text: unexpected, rushed, a small fee and a strange link.'
+  - Name phishing and spot a fake look-alike address.
+  - 'Recognise a real notice: it matches something you did, gives you time and asks
+    for nothing secret.'
+  - 'Know that not every message is a scam: a real one from someone you know just
+    shares details.'
   learningSummary: 
   performanceHigh: 
   performanceModerate: 
   performanceLow: 
+  tutorial: 1
+  tutorialFirstQuestion: E03

@@ -146,6 +146,88 @@ public static class UIKit
         return r;
     }
 
+    // ---------- Pop-up tones (shared by every pop-up: feedback, warnings, briefing, results, confirmations) ----------
+
+    /// <summary>What a pop-up is for. Decides its colour, icon and entrance animation.</summary>
+    public enum PopupTone { Info, Success, Error, Warning }
+
+    public static Color ToneColor(PopupTone t) =>
+        t == PopupTone.Success ? Safe : t == PopupTone.Error ? Danger : t == PopupTone.Warning ? Warning : Accent;
+
+    public static string ToneHex(PopupTone t) =>
+        t == PopupTone.Success ? HexSafe : t == PopupTone.Error ? HexDanger : t == PopupTone.Warning ? HexWarning : HexAccent;
+
+    /// <summary>Icon glyph inside the badge (characters the game font has).</summary>
+    public static string ToneGlyph(PopupTone t) =>
+        t == PopupTone.Success ? "✓" : t == PopupTone.Error ? "×" : t == PopupTone.Warning ? "!" : "i";
+
+    /// <summary>Round status icon (tinted disc, ring and glyph) that animates when shown. Never colour alone: the glyph differs per tone.</summary>
+    public static PopupIcon IconBadge(Transform parent, PopupTone tone, float size = 64f)
+    {
+        var r = Rect("Icon", parent);
+        r.sizeDelta = new Vector2(size, size);
+        var le = r.gameObject.AddComponent<LayoutElement>();
+        le.preferredWidth = le.minWidth = size;
+        le.preferredHeight = le.minHeight = size;
+        var icon = r.gameObject.AddComponent<PopupIcon>();
+        icon.Build(size);
+        icon.SetTone(tone);
+        return icon;
+    }
+
+    /// <summary>
+    /// Icon + text column in one row, for pop-up headers. Returns the column so callers can add the kicker and title
+    /// (as children, top to bottom).
+    /// </summary>
+    public static RectTransform IconHeader(Transform parent, PopupTone tone, out PopupIcon icon, float iconSize = 64f, float spacing = 22f)
+    {
+        var row = Rect("Header", parent);
+        var h = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+        h.spacing = spacing;
+        h.childAlignment = TextAnchor.MiddleLeft;
+        h.childControlWidth = h.childControlHeight = true;
+        h.childForceExpandWidth = h.childForceExpandHeight = false;
+        icon = IconBadge(row, tone, iconSize);
+        var col = Rect("Text", row);
+        var v = col.gameObject.AddComponent<VerticalLayoutGroup>();
+        v.spacing = 2f;
+        v.childControlWidth = v.childControlHeight = true;
+        v.childForceExpandWidth = true;
+        v.childForceExpandHeight = false;
+        col.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
+        return col;
+    }
+
+    /// <summary>Recolours a panel built with PanelImage + AccentStrip to a tone (border and left strip).</summary>
+    public static void TintPanel(RectTransform panel, PopupTone tone, float borderAlpha = 0.85f)
+    {
+        if (panel == null) return;
+        Color c = ToneColor(tone);
+        var outline = panel.GetComponent<Outline>();
+        if (outline != null) outline.effectColor = tone == PopupTone.Info ? Border : new Color(c.r, c.g, c.b, borderAlpha);
+        var strip = panel.Find("Accent");
+        if (strip != null && strip.TryGetComponent<Image>(out var img)) img.color = c;
+    }
+
+    /// <summary>Soft tinted box (rounded, tone border) for the one line a player must not miss.</summary>
+    public static Image Callout(RectTransform r, PopupTone tone)
+    {
+        var img = AddImage(r, Color.clear, rounded: true);
+        img.raycastTarget = false;
+        r.gameObject.AddComponent<Outline>().effectDistance = new Vector2(2f, -2f);
+        TintCallout(img, tone);
+        return img;
+    }
+
+    public static void TintCallout(Image callout, PopupTone tone)
+    {
+        if (callout == null) return;
+        Color c = ToneColor(tone);
+        callout.color = new Color(c.r * 0.16f, c.g * 0.16f, c.b * 0.16f, 0.92f);
+        var o = callout.GetComponent<Outline>();
+        if (o != null) o.effectColor = new Color(c.r, c.g, c.b, 0.55f);
+    }
+
     /// <summary>Thin cyan strip on the left edge of a panel (ignored by layout groups).</summary>
     public static void AccentStrip(RectTransform panel, Color? color = null, float width = 6f)
     {
@@ -519,11 +601,35 @@ public static class UIKit
         ("UIKit_Sweep", MakeSweep()),
         ("UIKit_Circle", MakeCircle()),
         ("UIKit_Star", MakeStar()),
+        ("UIKit_Ring", MakeRing()),
     };
 
     /// <summary>Forget cached sprites so the next access re-loads them (after the assets were written).</summary>
     public static void ClearSpriteCache() =>
-        roundedSprite = starSprite = circleSprite = chamferSprite = chamferOutlineSprite = sweepSprite = null;
+        roundedSprite = starSprite = circleSprite = chamferSprite = chamferOutlineSprite = sweepSprite = ringSprite = null;
+
+    static Sprite ringSprite;
+
+    /// <summary>White anti-aliased ring (about 6% of the diameter thick); tint with Image.color.</summary>
+    public static Sprite RingSprite => ringSprite != null ? ringSprite : (ringSprite = LoadOrMake("UIKit_Ring", MakeRing));
+
+    static Sprite MakeRing()
+    {
+        const int s = 128;
+        var tex = new Texture2D(s, s, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+        float c = (s - 1) / 2f, outer = s / 2f - 1.5f, inner = outer - 7f;
+        for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+            {
+                float d = Vector2.Distance(new Vector2(x, y), new Vector2(c, c));
+                float a = Mathf.Clamp01(outer - d + 0.5f) * Mathf.Clamp01(d - inner + 0.5f);
+                tex.SetPixel(x, y, new Color(1, 1, 1, a));
+            }
+        tex.Apply();
+        var ring = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f));
+        ring.name = "UIKit_Ring";
+        return ring;
+    }
 
     /// <summary>White 9-sliced rounded rectangle; tint it with Image.color.</summary>
     public static Sprite RoundedSprite => roundedSprite != null ? roundedSprite : (roundedSprite = LoadOrMake("UIKit_Rounded", MakeRounded));
@@ -687,7 +793,8 @@ public static class UIKit
         if (m == null) return "";
         var sb = new System.Text.StringBuilder();
         string channel = m.channel == MessageChannel.SMS ? "Text message" : m.channel == MessageChannel.Website ? "Web page (captured)"
-                       : m.channel == MessageChannel.Case ? "Multi-evidence case" : m.channel == MessageChannel.Chat ? "Work chat" : "Email";
+                       : m.channel == MessageChannel.Case ? "Multi-evidence case" : m.channel == MessageChannel.Chat ? "Work chat"
+                       : m.channel == MessageChannel.Question ? "Case question" : "Email";
         sb.Append($"<color={HexAccent}><b>SENDER</b></color>  {m.sender}");
         if (!string.IsNullOrEmpty(m.senderDetail)) sb.Append($"  <color={HexSecondary}>({m.senderDetail})</color>");
         sb.Append($"\n<color={HexAccent}><b>CHANNEL</b></color>  {channel}");
@@ -698,6 +805,8 @@ public static class UIKit
             sb.Append($"\n<color={HexAccent}><b>OBSERVATIONS</b></color>");
             foreach (var c in m.clues) if (!string.IsNullOrEmpty(c)) sb.Append($"\n•  {c}");
         }
+        if (!string.IsNullOrEmpty(m.scenarioContext))
+            sb.Append($"\n<color={HexAccent}><b>CASE NOTE</b></color>  {m.scenarioContext}");
         if (recentActivity != null && recentActivity.Length > 0)
         {
             sb.Append($"\n<color={HexAccent}><b>YOUR RECENT ACTIVITY</b></color>");
@@ -706,5 +815,42 @@ public static class UIKit
         return sb.ToString();
     }
 
+    /// <summary>A key drawn as a highlighted key cap inside rich text ("E", "Esc", "W A S D"). Same look in every screen.</summary>
+    public static string Key(string key) => $"<mark=#38BDF840><b> {key} </b></mark>";
+
+    /// <summary>Numbered step for instruction lists: cyan number, then the text (one short line each).</summary>
+    public static string Step(int n, string text) => $"<color={HexAccent}><b>{n}</b></color>   {text}";
+
+    /// <summary>One-line control strip ("[W A S D] Move   [Mouse] Look ..."), shared by the briefing and How to Play.</summary>
+    public static string ControlStrip(bool includeTab = true) =>
+        $"{Key("W A S D")} Move     {Key("Mouse")} Look     {Key("E")} Use / open" +
+        (includeTab ? $"     {Key("Tab")} Tasks" : "") + $"     {Key("Esc")} Pause";
+
     public static string VerdictWord(MessageVerdict v) => v == MessageVerdict.Scam ? "SCAM" : "LEGITIMATE";
+
+    /// <summary>
+    /// Rich text as plain text: tags removed, but angle brackets shown literally through &lt;noparse&gt; are kept
+    /// (e.g. "&lt;noparse&gt;&lt;&lt;/noparse&gt;name@site.example&lt;noparse&gt;&gt;&lt;/noparse&gt;" becomes "&lt;name@site.example&gt;").
+    /// </summary>
+    public static string StripRichText(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        s = s.Replace("<noparse><</noparse>", "\u0001").Replace("<noparse>></noparse>", "\u0002");
+        s = System.Text.RegularExpressions.Regex.Replace(s, "</?noparse>", "");
+        s = System.Text.RegularExpressions.Regex.Replace(s, "<[^<>]*>", "");
+        return s.Replace("\u0001", "<").Replace("\u0002", ">");
+    }
+
+    /// <summary>The message's short feedback line (italic, then a blank line), or "" if it has none.</summary>
+    public static string FeedbackLead(ScamMessage m) =>
+        m != null && !string.IsNullOrEmpty(m.feedback) ? $"<i>{m.feedback}</i>\n\n" : "";
+
+    /// <summary>"Your answer: X · Correct answer: Y" style text for a result, for verdict and choice questions alike.</summary>
+    public static string AnswerSummary(ScoringSystem.AnswerResult r)
+    {
+        if (r.message == null) return "";
+        if (r.IsChoice)
+            return $"Your answer: <b>{r.message.ChoiceText(r.chosenChoice)}</b>   ·   Best answer: <b>{r.message.ChoiceText(r.message.correctChoice)}</b>";
+        return $"Your answer: <b>{VerdictWord(r.chosen)}</b>   ·   Correct answer: <b>{VerdictWord(r.message.correctVerdict)}</b>";
+    }
 }

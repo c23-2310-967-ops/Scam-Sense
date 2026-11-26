@@ -109,6 +109,57 @@ public class ScoringTests
         Assert.GreaterOrEqual(points, level.scoring.minCorrectPoints);
     }
 
+    // ---------- Choice questions ----------
+
+    static ScamMessage ChoiceMsg(string id, int correct) => new ScamMessage
+    {
+        id = id, channel = MessageChannel.Question, subject = "Multiple Choice", body = "Which one?",
+        choices = new[] { "w", "x", "y", "z" }, correctChoice = correct
+    };
+
+    [Test]
+    public void CorrectChoice_EarnsBasePoints()
+    {
+        Assert.IsTrue(scoring.TryRecordChoice(ChoiceMsg("c", 2), 2, 5f, out var r));
+        Assert.IsTrue(r.isCorrect);
+        Assert.IsTrue(r.IsChoice);
+        Assert.AreEqual(2, r.chosenChoice);
+        Assert.AreEqual(100, r.points);
+        Assert.AreEqual(100, scoring.TotalScore);
+    }
+
+    [Test]
+    public void WrongChoice_CostsThePenalty_ButIsNotAMissedScamOrFalseAlarm()
+    {
+        scoring.TryRecord(Msg("first", MessageVerdict.Scam), MessageVerdict.Scam, 1f, out _);   // 100
+        Assert.IsTrue(scoring.TryRecordChoice(ChoiceMsg("c", 2), 0, 5f, out var r));
+        Assert.IsFalse(r.isCorrect);
+        Assert.AreEqual(0, r.points);
+        Assert.AreEqual(90, scoring.TotalScore);
+        Assert.AreEqual(0, scoring.MissedRisks);
+        Assert.AreEqual(0, scoring.FalseAlarms);
+        Assert.AreEqual(1, scoring.IncorrectCount);
+    }
+
+    [Test]
+    public void Choice_IsScoredOnceAndRejectsBadIndexes()
+    {
+        var m = ChoiceMsg("c", 1);
+        Assert.IsFalse(scoring.TryRecordChoice(m, -1, 1f, out _));
+        Assert.IsFalse(scoring.TryRecordChoice(m, 4, 1f, out _));
+        Assert.IsTrue(scoring.TryRecordChoice(m, 1, 1f, out _));
+        Assert.IsFalse(scoring.TryRecordChoice(m, 1, 1f, out _), "answered twice");
+        Assert.IsFalse(scoring.TryRecordChoice(Msg("v", MessageVerdict.Scam), 0, 1f, out _), "a verdict message has no choices");
+    }
+
+    [Test]
+    public void VerdictAnswer_IsNotAChoice()
+    {
+        scoring.TryRecord(Msg("a", MessageVerdict.Scam), MessageVerdict.Scam, 1f, out var r);
+        Assert.IsFalse(r.IsChoice);
+        Assert.AreEqual(-1, r.chosenChoice);
+    }
+
     [TestCase(0f, "0:00")]
     [TestCase(5f, "0:05")]
     [TestCase(65f, "1:05")]

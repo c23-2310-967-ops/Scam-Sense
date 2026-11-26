@@ -12,6 +12,8 @@ using UnityEngine;
 ///      Inspector reference and adds persistent OnClick / OnValueChanged events to every button and slider.
 ///   3. Builds the account panels (AuthenticationPanel, PlayerSignInPanel, CreateAccountPanel, AccountPanel,
 ///      BusyPanel, AccountChip) inside the same canvas and wires them to AccountUI.
+///   4. Builds the Classroom panel shell (ClassroomDim, ClassroomPanel: title, tabs, scroll area, REFRESH / CLOSE)
+///      and wires it to ClassroomUI; the menu's CLASSROOM button opens it.
 /// Running it again replaces the generated menu objects (your other scene objects are not touched).
 /// </summary>
 public static class MenuUIBuilder
@@ -53,9 +55,13 @@ public static class MenuUIBuilder
 
         menu.BuildIntoScene();
         account.BuildIntoScene(menu);
+        var classroom = menu.GetComponent<ClassroomUI>();
+        if (classroom == null) classroom = menu.gameObject.AddComponent<ClassroomUI>();
+        classroom.BuildIntoScene(menu);
 
         EditorUtility.SetDirty(menu);
         EditorUtility.SetDirty(account);
+        EditorUtility.SetDirty(classroom);
         var scene = menu.gameObject.scene;
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);

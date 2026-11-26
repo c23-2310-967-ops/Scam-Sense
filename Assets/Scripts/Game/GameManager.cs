@@ -157,8 +157,11 @@ public class GameManager : MonoBehaviour
         // 5) Completed (finished the level) is saved separately from 6) the next-room unlock - ProgressController
         // handles both, plus the run history for the cloud.
         var careerBefore = CareerSystem.TakeSnapshot(level.levelId);
+        // The run's per-question results go with it (class records: weak topics, hardest questions).
+        var answers = RunRecord.FromAnswers(scoring.Results, scoring.WasRecovered, scoring.HintUsedFor);
         var saved = ProgressController.SaveRun(level, score, scoring.MaxScoreFor(level.MessageCount), stars, met,
-                                               scoring.CorrectCount, scoring.TotalAnswerTime);
+                                               scoring.CorrectCount, scoring.TotalAnswerTime,
+                                               answers, scoring.Results.Count >= level.MessageCount);
 
         var r = new LevelResult
         {

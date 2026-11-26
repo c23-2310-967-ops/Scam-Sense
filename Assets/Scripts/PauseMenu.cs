@@ -41,6 +41,8 @@ public class PauseMenu : MonoBehaviour
     private TMP_Text confirmTitle, confirmBody, statusText;
     private Button confirmYes;
     private System.Action confirmAction;
+    private PopupAnimator confirmAnimator;
+    private PopupIcon confirmIcon;
     private Slider masterSlider, musicSlider, sfxSlider, sensSlider;
     private float timeScaleBeforePause = 1f;
     private bool leaving;
@@ -178,6 +180,8 @@ public class PauseMenu : MonoBehaviour
         UIKit.SetLabel(confirmYes, yesLabel);
         confirmAction = action;
         ShowPanel(confirmPanel);
+        confirmAnimator.Open();
+        confirmIcon.Play();
     }
 
     void ShowPanel(RectTransform panel)
@@ -239,6 +243,9 @@ public class PauseMenu : MonoBehaviour
         var title = UIKit.Text(mainPanel, "Title", "PAUSED", UIKit.SizeDisplay, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
         title.characterSpacing = 8f;
         UIKit.Text(mainPanel, "Sub", "The case timer is paused.", UIKit.SizeSmall, UIKit.TextSecondary, TextAlignmentOptions.Center);
+        // Controls reminder (the main menu no longer has a How to Play page).
+        var controls = UIKit.Text(mainPanel, "Controls", UIKit.ControlStrip(), 19, UIKit.TextSecondary, TextAlignmentOptions.Center);
+        controls.lineSpacing = 12f;
         AddMenuButton(mainPanel, "RESUME GAME", Resume, UIKit.Primary);
         AddMenuButton(mainPanel, "SETTINGS", OpenSettings, UIKit.Secondary);
         AddMenuButton(mainPanel, "RETURN TO MAIN MENU", AskMainMenu, UIKit.Secondary);
@@ -257,6 +264,14 @@ public class PauseMenu : MonoBehaviour
         AddMenuButton(settingsPanel, "BACK", () => { Click(); ShowPanel(mainPanel); }, UIKit.Primary);
 
         confirmPanel = MakePanel("Confirm", 680);
+        UIKit.TintPanel(confirmPanel, UIKit.PopupTone.Warning);   // amber strip and border: this asks for a decision
+        confirmAnimator = confirmPanel.gameObject.AddComponent<PopupAnimator>();
+        var iconRow = UIKit.Rect("IconRow", confirmPanel);
+        var ih = iconRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+        ih.childAlignment = TextAnchor.MiddleCenter;
+        ih.childControlWidth = ih.childControlHeight = true;
+        ih.childForceExpandWidth = ih.childForceExpandHeight = false;
+        confirmIcon = UIKit.IconBadge(iconRow, UIKit.PopupTone.Warning, 72f);
         confirmTitle = UIKit.Text(confirmPanel, "Title", "", UIKit.SizeH1, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
         confirmBody = UIKit.Text(confirmPanel, "Body", "", UIKit.SizeBody, UIKit.TextSecondary, TextAlignmentOptions.Center);
         var row = UIKit.Rect("Row", confirmPanel);

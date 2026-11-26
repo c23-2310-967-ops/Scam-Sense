@@ -25,13 +25,17 @@ public static class ProgressController
     /// Saves a finished run: queues it for the cloud history, records the result (completion, bests, stars) and
     /// unlocks the next room when the unlock score was met. Unlocking depends on the score only, never on stars.
     /// </summary>
+    /// <param name="questions">Per-question results (RunRecord.FromAnswers) for the class records; may be null.</param>
+    /// <param name="completed">False if the run ended before every question was answered.</param>
     public static SaveOutcome SaveRun(LevelDefinition level, int score, int maxScore, int stars, bool metUnlockScore,
-                                      int correct, float answerSeconds)
+                                      int correct, float answerSeconds,
+                                      System.Collections.Generic.List<GameResultLog.QuestionAnswer> questions = null, bool completed = true)
     {
         bool hasNext = !string.IsNullOrEmpty(level.nextLevelId);
         var outcome = new SaveOutcome { nextWasUnlocked = hasNext && IsUnlocked(level.nextLevelId) };
 
-        GameResultLog.Add(level.levelId, score, maxScore, stars, correct, level.MessageCount, metUnlockScore, answerSeconds);
+        GameResultLog.Add(level.levelId, score, maxScore, stars, correct, level.MessageCount, metUnlockScore, answerSeconds,
+                          questions, completed);
         outcome.progress = LocalDataManager.RecordResult(level.levelId, score, stars, metUnlockScore);
         if (metUnlockScore && hasNext) LocalDataManager.Unlock(level.nextLevelId);
 

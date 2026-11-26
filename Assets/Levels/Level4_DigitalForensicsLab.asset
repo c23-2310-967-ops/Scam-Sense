@@ -16,311 +16,723 @@ MonoBehaviour:
   levelNumber: 4
   displayName: Digital Forensics Lab
   sceneName: Room4_DigitalForensicsLab
-  description: Trace the evidence. Expose the scam. Compare emails, web pages and
-    records before you decide.
+  description: Pressure from 'important' people, booby-trapped files, emails written
+    just for you, risky app permissions and which risk to fix first.
   previewImage: {fileID: 21300000, guid: 868639aac13a5e34aab9a889c77ee51d, type: 3}
   briefingTitle: 'LEVEL 4: DIGITAL FORENSICS LAB'
-  briefingText: Several suspicious communications have been reported to the cybersecurity
-    team. Examine the available evidence, identify fraudulent messages, and submit
-    your findings. Some communications are legitimate. Investigate before making
-    your decision.
-  caseNotes:
-  - You store files with NovaCloud. Your plan is paid until next month.
-  - You ordered headphones from Brightway Store (order BW-55120).
-  - You work with Vertexa Systems as a contractor.
-  - You do not have a BrightPay account.
+  briefingText: 'In this room: pressure from ''important'' people, booby-trapped
+    files, emails written just for you, risky app permissions and which risk to fix
+    first.
+
+    You''ll get 6 questions with answer choices (A-D). Take your time
+    and read each one carefully.'
+  caseNotes: []
   objectives:
-  - Investigate the available case files.
-  - Classify the seven reported communications as SCAM or LEGITIMATE.
-  - 'Inspect the evidence wall: initial email, domain record, follow-up message.'
-  - Submit your findings at the final case review terminal.
+  - Answer all 6 questions.
+  - Read the whole situation before you choose. Stuck? Press HINT.
+  - Score 730+ to unlock the next room.
   messages:
-  - id: l4_account_verification
-    channel: 1
-    sender: NovaCloud Account Team
-    senderDetail: account-team@novacloud-verify.example
-    subject: 'Action needed: verify your account within 24 hours'
-    body: We could not confirm your account details. To avoid restrictions on your
-      storage, verify your information within 24 hours using the secure link below.
-    link: novacloud-verify.example/confirm
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: The display name says NovaCloud, but the address uses novacloud-verify.example,
-      which is not NovaCloud's verified domain. It adds a 24-hour deadline and asks
-      you to verify through its own link instead of the service you already use.
-    trigger: 2
-    readingSeconds: 0
-    stationId: 
-    requestedAction: Verify your account information through the provided link within
-      24 hours.
-    linkNote: novacloud-verify.example/confirm (training placeholder, never opened).
-    clues:
-    - Claims to be NovaCloud.
-    - 'Deadline: 24 hours, or storage is restricted.'
-    - Compare the sender domain with Verified Domains on the network station.
-    inspectables: []
-    evidence: []
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-  - id: l4_security_notification
-    channel: 1
-    sender: NovaCloud Security
-    senderDetail: security@novacloud.example
-    subject: Sign-in attempt blocked
-    body: We blocked a sign-in attempt to your NovaCloud account at 09:12 from an
-      unrecognised device. No action is needed if this wasn't you - your account
-      is protected. To review your activity, open the NovaCloud app or go to novacloud.example
-      yourself. We will never ask for your password or payment by email.
-    link: 
-    correctVerdict: 1
-    scenarioContext: Fictional training example. The sender domain and the event
-      match the account records on the network station.
-    explanation: The sender uses NovaCloud's verified domain and the 09:12 blocked
-      attempt matches your account record. It asks for nothing and tells you to open
-      the service yourself. This is a fictional example, not a promise that any email
-      in this format is safe - still check important alerts in the official app.
-    trigger: 2
-    readingSeconds: 0
-    stationId: 
-    requestedAction: Nothing. Optionally review activity in the app or at the address
-      you already know.
-    linkNote: No link. It points you to the app or the known address.
-    clues:
-    - 'Describes a specific event: blocked sign-in at 09:12.'
-    - Asks for no password, code or payment.
-    - Compare with Account & Order Records on the network station.
-    inspectables: []
-    evidence: []
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-  - id: l4_payment_recovery
-    channel: 0
-    sender: BrightPay Support
-    senderDetail: +1 (555) 014-3392
-    subject: 
-    body: 'BrightPay: your account is frozen with $480 waiting. To release the funds,
-      pay a $25 recovery processing fee today at brightpay-release.example. Case
-      ref: unavailable.'
-    link: brightpay-release.example
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: You don't have a BrightPay account, the message comes from an ordinary
-      number, it gives no case reference you can check, and it asks for a fee to
-      release money. Unexpected fees to recover funds or access are a classic scam.
-    trigger: 1
-    readingSeconds: 0
-    stationId: 
-    requestedAction: Pay a $25 processing fee to release frozen funds.
-    linkNote: brightpay-release.example (training placeholder, never opened).
-    clues:
-    - Sent from an ordinary phone number.
-    - No verifiable case reference.
-    - Asks for a fee to get money back.
-    inspectables: []
-    evidence: []
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-  - id: l4_impersonated_announcement
-    channel: 1
-    sender: Vertexa Systems
-    senderDetail: news@vertexa-systems-update.example
-    subject: 'Required: install the new device security tool'
-    body: 'All Vertexa staff and contractors must install the new device security
-      tool by Friday. Download it from the update portal below and sign in with your
-      work password. Questions: call +1 (555) 019-2274.'
-    link: vertexa-systems-update.example/portal
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: The display name is correct, but the real address is vertexa-systems-update.example,
-      not Vertexa's documented domain vertexa.example. The phone number doesn't match
-      the company profile either. Always read the full address and verify through
-      the company's known contacts.
-    trigger: 2
-    readingSeconds: 0
-    stationId: 
-    requestedAction: Download a tool from a portal and sign in with your work password.
-    linkNote: vertexa-systems-update.example/portal (training placeholder, never
-      opened).
-    clues:
-    - 'Display name: Vertexa Systems.'
-    - Asks for your work password on a download portal.
-    - Compare the domain and phone number with Verified Domains.
-    inspectables: []
-    evidence: []
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-  - id: l4_order_update
-    channel: 0
-    sender: Brightway Store
-    senderDetail: Saved contact
-    subject: 
-    body: 'Brightway: your order BW-55120 (wireless headphones) has shipped and should
-      arrive Thursday. Track it in the Brightway app or your account at brightway.example.'
-    link: 
-    correctVerdict: 1
-    scenarioContext: You ordered headphones from Brightway Store. The reference matches
-      the order record on the network station.
-    explanation: The order number, product and store all match your purchase record,
-      it comes from the saved contact, and it only points you to the app or the store's
-      known address. Context matters - but an unexpected request for payment or a
-      password would still need checking.
-    trigger: 1
-    readingSeconds: 0
-    stationId: 
-    requestedAction: Nothing; optionally track the order in the app you already use.
-    linkNote: No link to tap - it names the store's known address.
-    clues:
-    - Order BW-55120, wireless headphones.
-    - From a saved contact.
-    - Compare with Account & Order Records.
-    inspectables: []
-    evidence: []
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-  - id: l4_prize_claim
-    channel: 1
-    sender: Lumen Rewards
-    senderDetail: winners@lumen-rewards-prize.example
-    subject: Congratulations - you've won a tablet!
-    body: You were selected as this month's winner of a new tablet! To release your
-      prize, pay the $4.99 delivery fee and confirm your date of birth and card details
-      on the claim page within 48 hours.
-    link: lumen-rewards-prize.example/claim
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: You never entered a Lumen Rewards draw, the prize needs an upfront
-      fee, and it asks for your date of birth and card details. Unexpected prizes
-      that need payment or sensitive information are warning signs.
-    trigger: 2
-    readingSeconds: 0
-    stationId: 
-    requestedAction: Pay a delivery fee and give date of birth and card details within
-      48 hours.
-    linkNote: lumen-rewards-prize.example/claim (training placeholder, never opened).
-    clues:
-    - Prize from a competition you don't recall entering.
-    - Upfront fee plus sensitive personal details.
-    - 'Deadline: 48 hours.'
-    inspectables: []
-    evidence: []
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-  - id: l4_suspicious_website
-    channel: 2
-    sender: NovaCloud - Sign in
-    senderDetail: novacl0ud-login.example
-    subject: 'Captured page: NovaCloud sign-in'
-    body: 'NOVACLOUD
-
-      Sign in to keep your files safe.
-
-      Email address 
-      [__________]
-
-      Password  [__________]
-
-      Card number (identity check) 
-      [__________]
-
-      [ SIGN IN ]
-
-
-      Footer: (c) 2026 Nova Cloud Services
-      Ltd  -  Help: help@novacloud-assist.example  -  (padlock icon shown)'
-    link: https://novacl0ud-login.example/signin
-    correctVerdict: 0
-    scenarioContext: 
-    explanation: The page copies NovaCloud's look, but the domain novacl0ud-login.example
-      is not NovaCloud's, the company name in the footer differs, the help address
-      uses yet another domain, and it asks for a card number to sign in. A padlock
-      or https only means the connection is encrypted - not that the site is who
-      it claims to be.
-    trigger: 2
-    readingSeconds: 0
-    stationId: 
-    requestedAction: Enter your email, password and card number to sign in.
-    linkNote: novacl0ud-login.example (training placeholder, never opened). The padlock
-      only means the connection is encrypted.
-    clues:
-    - 'Address: novacl0ud-login.example.'
-    - 'Footer company: Nova Cloud Services Ltd; help: novacloud-assist.example.'
-    - Asks for a card number to sign in.
-    inspectables: []
-    evidence: []
-    consequence:
-      kind: 0
-      alertTitle: 
-      alertBody: 
-      overlookedClue: 
-      followUp: 0
-      recheckDetails: []
-  - id: l4_final_case
-    channel: 3
+  - id: M09
+    channel: 5
     sender: Case Review
-    senderDetail: "CASE-04 \xB7 Billing Storm"
-    subject: "CASE-04  \xB7  Operation Billing Storm"
-    body: 'A wave of "payment failed" messages has reached staff who use NovaCloud.
-      Using the initial email, the domain record and the follow-up message, decide:
-      is this campaign a scam or legitimate billing contact from NovaCloud?'
+    senderDetail: 
+    subject: Scenario-Based
+    body: 'You''re a student assistant at the IT help desk. A caller says: "This
+      is Dean Reyes. I''m locked out and presenting in five minutes. Reset my password
+      and send it to my personal email, deanreyes.personal@freemail.example. Hurry!"'
     link: 
     correctVerdict: 0
     scenarioContext: 
-    explanation: 'Several independent indicators agree: the email comes from novacloud-support.example,
-      which is not NovaCloud''s verified domain; that domain was registered 3 days
-      ago with a hidden owner and shares a server with the fake sign-in page; the
-      follow-up text from an unknown number repeats the same link and pressure; and
-      your account record shows the plan is paid. No single clue decides it - together
-      they do.'
+    explanation: 'This is <b>pretexting</b>: a made-up story that uses an important
+      name and a rush to make you skip the rules. Sending a reset to a personal email
+      could hand the account to a scammer. Always check first. A real dean will understand.'
     trigger: 0
     readingSeconds: 0
     stationId: 
     requestedAction: 
     linkNote: 
-    clues:
-    - 'Email sender: billing@novacloud-support.example - NovaCloud''s verified domain
-      is novacloud.example.'
-    - Domain registered 3 days ago, owner hidden, same server as novacl0ud-login.example.
-    - Follow-up text from an unknown number with the same link and a 'final notice'.
-    - Your NovaCloud plan is paid until next month.
-    inspectables: []
-    evidence: []
+    clues: []
+    inspectables:
+    - id: authority
+      field: 5
+      match: This is Dean Reyes
+      label: Who they say they are
+      finding: A name on the phone isn't proof. Authority is used to make you skip
+        procedure.
+      linkAddress: 
+      clueId: authority
+      part: c1
+    - id: pressure
+      field: 5
+      match: presenting in five minutes
+      label: Time pressure
+      finding: A deadline leaves no time to check - that's the point.
+      linkAddress: 
+      clueId: pressure
+      part: c1
+    - id: personal
+      field: 5
+      match: send it to my personal email
+      label: Where it should go
+      finding: A reset sent to a personal address could hand the account to an attacker.
+      linkAddress: 
+      clueId: personal
+      part: c2
+    - id: hurry
+      field: 5
+      match: Hurry!
+      label: Hurry
+      finding: More pressure. A real dean would understand a quick verification.
+      linkAddress: 
+      clueId: pressure
+      part: c2
+    evidence:
+    - id: authority
+      title: Claims authority
+      whyItMatters: Pretexting uses rank to skip the rules.
+      supportsVerdict: 1
+    - id: pressure
+      title: Time pressure
+      whyItMatters: Urgency is used to stop you from verifying.
+      supportsVerdict: 1
+    - id: personal
+      title: Reset to a personal address
+      whyItMatters: Resets go only to the official account.
+      supportsVerdict: 1
     consequence:
-      kind: 0
+      kind: 4
       alertTitle: 
       alertBody: 
       overlookedClue: 
-      followUp: 0
+      followUp: 1
       recheckDetails: []
+    choices:
+    - Do it, because the dean outranks you
+    - Reset it but send the password by SMS instead
+    - Give the caller your own login for now
+    - 'Check it''s really the dean: call back on the dean''s official number, and
+      send resets only to the school account'
+    correctChoice: 3
+    feedback: Check first! <b>Important person + rush</b> is an old trick. Call back
+      on the official number.
+    curriculumRef: "Social and Professional Issues (BIT2105). Supporting: Computer
+      Security (BIT1225), Authentication and Access Control \u2014 Week 9: Ethics
+      for IT Workers"
+    hint: A big name plus a rush is an old trick. How can you check who is really
+      calling?
+    activity:
+      kind: 4
+      title: "IT help desk line  \xB7  transcript"
+      instruction: Read the call. Find the pressure tricks, then choose.
+      items:
+      - key: c1
+        role: 2
+        label: Caller
+        text: This is Dean Reyes. I'm locked out and presenting in five minutes.
+      - key: c2
+        role: 2
+        label: Caller
+        text: Reset my password and send it to my personal email, deanreyes.personal@freemail.example.
+          Hurry!
+      minClues: 2
+      outcomes:
+      - If the caller isn't the dean, an attacker now controls the dean's account
+        - and the procedure that would have stopped it was skipped.
+      - The password still goes to someone you haven't verified. Changing the delivery
+        method doesn't fix the missing identity check.
+      - An unverified caller now has your account too, and anything they do is logged
+        under your name.
+      - A quick call-back confirms who it really is. The real dean gets help through
+        the official account; an impostor gets nothing.
+  - id: M10
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Identify the Threat
+    body: 'An email titled "Revised grading sheet" has <b>Grades_Final.docm</b> attached.
+      When opened, a yellow bar says: "Content is disabled. Click <b>ENABLE CONTENT</b>
+      to view the grades." <b>What''s going on?</b>'
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: A <b>.docm</b> file can hold macros, which are small hidden programs.
+      Office turns them off to keep you safe. Clicking "Enable Content" runs the
+      scammer's program. A grades file doesn't need macros to show grades.
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables:
+    - id: subject
+      field: 5
+      match: Revised grading sheet
+      label: Subject
+      finding: A believable subject is part of the lure. On its own it proves nothing.
+      linkAddress: 
+      clueId: 
+      part: subject
+    - id: docm
+      field: 5
+      match: .docm
+      label: File type
+      finding: The 'm' means the document can contain macros - small programs.
+      linkAddress: 
+      clueId: macro
+      part: file
+    - id: disabled
+      field: 5
+      match: Content is disabled.
+      label: The yellow bar
+      finding: Office blocks macros by default, for your safety.
+      linkAddress: 
+      clueId: blocked
+      part: bar
+    - id: lure
+      field: 5
+      match: Click ENABLE CONTENT to view the grades
+      label: What it asks
+      finding: A grades file doesn't need macros to display. The document is pushing
+        you to run its code.
+      linkAddress: 
+      clueId: lure
+      part: bar
+    - id: button
+      field: 5
+      match: ENABLE CONTENT
+      label: The button
+      finding: 'Clicking it would run the hidden code and could install malware.
+        (Simulated: nothing runs.)'
+      linkAddress: 
+      clueId: lure
+      part: button
+    evidence:
+    - id: macro
+      title: Macro-enabled file (.docm)
+      whyItMatters: Macros are programs hidden in the document.
+      supportsVerdict: 1
+    - id: blocked
+      title: Macros blocked by default
+      whyItMatters: Office disables them for safety.
+      supportsVerdict: 1
+    - id: lure
+      title: Pushes you to enable content
+      whyItMatters: Enabling runs the attacker's code.
+      supportsVerdict: 1
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - A normal Word update
+    - 'A macro malware trap: enabling content runs hidden code'
+    - A corrupted file that needs repair
+    - The document is just read-only
+    correctChoice: 1
+    feedback: Macro trap! <b>Enable Content = run their program.</b> Grades don't
+      need macros.
+    curriculumRef: "Computer Security (BIT1225) \u2014 Malware and Threats"
+    hint: Look at the file ending (.docm). What could "Enable Content" let the file
+      do?
+    activity:
+      kind: 1
+      title: "Campus Mail  \xB7  attachment opened"
+      instruction: Check the attachment and the yellow bar. Don't enable anything.
+      items:
+      - key: subject
+        role: 0
+        label: Subject
+        text: Revised grading sheet
+      - key: file
+        role: 4
+        label: attachment
+        text: Grades_Final.docm
+      - key: bar
+        role: 5
+        label: SECURITY WARNING
+        text: Content is disabled. Click ENABLE CONTENT to view the grades.
+      - key: button
+        role: 7
+        label: 
+        text: ENABLE CONTENT
+      minClues: 2
+      outcomes: []
+  - id: H01
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Identify the Threat
+    body: 'You''re your student org''s treasurer. <b>Email from:</b> "Prof. L. Santos"
+      <noparse><</noparse>lsantos.adviser@freemail.example<noparse>></noparse>
+
+      "Hi!
+      As we discussed at Tuesday''s meeting, please send the venue deposit for the
+      <b>Sept 14 Acquaintance Party</b> to our new account before 3 PM today. Thanks!"
+
+      <b>Case
+      file:</b> The meeting, the date and the event were all posted on the org''s
+      public page. The adviser''s school address is lsantos@uphsl-binan.example.'
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 'The scammer studied your org''s public page first, then wrote an
+      email just for you. That is <b>spear phishing</b>: a fake message aimed at
+      one person. Real details don''t prove a real sender. The giveaways: a free-mail
+      address, a "new account" and a same-day deadline.'
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables:
+    - id: freemail
+      field: 5
+      match: freemail.example
+      label: Sender address
+      finding: A free-mail address, not the adviser's school address in the case
+        file.
+      linkAddress: 
+      clueId: freemail
+      part: from
+    - id: details
+      field: 5
+      match: Tuesday's meeting
+      label: Real details
+      finding: Real names, dates and events make the email convincing - and gathering
+        them takes research.
+      linkAddress: 
+      clueId: recon
+      part: body
+    - id: public
+      field: 5
+      match: posted on the org's public page
+      label: Where the details came from
+      finding: Everything the attacker 'knew' was public. That's reconnaissance before
+        a targeted attack.
+      linkAddress: 
+      clueId: recon
+      part: case1
+    - id: school
+      field: 5
+      match: lsantos@uphsl-binan.example
+      label: Adviser's real address
+      finding: 'Compare it with the sender: the real adviser writes from the school
+        domain.'
+      linkAddress: 
+      clueId: freemail
+      part: case2
+    - id: account
+      field: 5
+      match: our new account
+      label: New account
+      finding: A sudden change of bank account is a classic sign of payment fraud.
+      linkAddress: 
+      clueId: newacct
+      part: body
+    - id: deadline
+      field: 5
+      match: before 3 PM today
+      label: Deadline
+      finding: A same-day deadline leaves no time to check with the real adviser.
+      linkAddress: 
+      clueId: deadline
+      part: body
+    evidence:
+    - id: recon
+      title: Built from public information
+      whyItMatters: Research aimed at one person = spear phishing.
+      supportsVerdict: 1
+    - id: freemail
+      title: Free-mail sender
+      whyItMatters: Not the adviser's school address.
+      supportsVerdict: 1
+    - id: newacct
+      title: '"New account"'
+      whyItMatters: Payment details changed by email.
+      supportsVerdict: 1
+    - id: deadline
+      title: Same-day deadline
+      whyItMatters: Pressure to pay before checking.
+      supportsVerdict: 1
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Random spam sent to thousands of people
+    - Clone phishing (a copy of an earlier real email)
+    - Spear phishing built from public information gathered beforehand
+    - Ransomware
+    correctChoice: 2
+    feedback: Spear phishing! They read your <b>public page</b> first. Real details
+      don't mean a real sender.
+    curriculumRef: "Advanced Cybersecurity Strategies (BIT4233) \u2014 Advanced Pen
+      Testing (reconnaissance) and APT Defense (TTPs)"
+    hint: Every detail in the email was on a public page. Was it sent to everyone,
+      or written for you?
+    activity:
+      kind: 1
+      title: "Treasurer's inbox  \xB7  with case file"
+      instruction: Compare the email with the case file. What did the scammer look
+        up?
+      items:
+      - key: from
+        role: 0
+        label: From
+        text: Prof. L. Santos <lsantos.adviser@freemail.example>
+      - key: body
+        role: 1
+        label: 
+        text: Hi! As we discussed at Tuesday's meeting, please send the venue deposit
+          for the Sept 14 Acquaintance Party to our new account before 3 PM today.
+          Thanks!
+      - key: case1
+        role: 6
+        label: case file
+        text: The meeting, the date and the event were all posted on the org's public
+          page.
+      - key: case2
+        role: 6
+        label: case file
+        text: The adviser's school address is lsantos@uphsl-binan.example.
+      minClues: 2
+      outcomes: []
+  - id: H02
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Scenario-Based
+    body: "You open a \"shared document\" link. It takes you to the <b>real</b> NovaCloud
+      sign-in page (novacloud.example). After you sign in, a screen appears:\n\"<b>DocuView
+      Plus</b> (unverified publisher) wants to: \u2022 Read, send and delete your
+      mail \u2022 Access your files at any time \u2022 Keep access when you're not
+      using it\""
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: 'This trick doesn''t steal your password. It gets <b>you</b> to
+      give a fake app full access to your mail. A document viewer has no reason to
+      send or delete emails. Changing your password later won''t remove the app:
+      you have to remove it from your account.'
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables:
+    - id: real
+      field: 5
+      match: novacloud.example
+      label: The address
+      finding: 'This really is NovaCloud. The real sign-in page is part of the trick:
+        the attack is the permission request, not your password.'
+      linkAddress: 
+      clueId: trick
+      part: addr
+    - id: unverified
+      field: 5
+      match: unverified publisher
+      label: Publisher
+      finding: Nobody has verified who made this app.
+      linkAddress: 
+      clueId: unverified
+      part: app
+    - id: mail
+      field: 5
+      match: send and delete your mail
+      label: Mail access
+      finding: A document viewer has no reason to send or delete your mail.
+      linkAddress: 
+      clueId: overreach
+      part: p1
+    - id: files
+      field: 5
+      match: at any time
+      label: File access
+      finding: Access at any time, not just to open one document.
+      linkAddress: 
+      clueId: overreach
+      part: p2
+    - id: keep
+      field: 5
+      match: Keep access
+      label: Lasting access
+      finding: This access stays even after you change your password - until you
+        remove the app from your account.
+      linkAddress: 
+      clueId: persist
+      part: p3
+    - id: allow
+      field: 5
+      match: ALLOW
+      label: Allow
+      finding: 'Clicking this would grant the access. (Simulated: nothing is granted.)'
+      linkAddress: 
+      clueId: 
+      part: allow
+    evidence:
+    - id: trick
+      title: The real page is part of the trick
+      whyItMatters: Consent phishing doesn't need your password.
+      supportsVerdict: 1
+    - id: overreach
+      title: Asks for far too much
+      whyItMatters: A viewer doesn't need to send or delete mail.
+      supportsVerdict: 1
+    - id: persist
+      title: Access that lasts
+      whyItMatters: A password change doesn't remove it.
+      supportsVerdict: 1
+    - id: unverified
+      title: Unverified publisher
+      whyItMatters: Nobody vouches for this app.
+      supportsVerdict: 1
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Cancel. It's a trick to get app permissions (consent phishing). Report it and
+      check your connected apps
+    - Accept, because the sign-in page was real
+    - Accept, then change your password afterwards to be safe
+    - Accept just this once
+    correctChoice: 0
+    feedback: Cancel! The sign-in was real, but the <b>permissions</b> were the trap.
+      A viewer doesn't need to send your mail.
+    curriculumRef: "Advanced Cybersecurity Strategies (BIT4233) \u2014 Cloud Security
+      (\"identity management\" in SaaS)"
+    hint: The sign-in page was real. Now read what the app wants permission to do.
+    activity:
+      kind: 2
+      title: "NovaCloud  \xB7  app permissions"
+      instruction: Check what the app is asking for, then choose.
+      items:
+      - key: addr
+        role: 0
+        label: Address
+        text: https://novacloud.example/consent
+      - key: app
+        role: 0
+        label: App
+        text: DocuView Plus (unverified publisher)
+      - key: p1
+        role: 6
+        label: wants to
+        text: Read, send and delete your mail
+      - key: p2
+        role: 6
+        label: wants to
+        text: Access your files at any time
+      - key: p3
+        role: 6
+        label: wants to
+        text: Keep access when you're not using it
+      - key: allow
+        role: 7
+        label: 
+        text: ALLOW
+      minClues: 2
+      outcomes:
+      - The app gets nothing. You report it and review your connected apps in case
+        anything else slipped through.
+      - DocuView Plus can now read, send and delete your mail. The real sign-in page
+        didn't make the app safe.
+      - The app keeps its access even after your password changes. It can still read
+        your mail until you remove it.
+      - 'Once is enough: the app keeps access even when you''re not using it.'
+  - id: H03
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: What Should You Do?
+    body: "An email comes from the finance director's <b>real</b> address in an existing
+      thread, and it <b>passes</b> all email authentication checks: \"Our supplier
+      changed banks. Please pay today's invoice (\u20B1480,000) to the new account
+      below. I'm in meetings all day, so don't call, just reply here.\""
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: The director's account may be controlled by a scammer, so the email
+      passes every check. Replying just reaches the scammer. <b>Zero trust</b> means
+      "never trust, always check", especially when bank details change. "Don't call"
+      is a warning sign.
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables:
+    - id: auth
+      field: 5
+      match: "SPF pass  \xB7  DKIM pass  \xB7  DMARC pass"
+      label: Authentication
+      finding: These checks prove the email came from the director's account - not
+        who is using it. If the account was taken over, every check still passes.
+      linkAddress: 
+      clueId: passes
+      part: auth
+    - id: thread
+      field: 5
+      match: existing email thread
+      label: Thread
+      finding: Whoever controls the account can reply in real threads too.
+      linkAddress: 
+      clueId: 
+      part: thread
+    - id: banks
+      field: 5
+      match: Our supplier changed banks
+      label: The request
+      finding: A change of bank details is exactly what business email compromise
+        looks for. Always verify it.
+      linkAddress: 
+      clueId: bank
+      part: body
+    - id: amount
+      field: 5
+      match: "\u20B1480,000"
+      label: Amount
+      finding: A large, same-day payment raises the stakes - and the pressure.
+      linkAddress: 
+      clueId: 
+      part: body
+    - id: nocall
+      field: 5
+      match: don't call, just reply here
+      label: '"Don''t call"'
+      finding: Blocking a call-back is a warning sign in itself. A reply goes to
+        whoever controls the account.
+      linkAddress: 
+      clueId: nocall
+      part: body
+    evidence:
+    - id: passes
+      title: Checks pass, but prove little
+      whyItMatters: A taken-over account passes every check.
+      supportsVerdict: 1
+    - id: bank
+      title: Bank details changed
+      whyItMatters: Verify every change through a channel you already trust.
+      supportsVerdict: 1
+    - id: nocall
+      title: '"Don''t call"'
+      whyItMatters: It blocks the one check that works.
+      supportsVerdict: 1
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Pay it, since the email passed authentication and came from the real address
+    - Reply to the email asking the director to confirm
+    - Pay half now and half after confirming
+    - Call the director and the supplier on numbers you already have before changing
+      any bank details
+    correctChoice: 3
+    feedback: Check by <b>phone, on a number you already have</b>. A real account
+      can still be used by a scammer.
+    curriculumRef: "Advanced Cybersecurity Strategies (BIT4233) \u2014 Secure Network
+      Design (\"zero-trust models\")"
+    hint: If the director's account was taken over, would a reply to that same email
+      reach the real director?
+    activity:
+      kind: 1
+      title: "Finance  \xB7  existing thread"
+      instruction: Check the email and its checks. Does 'passed' mean safe?
+      items:
+      - key: from
+        role: 0
+        label: From
+        text: "Finance Director  \xB7  the director's real address"
+      - key: auth
+        role: 0
+        label: Checks
+        text: "SPF pass  \xB7  DKIM pass  \xB7  DMARC pass"
+      - key: thread
+        role: 8
+        label: 
+        text: This message is a reply in an existing email thread.
+      - key: body
+        role: 1
+        label: 
+        text: "Our supplier changed banks. Please pay today's invoice (\u20B1480,000)
+          to the new account below. I'm in meetings all day, so don't call, just
+          reply here."
+      minClues: 2
+      outcomes:
+      - "\u20B1480,000 goes to the attacker's account. Passing the checks didn't
+        prove who was typing."
+      - Your reply goes straight to whoever controls the account - and they 'confirm'
+        it.
+      - Half the money still goes to the attacker before anyone checks.
+      - A call on the directory number and the supplier's number on file shows whether
+        the request is real - before any money or bank details change.
+  - id: H04
+    channel: 5
+    sender: Case Review
+    senderDetail: 
+    subject: Multiple Choice
+    body: After many phishing emails hit the campus, IT finds four problems. <b>Which
+      should be fixed first?</b>
+    link: 
+    correctVerdict: 0
+    scenarioContext: 
+    explanation: Fix first the problem that is <b>most likely</b> to happen and would
+      do the <b>most damage</b>. The admin password is already public and has no
+      MFA, so breaking in is easy, and that account controls everyone's email. The
+      others matter, but they are less urgent.
+    trigger: 0
+    readingSeconds: 0
+    stationId: 
+    requestedAction: 
+    linkNote: 
+    clues: []
+    inspectables: []
+    evidence: []
+    consequence:
+      kind: 4
+      alertTitle: 
+      alertBody: 
+      overlookedClue: 
+      followUp: 1
+      recheckDetails: []
+    choices:
+    - Lab PCs are one month behind on non-security feature updates
+    - The email administrator account has no MFA, and its password appears in a public
+      breach list
+    - The spam filter sometimes flags newsletters by mistake
+    - Some staff haven't attended this year's awareness seminar yet
+    correctChoice: 1
+    feedback: 'Admin account first: <b>public password + no MFA + full control</b>
+      = most likely and most harmful.'
+    curriculumRef: "Information Assurance in Security 1 (BIT1101) \u2014 Weeks 13\u201314:
+      Vulnerabilities and Risk Management (\"conduct a basic risk assessment\")"
+    hint: Look for the problem an attacker could use most easily that would also
+      do the most damage.
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   inboxExtras:
   - id: l4_old_welcome
     channel: 1
@@ -350,6 +762,18 @@ MonoBehaviour:
       overlookedClue: 
       followUp: 0
       recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: 
+    curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   - id: l4_old_receipt
     channel: 1
     sender: Brightway Store
@@ -376,63 +800,40 @@ MonoBehaviour:
       overlookedClue: 
       followUp: 0
       recheckDetails: []
+    choices: []
+    correctChoice: 0
+    feedback: 
+    curriculumRef: 
+    hint: 
+    activity:
+      kind: 0
+      title: 
+      instruction: 
+      items: []
+      minClues: 1
+      outcomes: []
   caseFiles:
-  - title: Initial Email
-    body: '<b>From:</b> NovaCloud Billing  <billing@novacloud-support.example>
-
-      <b>Received:</b>
-      today 08:41
-
-      <b>Subject:</b> Payment failed - update your card within
-      12 hours
-
-
-      "Your storage plan payment failed. Update your card within
-      12 hours at novacloud-support.example/billing or your files will be deleted."
-
-
-      <b>Asks
-      for:</b> card details on a linked page
-
-      <b>Link:</b> novacloud-support.example/billing
-      (training placeholder)'
-  - title: Domain Record
-    body: '<b>Domain:</b> novacloud-support.example
-
-      <b>Registered:</b> 3 days
-      ago
-
-      <b>Owner:</b> hidden (privacy service)
-
-      <b>Server:</b> 203.0.113.48
-      - also hosts novacl0ud-login.example (the fake sign-in page)
-
-      <b>Listed
-      by NovaCloud:</b> no - NovaCloud lists only novacloud.example
-
-
-      This
-      is a fictional training record; it does not describe any real domain.'
-  - title: Follow-up Message
-    body: '<b>Text message from:</b> +1 (555) 017-8820 (not in contacts)
-
-      <b>Received:</b>
-      today 10:05
-
-
-      "NovaCloud FINAL NOTICE: billing failed. Update at novacloud-support.example/billing
-      or lose all files today."
-
-
-      <b>Same link as the email:</b> yes
-
-      <b>Pressure:</b>
-      ''final notice'', ''lose all files today'''
   - title: Case Notes
-    body: "\u2022  Reports came from 14 staff between 08:40 and 10:10.\n\u2022  All
-      messages point to the same domain.\n\u2022  NovaCloud's billing page is inside
-      its app; it doesn't delete files over one failed payment.\n\u2022  Compare
-      the records on the network analysis station before submitting the final case."
+    body: No extra records are needed in this room. Everything you need is in each
+      question.
+  - title: How This Room Works
+    body: '1. 6 questions arrive one at a time, in a new order each attempt.
+
+
+      2.
+      Case questions: pick the safest, most accurate answer (A-D).
+
+
+      3. Messages
+      and web pages: choose SCAM or LEGITIMATE.
+
+
+      4. Not sure? Press HINT to
+      see what to look at. After each answer you''ll see why it was right or wrong.
+
+
+      Goal:
+      score 730+ to unlock the next room.'
   firstMessageDelay: 10
   delayBetweenMessages: {x: 10, y: 20}
   minimumActivityDelay: 5
@@ -440,39 +841,38 @@ MonoBehaviour:
     basePoints: 250
     speedBonus: 25
     fastWindow: 0.35
-    wrongPenalty: 50
-    recoveryPoints: 60
+    wrongPenalty: 35
+    recoveryPoints: 62
     baseReadingSeconds: 20
     secondsPerWord: 0.5
     secondsPerDetail: 3
-    minReadingSeconds: 40
-    maxReadingSeconds: 120
+    minReadingSeconds: 45
+    maxReadingSeconds: 150
     caseExtraSeconds: 75
     overtimeStepSeconds: 10
     overtimePenaltyPerStep: 10
-    maxTimePenalty: 60
-    minCorrectPoints: 190
-  oneStarScore: 1
-  twoStarScore: 1500
-  threeStarScore: 1700
-  minScoreToUnlockNext: 1500
+    maxTimePenalty: 50
+    minCorrectPoints: 200
+  oneStarScore: 495
+  twoStarScore: 730
+  threeStarScore: 1500
+  minScoreToUnlockNext: 730
   nextLevelId: level_5
   nextSceneName: Room5_MacLab
   lessons:
-  - A familiar display name proves nothing - read the full sender address and compare
-    it with verified records.
-  - 'Security alerts can be genuine: check whether the details match your records
-    and whether it asks for anything.'
-  - Fees to recover money, release funds or claim a prize are major warning signs.
-  - A professional page or a padlock doesn't prove a site is real - check the domain
-    and verify the organisation.
-  - Strong conclusions come from several independent clues pointing the same way.
-  learningSummary: You compared communications against verified domains and account
-    records, exposed impersonation, fee scams and a fake sign-in page, recognised
-    genuine notices, and tied several pieces of evidence together to close a campaign.
+  - Follow the checking steps, even when someone important is rushing you.
+  - Don't click "Enable Content" on unexpected attachments.
+  - Know that personal details can come from public pages and don't prove who sent
+    a message.
+  - Read what an app asks for before you click Allow.
+  - Double-check risky requests another way, even from trusted accounts.
+  - Fix risks by how likely and how harmful they are.
+  learningSummary: 
   performanceHigh: Outstanding forensic work! Every conclusion was backed by the
     evidence.
   performanceModerate: Good investigation. Review the explanations - the records
     hold the clues that separate real from fake.
   performanceLow: Keep practising. Compare each sender, domain and request with the
     records before you decide.
+  tutorial: 0
+  tutorialFirstQuestion: 

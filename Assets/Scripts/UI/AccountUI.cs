@@ -167,15 +167,28 @@ public class AccountUI : MonoBehaviour
 
     public void OpenAccountPanel() => Show(Screen.Account);
 
+    /// <summary>
+    /// Opened from another menu panel (the Classroom): SIGN IN or CREATE ACCOUNT, then <paramref name="then"/> runs once the
+    /// player is signed in (e.g. reopen the Classroom). BACK returns to the menu without running it.
+    /// A guest who creates an account keeps their progress (same as the account panel's button).
+    /// </summary>
+    public void OpenAccountFlow(bool create, Action then)
+    {
+        pendingAction = then;
+        backFromSignIn = Screen.None;
+        backFromCreate = create ? Screen.None : Screen.SignIn;
+        Show(create ? Screen.CreateAccount : Screen.SignIn);
+    }
+
     /// <summary>BACK on any panel: returns to the panel it came from (progress is never touched).</summary>
     public void Back()
     {
         switch (screen)
         {
-            case Screen.SignIn: Show(backFromSignIn); break;
-            case Screen.CreateAccount: Show(backFromCreate); break;
+            case Screen.SignIn: if (backFromSignIn == Screen.None) pendingAction = null; Show(backFromSignIn); break;
+            case Screen.CreateAccount: if (backFromCreate == Screen.None) pendingAction = null; Show(backFromCreate); break;
             case Screen.Authentication: pendingAction = null; Show(Screen.None); break;
-            default: Show(Screen.None); break;
+            default: pendingAction = null; Show(Screen.None); break;
         }
     }
 
@@ -689,7 +702,7 @@ public class AccountUI : MonoBehaviour
     }
 
     /// <summary>A TextMeshPro input field in the menu style (password fields hide the text).</summary>
-    static TMP_InputField Field(RectTransform parent, string objectName, string placeholder, bool password)
+    public static TMP_InputField Field(RectTransform parent, string objectName, string placeholder, bool password)
     {
         var r = UIKit.Rect(objectName, parent);
         r.gameObject.SetActive(false);   // wire everything before the field's OnEnable runs

@@ -6,12 +6,187 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Full-screen message view used for text messages (and for emails if the scene has no ComputerTerminal).
-/// Left: a smartphone (SMS) or a mail window (Email). Right: the decision card with the response timer
-/// and SCAM / LEGITIMATE buttons, which turns into the feedback card after answering.
-/// Builds itself at runtime. QuizManager drives it through IMessagePresenter.
+/// Left: a smartphone (SMS), a mail window (Email) or a case-question sheet (choice questions). Right: the decision
+/// card with the response timer and SCAM / LEGITIMATE buttons - or, for a choice question, its answer buttons in
+/// this attempt's shuffled order - which turns into the feedback card after answering.
+/// Builds itself at runtime. QuizManager drives it through IMessagePresenter (and IChoicePresenter).
 /// </summary>
-public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming, IInvestigationDock, IRecheckPresenter, IWarningTarget
+public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IChoicePresenter, IPresenterTiming, IInvestigationDock, IInvestigationInline, IRecheckPresenter, IWarningTarget, ITutorialTargets
 {
+    // ---------- Interactive activities (simulated app + evidence board + clue gate) ----------
+
+    private ActivityView activityView;
+    private Button skipGateButton;
+    private bool gateLocked;
+    private const float ActivityWindowWidth = 1000f, SheetWidth = 900f, ActivityCaseTextSize = 25f;
+    static readonly float[] ActivityScales = { 1f, 0.93f, 0.86f, 0.8f };
+
+    /// <summary>
+    /// Long activities step their text down (never below 80%) until the whole case sheet fits the screen,
+    /// instead of running off the bottom. Most cases stay at full size.
+    /// </summary>
+    /// <summary>Activities get tighter sheet margins; the "fictional" note moves into the app's title bar.</summary>
+    void SetSheetSpacing(bool activity)
+    {
+        var v = questionBody.transform.parent.GetComponent<VerticalLayoutGroup>();
+        int pad = activity ? 26 : 38;
+        int side = activity ? 32 : 38;   // the plain sheet keeps its original 38 on every side
+        v.padding = new RectOffset(side, side, pad, pad);
+        v.spacing = activity ? 12f : 16f;
+        qwFooter.gameObject.SetActive(!activity);
+    }
+
+    /// <summary>Thickens (or restores) one text's glyph strokes through its own material instance (others are unaffected).</summary>
+    static void SetInkWeight(TMP_Text t, float dilate)
+    {
+        var mat = t.fontMaterial;   // per-text instance
+        if (mat.HasProperty(ShaderUtilities.ID_FaceDilate)) mat.SetFloat(ShaderUtilities.ID_FaceDilate, dilate);
+    }
+
+    void FitQuestionWindow()
+    {
+        if (activityView == null || !activityView.IsShowing || !questionWindow.gameObject.activeInHierarchy) return;
+        float max = content != null && content.rect.height > 100f ? content.rect.height : 1000f;
+        foreach (float k in ActivityScales)
+        {
+            activityView.ApplyScale(k);
+            questionBody.fontSize = Mathf.Round(ActivityCaseTextSize * Mathf.Lerp(1f, 0.88f, (1f - k) / 0.2f));
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(questionWindow);
+            if (LayoutUtility.GetPreferredHeight(questionWindow) <= max) return;
+        }
+    }
+
+    /// <summary>Inspection results of an activity go on its evidence board (not the floating card).</summary>
+    public bool ShowFinding(ScamMessage msg, MessageInspectable part, MessageEvidence clue, InvestigationSession.InspectOutcome outcome)
+    {
+        if (activityView == null || !activityView.ShowFinding(msg, part, clue, outcome)) return false;
+        UpdateGate(msg);
+        RelayoutQuestion();
+        return true;
+    }
+
+    /// <summary>Key clues the open activity still needs before its answers unlock (0 = open).</summary>
+    int CluesStillNeeded(ScamMessage msg)
+    {
+        if (msg == null || !msg.HasActivity || activityView == null || !activityView.IsShowing) return 0;
+        int need = Mathf.Min(msg.activity.minClues, activityView.KeyTotal);
+        return Mathf.Max(0, need - activityView.KeyFound);
+    }
+
+    /// <summary>Answers stay locked until enough key clues are on the evidence board (or the player skips).</summary>
+    void UpdateGate(ScamMessage msg)
+    {
+        if (msg == null || shownChoices.Length == 0 || feedbackGroup.activeSelf) return;
+        int need = gateLocked ? CluesStillNeeded(msg) : 0;
+        gateLocked = need > 0;
+        for (int i = 0; i < shownChoices.Length; i++) UIKit.SetInteractable(choiceButtons[i], !gateLocked);
+        skipGateButton.gameObject.SetActive(gateLocked);
+        if (!msg.HasActivity) return;
+        hintText.text = gateLocked
+            ? $"<color={UIKit.HexWarning}><b>ANSWERS LOCKED</b></color>  Click the underlined details: find {need} more key clue{(need == 1 ? "" : "s")}."
+            : activityView.KeyFound >= activityView.KeyTotal && activityView.KeyTotal > 0
+                ? $"<color={UIKit.HexSafe}><b>ALL CLUES FOUND</b></color>  Now choose your answer."
+                : $"<color={UIKit.HexSafe}><b>ANSWERS UNLOCKED</b></color>  Choose an answer, or keep looking for clues.";
+    }
+
+    /// <summary>The sheet's height changed: lay the row out now, so nothing is placed off screen for a frame.</summary>
+    void RelayoutQuestion()
+    {
+        FitDecisionCard();
+        FitQuestionWindow();
+        if (questionWindow == null || !questionWindow.gameObject.activeInHierarchy) return;
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(questionWindow);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(decisionCard);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(content);
+    }
+
+    static readonly float[] ExplanationSizes = { 25f, 23f, 21f, 19f }, AnswerSizes = { 26f, 24f, 22f, 20f }, ChoiceSizes = { 22f, 21f, 20f, 18f };
+
+    /// <summary>
+    /// Keeps the decision card on screen: long answer choices, explanations and outcomes step the text size down
+    /// (never below 18-19 pt) until the card fits the screen height.
+    /// </summary>
+    void FitDecisionCard()
+    {
+        if (decisionCard == null || !decisionCard.gameObject.activeInHierarchy) return;
+        float max = content != null && content.rect.height > 100f ? content.rect.height : 1000f;
+        for (int i = 0; i < ExplanationSizes.Length; i++)
+        {
+            explanationText.fontSize = ExplanationSizes[i];
+            explanationText.lineSpacing = i == 0 ? 8f : 4f;
+            answerLine.fontSize = AnswerSizes[i];
+            outcomeText.fontSize = AnswerSizes[i] - 2f;   // 24 down to 18
+            SizeChoiceButtons(ChoiceSizes[i]);
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(decisionCard);
+            if (LayoutUtility.GetPreferredHeight(decisionCard) <= max) return;
+        }
+    }
+
+    void SizeChoiceButtons(float size)
+    {
+        for (int pos = 0; pos < shownChoices.Length && pos < MaxChoices; pos++)
+        {
+            var label = choiceLabels[pos];
+            label.fontSize = size;
+            float h = label.GetPreferredValues(label.text, ChoiceLabelWidth, 0f).y + 26f;
+            UIKit.Size(choiceButtons[pos], -1, Mathf.Max(size >= 22f ? 64f : 56f, h));
+        }
+    }
+
+    void SkipGate()
+    {
+        gateLocked = false;
+        UpdateGate(activityView != null ? activityView.Message : null);
+        RelayoutQuestion();
+    }
+
+    public event Action<int> ChoiceChosen;
+    private HintControl hintCtl;
+
+    // ---------- Tutorial targets (Level 1 guide) ----------
+
+    public bool TryGetTutorialRect(TutorialFocus focus, out Rect rect)
+    {
+        rect = default;
+        if (!IsOpen) return false;
+        switch (focus)
+        {
+            case TutorialFocus.Message:
+                var left = phone != null && phone.gameObject.activeInHierarchy ? phone
+                         : questionWindow != null && questionWindow.gameObject.activeInHierarchy ? questionWindow
+                         : emailWindow != null && emailWindow.gameObject.activeInHierarchy ? emailWindow : null;
+                return left != null && MessageInvestigation.ScreenRect(left, out rect);
+            case TutorialFocus.Hint:
+                return hintCtl != null && hintCtl.Button.gameObject.activeInHierarchy &&
+                       MessageInvestigation.ScreenRect((RectTransform)hintCtl.Button.transform, out rect);
+            case TutorialFocus.Answers:
+                bool any = false;
+                foreach (var b in shownChoices.Length > 0 ? choiceButtons : new[] { scamButton, legitButton })
+                {
+                    if (b == null || !b.gameObject.activeInHierarchy || !MessageInvestigation.ScreenRect((RectTransform)b.transform, out var r)) continue;
+                    rect = any ? Rect.MinMaxRect(Mathf.Min(rect.xMin, r.xMin), Mathf.Min(rect.yMin, r.yMin), Mathf.Max(rect.xMax, r.xMax), Mathf.Max(rect.yMax, r.yMax)) : r;
+                    any = true;
+                }
+                return any;
+            case TutorialFocus.Feedback:
+                return feedbackGroup != null && feedbackGroup.activeInHierarchy && MessageInvestigation.ScreenRect(decisionCard, out rect);
+        }
+        return false;
+    }
+
+    // Choice questions
+    private RectTransform questionWindow;
+    private TMP_Text questionKicker, questionBody, questionPrompt;
+    private const int MaxChoices = 4;
+    private readonly Button[] choiceButtons = new Button[MaxChoices];
+    private readonly TMP_Text[] choiceLabels = new TMP_Text[MaxChoices];
+    private int[] shownChoices = new int[0];   // original choice index at each button position
+    private const float CardWidth = 580f, ChoiceCardWidth = 720f;
+    private const float ChoiceLabelWidth = ChoiceCardWidth - 44f - 36f - 48f - 24f;   // card padding + label margins
+
     [SerializeField] private int sortingOrder = 20;
     [Tooltip("Text messages are read on a first-person phone pulled out of the pocket (PocketPhone). " +
              "Off = the original full-screen phone view.")]
@@ -27,9 +202,12 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
     {
         area = default;
         if (!IsOpen || decisionCard == null || !decisionCard.gameObject.activeInHierarchy) return false;
-        var left = phone != null && phone.gameObject.activeInHierarchy ? phone : emailWindow != null && emailWindow.gameObject.activeInHierarchy ? emailWindow : null;
+        var left = phone != null && phone.gameObject.activeInHierarchy ? phone : emailWindow != null && emailWindow.gameObject.activeInHierarchy ? emailWindow
+                 : questionWindow != null && questionWindow.gameObject.activeInHierarchy ? questionWindow : null;
         if (left == null || !MessageInvestigation.ScreenRect(left, out var l) || !MessageInvestigation.ScreenRect(decisionCard, out var d)) return false;
-        area = Rect.MinMaxRect(l.xMax + 20f, d.yMin, d.xMin - 20f, d.yMax);
+        // Case questions: the gap beside the card is narrow, so the finding card goes under the question sheet.
+        if (left == questionWindow) area = Rect.MinMaxRect(l.xMin, 16f, l.xMax, l.yMin - 16f);
+        else area = Rect.MinMaxRect(l.xMax + 20f, d.yMin, d.xMin - 20f, d.yMax);
         return area.width > 0f && area.height > 0f;
     }
 
@@ -58,8 +236,13 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
     private QuizManager quiz;
 
     // Feedback
-    private TMP_Text verdictTitle, pointsLine, answerLine, explanationText, scoreLine;
+    private TMP_Text verdictTitle, pointsLine, answerLine, explanationText, scoreLine, whyHeader;
     private Button continueButton;
+    private PopupIcon verdictIcon;
+    private Image answerCallout, outcomeCallout;
+    private RectTransform outcomeBox;
+    private TMP_Text outcomeText;
+    private PopupAnimator feedbackAnimator;
 
     // Handheld phone mode (text messages)
     private RectTransform decisionCard;
@@ -82,6 +265,14 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
 
     public void ShowMessage(ScamMessage msg)
     {
+        if (quiz == null) quiz = FindFirstObjectByType<QuizManager>();
+        if (msg.HasChoices)
+        {
+            ShowQuestion(msg);
+            return;
+        }
+        SetChoiceMode(false);
+
         bool sms = MessageChannels.OnPhone(msg.channel);   // text messages and chats use the phone layout
         phone.gameObject.SetActive(sms);
         emailWindow.gameObject.SetActive(!sms);
@@ -112,7 +303,6 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         decisionGroup.SetActive(true);
 
         // Details start collapsed for every new message.
-        if (quiz == null) quiz = FindFirstObjectByType<QuizManager>();
         string details = UIKit.MessageDetailsText(msg, quiz != null && quiz.Level != null ? quiz.Level.caseNotes : null);
         detailsText.text = details;
         // Fit the box to short details; cap it (and scroll) for long ones.
@@ -126,6 +316,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         hintText.gameObject.SetActive(true);
         detailsButton.gameObject.SetActive(!string.IsNullOrEmpty(details));
         UIKit.SetLabel(detailsButton, "SHOW DETAILS");
+        hintCtl.Show(msg);   // HINT only for messages that carry one (Level 1 tutorial)
         feedbackGroup.SetActive(false);
         UIKit.SetInteractable(scamButton, true);
         UIKit.SetInteractable(legitButton, true);
@@ -140,6 +331,116 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         RestoreDesktopLayout();
         root.gameObject.SetActive(true);
         StartCoroutine(PopIn());
+    }
+
+    // ---------- Choice questions ----------
+
+    /// <summary>A case question: the scenario on the left, its choices (in this attempt's order) on the card.</summary>
+    void ShowQuestion(ScamMessage msg)
+    {
+        phone.gameObject.SetActive(false);
+        emailWindow.gameObject.SetActive(false);
+        questionWindow.gameObject.SetActive(true);
+        StyleCaseReview(msg);   // Level 1: report style; other rooms: unchanged light sheet
+        questionKicker.text = string.IsNullOrEmpty(msg.subject) ? "CASE QUESTION" : msg.subject.ToUpperInvariant();
+        // Underlined clues when the question is investigated (Level 1 tutorial); plain rich text otherwise.
+        MessageInvestigation.Bind(questionBody, () => MessageInvestigation.MarkRich(msg, InspectField.Body, msg.body));
+
+        // Interactive activity: the simulated app and evidence board sit under the case text.
+        bool activity = msg.HasActivity;
+        questionWindow.sizeDelta = new Vector2(activity ? ActivityWindowWidth : SheetWidth, questionWindow.sizeDelta.y);
+        if (activity)
+        {
+            activityView.Show(msg);
+            SetSheetSpacing(true);
+            questionBody.fontSize = ActivityCaseTextSize;
+            questionBody.lineSpacing = 6f;
+        }
+        else
+        {
+            activityView.Hide();
+            SetSheetSpacing(false);
+            questionBody.lineSpacing = 10f;
+        }
+
+        channelHeader.text = activity ? $"{ActivityView.KindLabel(msg.activity.kind)} investigation" : "Case question";
+        questionPrompt.text = "Choose the best answer.";
+        hintText.text = "Read the whole situation, then pick the <b>safest</b> answer.";
+        hintText.gameObject.SetActive(true);
+        detailsOpen = false;
+        detailsBox.gameObject.SetActive(false);
+        detailsMoreHint.gameObject.SetActive(false);
+        detailsButton.gameObject.SetActive(false);
+        feedbackGroup.SetActive(false);
+        decisionGroup.SetActive(true);
+        SetChoiceMode(true);
+
+        // Buttons follow this attempt's shuffled order; letters A-D are by position on screen.
+        var order = quiz != null ? quiz.ChoiceOrder(msg) : QuestionShuffle.Permutation(msg.choices.Length, null);
+        int count = Mathf.Min(MaxChoices, order.Count);
+        shownChoices = new int[count];
+        for (int pos = 0; pos < MaxChoices; pos++)
+        {
+            bool used = pos < count;
+            choiceButtons[pos].gameObject.SetActive(used);
+            if (!used) continue;
+            shownChoices[pos] = order[pos];
+            string label = $"<b>{ChoiceLetter(pos)}.</b>  {msg.ChoiceText(order[pos])}";
+            choiceLabels[pos].text = label;
+            float h = choiceLabels[pos].GetPreferredValues(label, ChoiceLabelWidth, 0f).y + 26f;
+            UIKit.Size(choiceButtons[pos], -1, Mathf.Max(64f, h));
+            UIKit.SetInteractable(choiceButtons[pos], true);
+        }
+
+        hintCtl.Show(msg);
+
+        // Clue gate: answers unlock once the activity's minimum key clues are on the evidence board.
+        gateLocked = activity && CluesStillNeeded(msg) > 0;
+        UpdateGate(msg);
+
+        var sc = quiz != null ? quiz.Scoring : null;
+        SetTimer(0f, sc != null && sc.HasTimePressure ? sc.ReadingAllowance(msg) : 0f, sc != null ? sc.PointsFor(msg, true, 0f) : 0);
+        RestoreDesktopLayout();
+        // Investigated questions sit at the top so the finding card has room under the question sheet.
+        if (MessageInvestigation.Investigates(msg)) row.childAlignment = TextAnchor.UpperCenter;
+        root.gameObject.SetActive(true);
+        RelayoutQuestion();   // after activating: layout is skipped on hidden objects, which left the card off screen on first open
+        StartCoroutine(PopIn());
+    }
+
+    /// <summary>Switches the decision card between SCAM / LEGITIMATE and the choice buttons.</summary>
+    void SetChoiceMode(bool on)
+    {
+        questionWindow.gameObject.SetActive(on);
+        scamButton.gameObject.SetActive(!on);
+        legitButton.gameObject.SetActive(!on);
+        for (int i = 0; i < MaxChoices; i++) choiceButtons[i].gameObject.SetActive(false);
+        decisionCard.sizeDelta = new Vector2(on ? ChoiceCardWidth : CardWidth, decisionCard.sizeDelta.y);
+        UIKit.TintPanel(decisionCard, UIKit.PopupTone.Info);   // back to the neutral look after a result
+        if (skipGateButton != null) skipGateButton.gameObject.SetActive(false);
+        gateLocked = false;
+        if (!on)
+        {
+            if (activityView != null) activityView.Hide();
+            questionPrompt.text = "Is this message a scam or legitimate?";
+            hintText.text = DefaultHint;
+            shownChoices = new int[0];
+        }
+    }
+
+    const string DefaultHint = "Check: <b>who</b> sent it  ·  did <b>you</b> expect it?  ·  <b>pressure</b> to hurry?  ·  where <b>links</b> go";
+
+    public static char ChoiceLetter(int position) => (char)('A' + position);
+
+    /// <summary>Screen position (0 = A) of an original choice index this attempt, or -1.</summary>
+    int PositionOf(int originalIndex) => Array.IndexOf(shownChoices, originalIndex);
+
+    void ChooseChoice(int position)
+    {
+        if (position < 0 || position >= shownChoices.Length || !choiceButtons[position].interactable) return;
+        // Disable all at once so a double click can never submit twice.
+        for (int i = 0; i < MaxChoices; i++) UIKit.SetInteractable(choiceButtons[i], false);
+        ChoiceChosen?.Invoke(shownChoices[position]);
     }
 
     // ---------- Handheld phone ----------
@@ -222,24 +523,67 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         decisionGroup.SetActive(false);
         feedbackGroup.SetActive(true);
 
-        string word = UIKit.VerdictWord(r.message.correctVerdict);
-        string hex = r.message.correctVerdict == MessageVerdict.Scam ? UIKit.HexDanger : UIKit.HexSafe;
-        if (r.isCorrect)
+        // Success / incorrect styling: icon, card border and strip, and the answer box all take the result's tone.
+        var tone = r.isCorrect ? UIKit.PopupTone.Success : UIKit.PopupTone.Error;
+        verdictTitle.text = r.isCorrect ? $"<color={UIKit.HexSafe}>CORRECT!</color>" : $"<color={UIKit.HexDanger}>NOT QUITE</color>";
+        verdictIcon.SetTone(tone);
+        UIKit.TintPanel(decisionCard, tone);
+        UIKit.TintCallout(answerCallout, tone);
+        whyHeader.text = r.isCorrect ? "WHY IT'S RIGHT" : "WHAT TO LOOK FOR";
+        feedbackAnimator.Open();
+        verdictIcon.Play();
+        ShowCaseReport(r);   // Level 1 only: the Case Review turns into a short case report
+        if (r.IsChoice)
         {
-            verdictTitle.text = $"<color={UIKit.HexSafe}>✓  CORRECT</color>";
-            answerLine.text = $"This message is <color={hex}><b>{word}</b></color>.";
+            // Letters are the ones the player saw this attempt (choices are shuffled per attempt).
+            var m = r.message;
+            string Shown(int original) => $"{ChoiceLetter(PositionOf(original))}. {m.ChoiceText(original)}";
+            answerLine.text = r.isCorrect
+                ? $"Your answer: <color={UIKit.HexSafe}><b>{Shown(m.correctChoice)}</b></color>"
+                : $"You chose <b>{Shown(r.chosenChoice)}</b>.\nThe best answer is <color={UIKit.HexSafe}><b>{Shown(m.correctChoice)}</b></color>";
         }
         else
         {
-            verdictTitle.text = $"<color={UIKit.HexWarning}>×  NOT QUITE</color>";
-            answerLine.text = $"You chose {UIKit.VerdictWord(r.chosen)}, but this message is <color={hex}><b>{word}</b></color>. Here is what to look for:";
+            string word = UIKit.VerdictWord(r.message.correctVerdict);
+            string hex = r.message.correctVerdict == MessageVerdict.Scam ? UIKit.HexDanger : UIKit.HexSafe;
+            answerLine.text = r.isCorrect
+                ? $"This message is <color={hex}><b>{word}</b></color>."
+                : $"You chose {UIKit.VerdictWord(r.chosen)}, but this message is <color={hex}><b>{word}</b></color>.";
         }
 
         pointsLine.text = $"{ScoringSystem.PointsSummary(r)}   ·   answered in {ScoringSystem.Clock(r.seconds)}";
-        explanationText.text = r.message.explanation + MessageInvestigation.FeedbackFor(r.message);   // + selected / missed evidence
-        scoreLine.text = $"Score <b>{score}</b> / {maxScore}   ·   Messages reviewed <b>{reviewed}/{total}</b>";
+        // Activities show found / missed clues on their evidence board; other investigated messages list them here.
+        bool onBoard = r.message.HasActivity && activityView != null && activityView.IsShowing && activityView.RevealMissed();
+        explanationText.text = UIKit.FeedbackLead(r.message) + r.message.explanation + (onBoard ? EvidenceLine() : MessageInvestigation.FeedbackFor(r.message));
+        string outcome = OutcomeLine(r);
+        outcomeBox.gameObject.SetActive(outcome.Length > 0);
+        outcomeText.text = outcome.TrimEnd();
+        UIKit.TintCallout(outcomeCallout, r.isCorrect ? UIKit.PopupTone.Success : UIKit.PopupTone.Error);
+        if (skipGateButton != null) skipGateButton.gameObject.SetActive(false);
+        scoreLine.text = $"Score <b>{score}</b> / {maxScore}   ·   {(r.IsChoice ? "Questions answered" : "Messages reviewed")} <b>{reviewed}/{total}</b>";
         UIKit.SetLabel(continueButton, reviewed >= total ? "SEE RESULTS" : "CONTINUE");
         UIKit.SetInteractable(continueButton, true);
+        RelayoutQuestion();   // fits the card on screen (long answers / explanations)
+    }
+
+    /// <summary>Decision challenges: what happens next after the chosen action ("" for other questions).</summary>
+    public static string OutcomeLine(ScoringSystem.AnswerResult r)
+    {
+        if (!r.IsChoice || r.message == null || !r.message.HasActivity) return "";
+        string outcome = r.message.activity.Outcome(r.chosenChoice);
+        if (string.IsNullOrEmpty(outcome)) return "";
+        string hex = r.isCorrect ? UIKit.HexSafe : UIKit.HexDanger;
+        return $"<color={hex}><b>WHAT HAPPENS NEXT</b></color>\n{outcome}\n\n";
+    }
+
+    /// <summary>One short line under the explanation pointing to the evidence board (activities only).</summary>
+    string EvidenceLine()
+    {
+        int found = activityView.KeyFound, total = activityView.KeyTotal;
+        if (total == 0) return "";
+        string hex = found >= total ? UIKit.HexSafe : UIKit.HexWarning;
+        return $"\n\n<color={UIKit.HexAccent}><b>EVIDENCE</b></color>  <color={hex}><b>{found} of {total}</b></color> key clues found" +
+               (found >= total ? ". Great detective work!" : ". The evidence board shows the ones you missed.");
     }
 
     /// <summary>The decision card flashes red after a wrong answer.</summary>
@@ -316,6 +660,9 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
     void Build()
     {
         root = UIKit.CreateCanvas(transform, "MessagePopup Canvas", sortingOrder);
+        // Expand: the 1920 x 1080 layout always fits whole. With "match height", windows narrower than 16:9
+        // pushed the answer card off the right edge.
+        root.GetComponent<CanvasScaler>().screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
         group = root.gameObject.AddComponent<CanvasGroup>();
         dimmer = UIKit.Dimmer(root, 0.8f).GetComponent<Image>();
 
@@ -329,7 +676,159 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
 
         BuildPhone(content);
         BuildEmail(content);
+        BuildQuestion(content);
         BuildDecisionCard(content);
+        questionWindow.gameObject.SetActive(false);
+    }
+
+    /// <summary>Case-question sheet: question type, the scenario text and a note that everything is fictional.</summary>
+    void BuildQuestion(RectTransform parent)
+    {
+        Color ink = new Color32(0x0F, 0x17, 0x2A, 255);
+
+        questionWindow = UIKit.Rect("QuestionWindow", parent);
+        questionWindow.sizeDelta = new Vector2(900, 0);
+        questionWindow.pivot = new Vector2(0.5f, 1f);   // grows downward (an activity's evidence board can grow while open)
+        qwImage = UIKit.AddImage(questionWindow, new Color32(0xF8, 0xFA, 0xFC, 255), rounded: true);
+        qwOutline = questionWindow.gameObject.AddComponent<Outline>();
+        qwOutline.effectDistance = new Vector2(2f, -2f);
+        qwOutline.enabled = false;   // Level 1 report style only
+        UIKit.Vertical(questionWindow, 0, 0);
+        UIKit.FitHeight(questionWindow);
+
+        var bar = UIKit.Rect("TitleBar", questionWindow);
+        qwBar = UIKit.AddImage(bar, UIKit.PanelRaised, rounded: true);
+        UIKit.Size(bar, -1, 62);
+        qwBarText = UIKit.Text(bar, "Title", "Case Review  ·  Question", 24, UIKit.TextPrimary, TextAlignmentOptions.Center, bold: true);
+        UIKit.Stretch(qwBarText.rectTransform);
+
+        var body = UIKit.Rect("Body", questionWindow);
+        UIKit.Vertical(body, 38, 16);
+        questionKicker = UIKit.Text(body, "Kicker", "", 22, new Color32(0x0E, 0x74, 0x90, 255), bold: true);
+        questionKicker.characterSpacing = 3f;
+        var div = UIKit.Rect("Divider", body);
+        qwDivider = UIKit.AddImage(div, new Color32(0xCB, 0xD5, 0xE1, 255));
+        UIKit.Size(div, -1, 2);
+        qwCaseHeader = UIKit.Header(body, "The case");
+        qwCaseHeader.gameObject.SetActive(false);
+        questionBody = UIKit.Text(body, "Scenario", "", 27, ink);
+        questionBody.lineSpacing = 10f;
+        activityView = ActivityView.Build(body, -1f);
+
+        // Case report (Level 1): shown after answering - verdict, clues to notice, what you learned.
+        qwReport = UIKit.Rect("Report", body);
+        UIKit.Vertical(qwReport, 0, 12).childForceExpandHeight = false;
+        var vb = UIKit.Rect("Verdict", qwReport);
+        qwVerdictBox = UIKit.Callout(vb, UIKit.PopupTone.Success);
+        var vv = UIKit.Vertical(vb, 16, 4);
+        vv.padding.left = vv.padding.right = 20;
+        qwVerdict = UIKit.Text(vb, "VerdictText", "", 24, UIKit.TextPrimary);
+        qwVerdict.lineSpacing = 4f;
+        UIKit.Header(qwReport, "Clues to notice");
+        qwClues = UIKit.Text(qwReport, "Clues", "", 22, UIKit.TextPrimary);
+        qwClues.lineSpacing = 6f;
+        UIKit.Header(qwReport, "What you learned");
+        qwLesson = UIKit.Text(qwReport, "Lesson", "", 22, UIKit.TextPrimary);
+        qwReport.gameObject.SetActive(false);
+
+        qwFooter = UIKit.Text(body, "Footer", "Training scenario · all names, numbers and links are fictional.", 19, new Color32(0x64, 0x74, 0x8B, 255));
+        qwFooter.fontStyle = FontStyles.Italic;
+    }
+
+    // ---------- Case Review style (Level 1 tutorial only) ----------
+
+    private Image qwImage, qwBar, qwDivider, qwVerdictBox;
+    private Outline qwOutline;
+    private TMP_Text qwBarText, qwCaseHeader, qwVerdict, qwClues, qwLesson, qwFooter;
+    private RectTransform qwReport;
+
+    /// <summary>True while the tutorial room (Level 1) is played - the only room with the Case Review report style.</summary>
+    bool ReportStyle => quiz != null && quiz.Level != null && quiz.Level.tutorial;
+
+    /// <summary>
+    /// Level 1: a dark, high-contrast investigation-report look for the case-question sheet. Other rooms keep the
+    /// original light sheet exactly as before.
+    /// </summary>
+    void StyleCaseReview(ScamMessage msg)
+    {
+        bool report = ReportStyle;
+        qwReport.gameObject.SetActive(false);
+        qwCaseHeader.gameObject.SetActive(report);
+        qwOutline.enabled = report;
+        if (report)
+        {
+            int n = quiz.Scoring != null ? quiz.Scoring.Results.Count + 1 : 1, total = quiz.Level.MessageCount;
+            qwImage.color = new Color32(0x0F, 0x1A, 0x2E, 255);
+            qwOutline.effectColor = UIKit.Border;
+            qwBar.color = new Color32(0x0B, 0x2A, 0x45, 255);
+            qwBarText.text = $"<color={UIKit.HexAccent}>CASE REVIEW</color>   ·   QUESTION {Mathf.Min(n, total)} OF {total}";
+            qwBarText.characterSpacing = 2f;
+            questionKicker.color = UIKit.Accent;
+            questionKicker.fontSize = 24;
+            qwDivider.color = UIKit.Border;
+            questionBody.color = UIKit.TextPrimary;
+            questionBody.fontSize = 28;
+            SetInkWeight(questionBody, 0f);
+            qwFooter.color = UIKit.TextSecondary;
+        }
+        else
+        {
+            qwImage.color = new Color32(0xF8, 0xFA, 0xFC, 255);
+            // Light case sheet (Rooms 2-5): dark navy title bar with the question number, like an investigation report.
+            int n = quiz != null && quiz.Scoring != null ? quiz.Scoring.Results.Count + 1 : 1, total = quiz != null && quiz.Level != null ? quiz.Level.MessageCount : 6;
+            qwBar.color = new Color32(0x0B, 0x2A, 0x45, 255);
+            qwBarText.text = $"<color={UIKit.HexAccent}>CASE REVIEW</color>   ·   QUESTION {Mathf.Min(n, total)} OF {total}";
+            qwBarText.characterSpacing = 2f;
+            questionKicker.color = new Color32(0x0E, 0x74, 0x90, 255);
+            questionKicker.fontSize = 25;
+            qwDivider.color = new Color32(0xCB, 0xD5, 0xE1, 255);
+            questionBody.color = new Color32(0x0F, 0x17, 0x2A, 255);
+            questionBody.fontSize = 27;
+            SetInkWeight(questionBody, 0.18f);   // dark text on the white sheet: slightly heavier strokes so it reads black, not grey
+            qwFooter.color = new Color32(0x64, 0x74, 0x8B, 255);
+        }
+    }
+
+    /// <summary>Level 1: after answering, the Case Review becomes a short case report next to the feedback.</summary>
+    void ShowCaseReport(ScoringSystem.AnswerResult r)
+    {
+        if (!ReportStyle || !questionWindow.gameObject.activeInHierarchy || r.message == null) return;
+        var m = r.message;
+        var tone = r.isCorrect ? UIKit.PopupTone.Success : UIKit.PopupTone.Error;
+        questionKicker.text = $"CASE REPORT   ·   {(string.IsNullOrEmpty(m.subject) ? "CASE QUESTION" : m.subject.ToUpperInvariant())}";
+        questionBody.fontSize = 23;   // the case stays readable; the report below gets the room
+        if (activityView != null) activityView.Collapse();   // the report lists the clues instead
+
+        string correct = m.HasChoices ? m.ChoiceText(m.correctChoice) : UIKit.VerdictWord(m.correctVerdict);
+        string yours = r.IsChoice ? m.ChoiceText(r.chosenChoice) : UIKit.VerdictWord(r.chosen);
+        qwVerdict.text = $"<color={UIKit.ToneHex(tone)}><b>{(r.isCorrect ? "✓  SOLVED" : "×  NOT QUITE")}</b></color>\n" +
+                         $"Correct answer: <b>{correct}</b>" + (r.isCorrect ? "" : $"\n<color={UIKit.HexSecondary}>You answered: {yours}</color>");
+        UIKit.TintCallout(qwVerdictBox, tone);
+
+        // Clues to notice: the key clues, marked found / missed when the case was investigated.
+        var sb = new System.Text.StringBuilder();
+        var eval = MessageInvestigation.Active != null && MessageInvestigation.Active.Session != null && MessageInvestigation.Active.Session.Message == m
+            ? MessageInvestigation.Active.Session.Evaluation : null;
+        if (m.evidence != null)
+            foreach (var c in m.evidence)
+            {
+                if (!c.supportsVerdict) continue;
+                bool found = eval != null && eval.found.Contains(c);
+                sb.Append(found ? $"<color={UIKit.HexSafe}>✓</color>  " : $"<color={UIKit.HexWarning}>•</color>  ")
+                  .Append($"<b>{c.title}</b>  <color={UIKit.HexSecondary}>- {c.whyItMatters}</color>")
+                  .Append(found ? "" : $"  <color={UIKit.HexWarning}><size=85%>(missed)</size></color>").Append('\n');
+            }
+        qwClues.text = sb.Length > 0 ? sb.ToString().TrimEnd() : m.explanation;
+
+        int i = quiz.Level.messages.IndexOf(m);
+        var lessons = quiz.Level.lessons;
+        qwLesson.text = lessons != null && i >= 0 && i < lessons.Length ? lessons[i] : (string.IsNullOrEmpty(m.feedback) ? "" : m.feedback);
+        qwReport.gameObject.SetActive(true);
+        qwOutline.effectColor = new Color(UIKit.ToneColor(tone).r, UIKit.ToneColor(tone).g, UIKit.ToneColor(tone).b, 0.8f);
+        // The sheet just grew: re-run the row layout now so it grows downward from the top, never off screen.
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(questionWindow);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(content);
     }
 
     void BuildPhone(RectTransform parent)
@@ -434,7 +933,7 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
     {
         var card = UIKit.Rect("DecisionCard", parent);
         decisionCard = card;
-        card.sizeDelta = new Vector2(580, 0);
+        card.sizeDelta = new Vector2(CardWidth, 0);
         UIKit.PanelImage(card);
         UIKit.Vertical(card, 0, 0);
         UIKit.FitHeight(card);
@@ -447,9 +946,8 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         decisionGroup = d.gameObject;
 
         channelHeader = UIKit.Header(d, "Incoming");
-        UIKit.Text(d, "Question", "Is this message a scam or legitimate?", 34, UIKit.TextPrimary, bold: true);
-        hintText = UIKit.Text(d, "Hint", "Check who sent it, whether it matches something you did, any pressure to act fast, and where links lead.",
-            UIKit.SizeSmall, UIKit.TextSecondary);
+        questionPrompt = UIKit.Text(d, "Question", "Is this message a scam or legitimate?", 34, UIKit.TextPrimary, bold: true);
+        hintText = UIKit.Text(d, "Hint", DefaultHint, UIKit.SizeSmall, UIKit.TextSecondary);
 
         // Investigation details (collapsed by default; opening them doesn't reveal the answer)
         detailsButton = UIKit.HudButton(d, "SHOW DETAILS", ToggleDetails, UIKit.HudVariant.Secondary, 22);
@@ -478,6 +976,14 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         detailsMoreHint = UIKit.Text(d, "MoreHint", "Scroll the details for more", 18, UIKit.TextSecondary, TextAlignmentOptions.Right);
         detailsMoreHint.gameObject.SetActive(false);
 
+        // HINT (messages with a hint only): button + amber hint box, both hidden otherwise.
+        hintCtl = HintControl.Build(d, d, () => quiz != null ? quiz.Scoring : null);
+
+        // Activities: answering before the minimum clues are found is allowed, but it's a deliberate choice.
+        skipGateButton = UIKit.HudButton(d, "SKIP CLUES, ANSWER NOW", SkipGate, UIKit.HudVariant.Secondary, 18);
+        UIKit.Size(skipGateButton, -1, 46);
+        skipGateButton.gameObject.SetActive(false);
+
         var timerRow = UIKit.Rect("TimerRow", d);
         UIKit.AddImage(timerRow, UIKit.Background, rounded: true);
         var tv = UIKit.Vertical(timerRow, 18, 4);
@@ -492,17 +998,59 @@ public class MessagePopupUI : MonoBehaviour, IMessagePresenter, IPresenterTiming
         legitButton = UIKit.HudButton(d, "✓  LEGITIMATE", () => Choose(MessageVerdict.Legitimate), UIKit.HudVariant.Safe, 32);
         UIKit.Size(legitButton, -1, 80);
 
+        // Choice buttons (choice questions only). Labels wrap, so long choices get taller buttons instead of tiny text.
+        for (int i = 0; i < MaxChoices; i++)
+        {
+            int pos = i;
+            var b = UIKit.HudButton(d, "", () => ChooseChoice(pos), UIKit.HudVariant.Secondary, 22);
+            b.name = $"Choice {ChoiceLetter(i)} Button";
+            var label = b.GetComponentInChildren<TMP_Text>(true);
+            label.enableAutoSizing = false;
+            label.fontSize = 22;
+            label.characterSpacing = 0f;
+            label.textWrappingMode = TextWrappingModes.Normal;
+            label.alignment = TextAlignmentOptions.MidlineLeft;
+            label.margin = new Vector4(48, 10, 24, 10);
+            label.font = UIKit.BodyFont != null ? UIKit.BodyFont : label.font;
+            choiceButtons[i] = b;
+            choiceLabels[i] = label;
+            b.gameObject.SetActive(false);
+        }
+
         // ----- Feedback state -----
         var f = UIKit.Rect("Feedback", card);
         var fv = UIKit.Vertical(f, 36, 16);
         fv.padding.left = 44;
         feedbackGroup = f.gameObject;
 
-        verdictTitle = UIKit.Text(f, "Verdict", "", UIKit.SizeDisplay, UIKit.TextPrimary, bold: true);
+        feedbackAnimator = f.gameObject.AddComponent<PopupAnimator>();
+        feedbackAnimator.drift = 0f;            // inside the card's layout
+        feedbackAnimator.startScale = 0.98f;
+
+        // Header: status icon + verdict + points
+        var head = UIKit.IconHeader(f, UIKit.PopupTone.Success, out verdictIcon, 76f);
+        verdictTitle = UIKit.Text(head, "Verdict", "", UIKit.SizeDisplay, UIKit.TextPrimary, bold: true);
         verdictTitle.characterSpacing = 3f;
-        pointsLine = UIKit.Text(f, "Points", "", 26, UIKit.TextPrimary);
-        answerLine = UIKit.Text(f, "Answer", "", 26, UIKit.TextPrimary);
-        UIKit.Header(f, "Why");
+        pointsLine = UIKit.Text(head, "Points", "", 24, UIKit.TextPrimary);
+
+        // The answer is the one line the player must not miss: a tinted box in the result's colour.
+        var answerBox = UIKit.Rect("AnswerBox", f);
+        answerCallout = UIKit.Callout(answerBox, UIKit.PopupTone.Success);
+        var ab = UIKit.Vertical(answerBox, 18, 0);
+        ab.padding.left = ab.padding.right = 22;
+        answerLine = UIKit.Text(answerBox, "Answer", "", 26, UIKit.TextPrimary);
+        answerLine.lineSpacing = 6f;
+
+        // Decision challenges: what happens next after the chosen action, in its own box (not mixed into the explanation).
+        outcomeBox = UIKit.Rect("OutcomeBox", f);
+        outcomeCallout = UIKit.Callout(outcomeBox, UIKit.PopupTone.Info);
+        var ob = UIKit.Vertical(outcomeBox, 14, 4);
+        ob.padding.left = ob.padding.right = 22;
+        outcomeText = UIKit.Text(outcomeBox, "Outcome", "", 22, UIKit.TextPrimary);
+        outcomeText.lineSpacing = 4f;
+        outcomeBox.gameObject.SetActive(false);
+
+        whyHeader = UIKit.Header(f, "Why");
         explanationText = UIKit.Text(f, "Explanation", "", 25, UIKit.TextPrimary);
         explanationText.lineSpacing = 8f;
         UIKit.Divider(f);

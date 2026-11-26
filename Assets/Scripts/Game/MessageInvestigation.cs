@@ -23,6 +23,7 @@ public class MessageInvestigation : MonoBehaviour
     /// <summary>Response time pauses briefly after each newly inspected detail (reading the finding is free).</summary>
     public static bool PausesTimer => Active != null && Active.session != null && Time.time < Active.pauseUntil;
     const float ReadingAllowance = 6f;
+    static readonly string DefaultHint = $"Click or tap the <color=#7DD3FC><u>highlighted details</u></color> to inspect them";
 
     const string HexLink = "#7DD3FC", HexClue = "#FBBF24", HexSeen = "#C9D4E3";
     static readonly Color Muted = new Color32(0xC9, 0xD4, 0xE3, 255);
@@ -54,10 +55,23 @@ public class MessageInvestigation : MonoBehaviour
     // ---------- Lifecycle (called by QuizManager) ----------
 
     /// <summary>
-    /// Only emails are investigated. Texts and chats stay plain read-and-answer (their data in the
-    /// Level assets is kept but unused; widen this check to bring it back).
+    /// A message is investigated when it carries investigation data: emails, web pages and texts with clickable
+    /// details, interactive activities, and the Level 1 tutorial questions. Case-terminal reports never are.
+    /// Messages without data behave exactly as before.
     /// </summary>
-    public static bool Investigates(ScamMessage msg) => msg != null && msg.HasInvestigation && msg.channel == MessageChannel.Email;
+    public static bool Investigates(ScamMessage msg) =>
+        msg != null && msg.HasInvestigation && msg.channel != MessageChannel.Case;
+
+    /// <summary>The level being played (null outside a level).</summary>
+    static LevelDefinition QuizLevel
+    {
+        get
+        {
+            if (cachedQuiz == null) cachedQuiz = FindFirstObjectByType<QuizManager>();
+            return cachedQuiz != null ? cachedQuiz.Level : null;
+        }
+    }
+    static QuizManager cachedQuiz;
 
     /// <summary>A message is being opened. Call before the presenter shows it, so its texts bind as clickable.</summary>
     public void Begin(ScamMessage msg, IInvestigationDock dockArea = null)
@@ -69,7 +83,7 @@ public class MessageInvestigation : MonoBehaviour
         session = new InvestigationSession(msg);
         pauseUntil = 0f;
         root.gameObject.SetActive(true);
-        hint.gameObject.SetActive(true);
+        hint.gameObject.SetActive(!msg.HasActivity);   // activities carry their own instruction
         ShowCard(false);
     }
 
@@ -188,7 +202,13 @@ public class MessageInvestigation : MonoBehaviour
     /// inspectable details of that field as underlined links when the message is being investigated.
     /// Not yet inspected = cyan; inspected clue = gold with ★; inspected neutral detail = grey with ✓.
     /// </summary>
-    public static string Mark(ScamMessage msg, InspectField field, string text)
+    public static string Mark(ScamMessage msg, InspectField field, string text) => Mark(msg, field, null, text);
+
+    /// <summary><see cref="Mark"/> for one item of an interactive activity (inspectables with that <c>part</c>).</summary>
+    public static string MarkActivity(ScamMessage msg, ActivityItem item) =>
+        item == null ? "" : Mark(msg, InspectField.Activity, item.key, item.text);
+
+    static string Mark(ScamMessage msg, InspectField field, string partKey, string text)
     {
         if (string.IsNullOrEmpty(text)) return "";
         var a = Active;
@@ -199,7 +219,7 @@ public class MessageInvestigation : MonoBehaviour
         var spans = new List<(int start, int length, MessageInspectable part)>();
         foreach (var p in msg.inspectables)
         {
-            if (p.field != field) continue;
+            if (p.field != field || (field == InspectField.Activity && p.part != partKey)) continue;
             int start = string.IsNullOrEmpty(p.match) ? 0 : text.IndexOf(p.match, StringComparison.Ordinal);
             int length = string.IsNullOrEmpty(p.match) ? text.Length : p.match.Length;
             if (start < 0) continue;
@@ -224,6 +244,52 @@ public class MessageInvestigation : MonoBehaviour
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Like <see cref="Mark"/>, for a field that is already rich text (case-question scenarios use &lt;b&gt; and
+    /// &lt;noparse&gt;): the text is kept as written and only the inspectable phrases become underlined links.
+    /// Match phrases must be plain words (not across tags); a match inside a tag is skipped.
+    /// </summary>
+    public static string MarkRich(ScamMessage msg, InspectField field, string richText)
+    {
+        if (string.IsNullOrEmpty(richText)) return "";
+        var a = Active;
+        var s = a != null && a.session != null && a.session.Message == msg ? a.session : null;
+        if (s == null) return richText;
+
+        var spans = new List<(int start, int length, MessageInspectable part)>();
+        foreach (var p in msg.inspectables)
+        {
+            if (p.field != field || string.IsNullOrEmpty(p.match)) continue;
+            int start = richText.IndexOf(p.match, StringComparison.Ordinal);
+            if (start < 0 || InsideTag(richText, start)) continue;
+            if (spans.Exists(o => start < o.start + o.length && o.start < start + p.match.Length)) continue;
+            spans.Add((start, p.match.Length, p));
+        }
+        spans.Sort((x, y) => x.start.CompareTo(y.start));
+
+        var sb = new StringBuilder();
+        int i = 0;
+        foreach (var (start, length, part) in spans)
+        {
+            sb.Append(richText, i, start - i);
+            bool seen = s.WasInspected(part.id);
+            bool clue = seen && !string.IsNullOrEmpty(part.clueId);
+            string color = !seen ? HexLink : clue ? HexClue : HexSeen;
+            sb.Append($"<link=\"{part.id}\"><color={color}><u>{richText.Substring(start, length)}</u></color></link>");
+            if (seen) sb.Append(clue ? $"<color={HexClue}><size=75%> ★</size></color>" : "<color=#94A3B8><size=75%> ✓</size></color>");
+            i = start + length;
+        }
+        sb.Append(richText, i, richText.Length - i);
+        return sb.ToString();
+    }
+
+    /// <summary>True if position <paramref name="at"/> is inside a "&lt;...&gt;" tag.</summary>
+    static bool InsideTag(string s, int at)
+    {
+        int open = s.LastIndexOf('<', at), close = s.LastIndexOf('>', at);
+        return open > close && s.IndexOf('>', at) >= 0 && !s.Substring(open).StartsWith("<noparse><</noparse>");
+    }
+
     static string Literal(string s) => string.IsNullOrEmpty(s) ? "" : "<noparse>" + s.Replace("</noparse>", "") + "</noparse>";
 
     /// <summary>Clue summary appended to the presenter's feedback explanation ("" if the message wasn't investigated).</summary>
@@ -242,7 +308,8 @@ public class MessageInvestigation : MonoBehaviour
 
     // ---------- Inspecting ----------
 
-    void Inspect(string id)
+    /// <summary>Inspects a detail by id (what clicking its underlined words does).</summary>
+    public void Inspect(string id)
     {
         if (session == null) return;
         var outcome = session.Inspect(id, out var part, out var clue, out bool first);
@@ -250,6 +317,13 @@ public class MessageInvestigation : MonoBehaviour
         if (first && !session.Submitted) pauseUntil = Time.time + ReadingAllowance;
         hint.gameObject.SetActive(false);   // the player has found the highlighted details; free the space for the card
         foreach (var (text, build) in binds) if (text != null) text.text = build();
+
+        // Activities show the finding on their own evidence board.
+        if (dock is IInvestigationInline inline && inline.ShowFinding(session.Message, part, clue, outcome))
+        {
+            ShowCard(false);
+            return;
+        }
 
         cardLabel.text = part.label;
         cardStatus.text =
@@ -287,7 +361,7 @@ public class MessageInvestigation : MonoBehaviour
     {
         root = UIKit.CreateCanvas(transform, "Investigation Canvas", 35);   // above the HUD and phone pop-up, below results
 
-        hint = UIKit.Text(root, "Hint", $"Click or tap the <color={HexLink}><u>highlighted details</u></color> to inspect them", 19, Muted, TextAlignmentOptions.BottomRight);
+        hint = UIKit.Text(root, "Hint", DefaultHint, 19, Muted, TextAlignmentOptions.BottomRight);
         UIKit.Place(hint.rectTransform, new Vector2(1, 0.5f), new Vector2(1, 0f), new Vector2(-28, 190), new Vector2(520, 30));
 
         // Finding card: what the inspected detail shows (and, for links, where it really goes)

@@ -69,7 +69,16 @@ public class QuizManager : MonoBehaviour
     private IMessagePresenter current;
 
     private int Total => level != null ? level.MessageCount : 0;
-    private ScamMessage Current => level.messages[index];
+    // Questions are asked in this attempt's shuffled order (built once in Begin).
+    private ScamMessage Current => level.messages[shuffle != null && index < shuffle.MessageOrder.Count ? shuffle.MessageOrder[index] : index];
+    private QuestionShuffle shuffle;
+
+    /// <summary>
+    /// Original choice indices in the order a presenter shows them this attempt (position 0 = "A").
+    /// Empty for a message without choices.
+    /// </summary>
+    public System.Collections.Generic.IReadOnlyList<int> ChoiceOrder(ScamMessage m) =>
+        shuffle != null ? shuffle.ChoiceOrder(m) : QuestionShuffle.Permutation(m != null && m.HasChoices ? m.choices.Length : 0, null);
     private MessageInvestigation investigation;
     private WrongAnswerConsequences consequences;
     private float recheckTime;
@@ -102,12 +111,19 @@ public class QuizManager : MonoBehaviour
 
     // ---------- Lifecycle ----------
 
-    /// <summary>Starts (or restarts) the sequence from the first message with a clean score.</summary>
+    /// <summary>
+    /// Starts (or restarts) the sequence from the first message with a clean score. Every call is a new attempt:
+    /// the room's questions and each question's choices get a new shuffled order, fixed until the next attempt.
+    /// </summary>
     public void Begin(LevelDefinition definition)
     {
         level = definition;
         index = 0;
         phase = Phase.Idle;
+        // Tutorial room only: its guided question is asked first (the rest and all choices stay shuffled).
+        int pin = level != null && level.tutorial && !string.IsNullOrEmpty(level.tutorialFirstQuestion)
+            ? level.messages.FindIndex(m => m != null && m.id == level.tutorialFirstQuestion) : -1;
+        shuffle = level != null ? new QuestionShuffle(level.messages, level.levelId, new System.Random(), pin) : null;
         if (scoring != null) { scoring.Configure(level); scoring.ResetRun(); }
         if (popup != null) popup.Hide();
         if (hud != null) hud.HideNotification();
@@ -136,6 +152,15 @@ public class QuizManager : MonoBehaviour
         }
         Schedule(level.firstMessageDelay);
         StateChanged?.Invoke();   // lets computer screens fill their inbox right away
+
+        // Step-by-step guide - only in a room marked as the tutorial (Level 1). Other rooms never create it.
+        var coach = GetComponent<TutorialCoach>();
+        if (level.tutorial)
+        {
+            if (coach == null) coach = gameObject.AddComponent<TutorialCoach>();
+            coach.Begin(this);
+        }
+        else if (coach != null) coach.Stop();
     }
 
     void Update()
@@ -186,6 +211,7 @@ public class QuizManager : MonoBehaviour
         waitTarget = Mathf.Max(0f, delay);
         walked = 0f;
         if (player != null) lastPlayerPos = player.position;
+        if (hud != null) hud.SetNextStep("Explore the room. A new message is on its way.");
     }
 
     void TickWaiting()
@@ -212,8 +238,32 @@ public class QuizManager : MonoBehaviour
         if (hud != null) hud.ShowNotification(Current, NeedsComputer(Current) ? (string.IsNullOrEmpty(Current.stationId) ? "Read it at a computer" : $"Flagged on workstation {Current.stationId}")
                                                      : NeedsCaseTerminal(Current) ? "Submit at the final case terminal"
                                                      : $"Press [{interactKey}] to read");
+        if (hud != null)
+        {
+            string key = UIKit.Key(InteractionPrompt.KeyName(interactKey));
+            hud.SetNextStep(NeedsCaseTerminal(Current) ? $"Check the evidence, then press {key} at the final case terminal."
+                          : NeedsComputer(Current) ? (string.IsNullOrEmpty(Current.stationId)
+                                ? $"New {MessageChannels.Noun(Current.channel)}! Look at a computer screen and press {key}."
+                                : $"Go to workstation <b>{Current.stationId}</b>, look at the screen and press {key}.")
+                          : $"New message on your phone! Press {key} to read it.");
+        }
+        OfferFirstTimeTip();
         if (levelAudio != null) levelAudio.PlayNotification(Current.channel);
         StateChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// The first time a player meets a kind of message (phone, computer, workstation, final case terminal, question),
+    /// a short tip explains it. The Level 1 guide teaches these itself, so while it runs the tip is only marked as seen.
+    /// </summary>
+    void OfferFirstTimeTip()
+    {
+        string id = FirstTimeTips.NextTip(Current, NeedsComputer(Current), NeedsCaseTerminal(Current), FirstTimeTips.Seen, out string text);
+        if (id == null) return;
+        FirstTimeTips.MarkSeen(id);
+        var coach = GetComponent<TutorialCoach>();
+        if (coach != null && coach.Running) return;
+        if (hud != null) hud.ShowTip(text);
     }
 
     void TickNotified()
@@ -238,18 +288,18 @@ public class QuizManager : MonoBehaviour
             {
                 // The final case terminal opens it (once the evidence has been reviewed).
                 if (LookedAt<FinalCaseTerminal>() == null && hud != null)
-                    hud.ShowToast("Final case: review the evidence, then go to the final case terminal and press E.");
+                    hud.ShowToast("Check the evidence first, then press E at the final case terminal.");
                 return;
             }
             if (NeedsComputer(Current))
             {
                 // Looking at a monitor? Let the ComputerTerminal handle this press.
                 if (!LookingAtComputer() && hud != null && !string.IsNullOrEmpty(Current.stationId))
-                    hud.ShowToast($"This message is flagged on workstation {Current.stationId} - find it, look at the screen and press E.");
+                    hud.ShowToast($"Find workstation {Current.stationId}, look at its screen and press E.");
                 else if (!LookingAtComputer() && hud != null)
                     hud.ShowToast(Current.channel == MessageChannel.Website
-                        ? "Web pages are reviewed on a computer - look at a monitor and press E."
-                        : "Emails are read on a computer - look at a monitor and press E.");
+                        ? "Web pages open on a computer: look at a screen and press E."
+                        : "Emails open on a computer: look at a screen and press E.");
                 return;
             }
             InteractionGate.ConsumeInteract();   // doors/chairs ignore this press
@@ -282,6 +332,7 @@ public class QuizManager : MonoBehaviour
         current = presenter;
         current.AnswerChosen += OnAnswer;
         current.ContinueClicked += OnContinue;
+        if (current is IChoicePresenter choicePresenter) choicePresenter.ChoiceChosen += OnChoice;
 
         if (hud != null) hud.HideNotification();
         InteractionPrompt.Clear(this);
@@ -296,6 +347,7 @@ public class QuizManager : MonoBehaviour
     {
         if (phase == Phase.Recheck) { OnRecheckAnswer(chosen); return; }
         if (phase != Phase.Reading) return;   // ignores late or repeated clicks
+        if (Current.HasChoices) return;       // choice questions are answered through OnChoice only
         phase = Phase.Feedback;
 
         if (!scoring.TryRecord(Current, chosen, responseTime, out var result))
@@ -307,6 +359,29 @@ public class QuizManager : MonoBehaviour
         }
 
         if (investigation != null) investigation.Submit(Current, chosen);   // evaluates the selected evidence once
+        AfterFirstAnswer(result);
+    }
+
+    /// <summary>A choice question was answered. <paramref name="originalChoice"/> is the index before shuffling.</summary>
+    void OnChoice(int originalChoice)
+    {
+        if (phase != Phase.Reading || !Current.HasChoices) return;   // ignores late or repeated clicks
+        phase = Phase.Feedback;
+
+        if (!scoring.TryRecordChoice(Current, originalChoice, responseTime, out var result))
+        {
+            Debug.LogError($"QuizManager: choice {originalChoice} for '{Current.id}' could not be scored (duplicate id or bad index).", this);
+            OnContinue();
+            return;
+        }
+        // Investigated choice questions (Level 1 tutorial): evaluate the clues found, for the feedback's clue list.
+        if (investigation != null) investigation.Submit(Current, result.chosen);
+        AfterFirstAnswer(result);
+    }
+
+    /// <summary>Feedback, progress and the wrong-answer reaction - shared by verdict and choice answers.</summary>
+    void AfterFirstAnswer(ScoringSystem.AnswerResult result)
+    {
         RecordEvidence();
         int max = scoring.MaxScoreFor(Total);
         if (levelAudio != null) levelAudio.PlayAnswer(result.isCorrect);
@@ -402,6 +477,7 @@ public class QuizManager : MonoBehaviour
         if (current == null) return;
         current.AnswerChosen -= OnAnswer;
         current.ContinueClicked -= OnContinue;
+        if (current is IChoicePresenter choicePresenter) choicePresenter.ChoiceChosen -= OnChoice;
         current = null;
     }
 
@@ -409,7 +485,7 @@ public class QuizManager : MonoBehaviour
     {
         phase = Phase.Complete;
         InteractionPrompt.Clear(this);
-        if (hud != null) hud.HideNotification();
+        if (hud != null) { hud.HideNotification(); hud.SetNextStep("All questions answered. Your results are next!"); }
         Completed?.Invoke();
     }
 
@@ -452,7 +528,8 @@ public class QuizManager : MonoBehaviour
 
         if (phase == Phase.Notified && !NeedsStation(Current))
             InteractionPrompt.Set(this, InteractionPrompt.KeyName(interactKey),
-                Current.channel == MessageChannel.Chat ? "Read new chat message" : Current.channel == MessageChannel.SMS ? "Read new text message" : "Read new email", priority: 3);
+                Current.channel == MessageChannel.Chat ? "Read new chat message" : Current.channel == MessageChannel.SMS ? "Read new text message"
+                : Current.channel == MessageChannel.Question ? "Open case question" : "Read new email", priority: 3);
         else
             InteractionPrompt.Set(this, "", device.idleLabel, priority: 1);
     }
