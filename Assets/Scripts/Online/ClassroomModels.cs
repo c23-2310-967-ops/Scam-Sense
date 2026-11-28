@@ -53,7 +53,7 @@ public static class ClassroomModels
     [Serializable] public class AchievementRow { public string user_id, achievement_id; public long unlocked_utc; }
 
     /// <summary>join_class / claim_teacher_role answer.</summary>
-    [Serializable] public class ActionResult { public bool ok; public string error, class_id, class_name, teacher_name, role; }
+    [Serializable] public class ActionResult { public bool ok; public string error, class_id, class_name, teacher_name, role; public int members_removed; }
 
     [Serializable] public class MyClass { public string class_id, class_name, teacher_name, joined_at; }
 

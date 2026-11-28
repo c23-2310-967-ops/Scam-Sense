@@ -25,7 +25,7 @@ using CA = ClassroomAnalytics;
 /// REFRESH) is a scene object built by Tools > Scam Sense > Build Menu UI In Scene; its contents are rebuilt at
 /// runtime from the data, like the Career panel.
 /// </summary>
-public class ClassroomUI : MonoBehaviour
+public partial class ClassroomUI : MonoBehaviour   // QUESTIONS tab: ClassroomUI.Questions.cs
 {
     public static bool IsOpen { get; private set; }
 
@@ -36,7 +36,7 @@ public class ClassroomUI : MonoBehaviour
     [SerializeField] private TMP_Text titleText, subtitleText, statusText;
     [SerializeField] private ScrollRect scroll;
 
-    enum Tab { Overview, Results, Topics, Achievements, Dashboard, Students, Analytics, Reports, Classes }
+    enum Tab { Overview, Results, Topics, Achievements, Dashboard, Students, Analytics, Reports, Classes, Questions, Requests }
 
     MainMenuUI menu;
     AccountUI account;
@@ -56,7 +56,8 @@ public class ClassroomUI : MonoBehaviour
     List<M.ClassInfo> classes = new List<M.ClassInfo>();
     string currentClassId;
     ClassData data;
-    string selectedStudent, confirmRemove, confirmArchive;
+    string selectedStudent, confirmRemove, confirmArchive, confirmDeleteClass;
+    bool showArchived;   // CLASSES: archived classes are hidden until SHOW ARCHIVED
     List<M.ProgressRow> detailProgress;
     List<M.AchievementRow> detailAchievements;
     TMP_InputField newClassField;
@@ -110,6 +111,8 @@ public class ClassroomUI : MonoBehaviour
         if (kb != null && kb.escapeKey.wasPressedThisFrame)
         {
             if (selectedStudent != null && tab == Tab.Students) { selectedStudent = null; Render(); }
+            else if (tab == Tab.Questions && CloseQuestionForm()) { }
+            else if (tab == Tab.Requests && openRequestId != null) { openRequestId = null; Render(); }
             else Close();
         }
     }
@@ -126,7 +129,7 @@ public class ClassroomUI : MonoBehaviour
         panel.gameObject.SetActive(true);
         IsOpen = true;
         selectedStudent = null;
-        confirmLeave = false; confirmRemove = confirmArchive = null;
+        confirmLeave = false; confirmRemove = confirmArchive = confirmDeleteClass = null;
         StartCoroutine(PanelIn());
         Reload();
     }
@@ -170,6 +173,8 @@ public class ClassroomUI : MonoBehaviour
         previewTeacher = false;
 #endif
         lastUser = svc.SignedIn ? svc.UserId : svc.CurrentMode.ToString();
+        qbank = null; qbankError = null;   // REFRESH reads the question bank again too (an open edit is kept)
+        adminRequests = null; requestsError = null; portalAdmin = false;   // read again from the server below
         ClearAll();
         SetStatus("", false);
 
@@ -184,11 +189,19 @@ public class ClassroomUI : MonoBehaviour
         {
             var role = await ClassroomService.LoadRoleAsync();
             if (!Current(v)) return;
+            portalAdmin = await QuestionBankService.IsAdminAsync();   // content admin (server-side table); false on any error
+            qAdmin = portalAdmin;   // one answer for every tab: QUESTIONS must never fall back to the teacher (request) mode for an admin
+            if (!Current(v)) return;
             if (role == ClassroomService.Role.Teacher)
             {
                 await LoadTeacherAsync(v);
                 if (!Current(v)) return;
                 if (!IsTeacherTab(tab)) tab = Tab.Dashboard;
+            }
+            else if (portalAdmin)
+            {
+                // An admin who isn't a teacher: the question management tabs only.
+                if (tab != Tab.Questions && tab != Tab.Requests) tab = Tab.Requests;
             }
             else
             {
@@ -256,6 +269,8 @@ public class ClassroomUI : MonoBehaviour
 
 #if UNITY_EDITOR
     bool previewTeacher;
+    /// <summary>Editor previews: show the teacher tabs (false = an admin who isn't a teacher).</summary>
+    public bool previewAsTeacher = true;
 
     /// <summary>
     /// Editor only (layout checks in Play Mode): shows the portal with rows passed in by the caller instead of server data.
@@ -277,6 +292,18 @@ public class ClassroomUI : MonoBehaviour
     public void EditorPreviewStudent(string studentId) { tab = Tab.Students; selectedStudent = studentId; Render(); }
 #endif
 
+    /// <summary>A teacher (classes, students...). An admin who isn't a teacher only gets the question tabs.</summary>
+    bool IsTeacherRole
+    {
+        get
+        {
+#if UNITY_EDITOR
+            if (previewTeacher && previewAsTeacher) return true;
+#endif
+            return ClassroomService.CurrentRole == ClassroomService.Role.Teacher;
+        }
+    }
+
     bool TeacherView
     {
         get
@@ -284,7 +311,7 @@ public class ClassroomUI : MonoBehaviour
 #if UNITY_EDITOR
             if (previewTeacher) return true;
 #endif
-            return ClassroomService.CurrentRole == ClassroomService.Role.Teacher;
+            return ClassroomService.CurrentRole == ClassroomService.Role.Teacher || portalAdmin;
         }
     }
 
@@ -488,7 +515,7 @@ public class ClassroomUI : MonoBehaviour
         var cat = menu != null ? menu.Catalog : null;
         if (cat == null) return list;
         foreach (var l in cat.levels)
-            if (l != null) list.Add(new M.ActivityRow { level_id = l.levelId, level_number = l.levelNumber, title = l.displayName, question_count = l.MessageCount });
+            if (l != null) list.Add(new M.ActivityRow { level_id = l.levelId, level_number = l.levelNumber, title = l.displayName, question_count = LevelContentResolver.QuestionCount(l) });
         return list;
     }
 
@@ -671,32 +698,50 @@ public class ClassroomUI : MonoBehaviour
 
     void RenderTeacher()
     {
-        titleText.text = "TEACHER PORTAL";
+        bool teacher = IsTeacherRole;
+        string who = (svc != null ? svc.DisplayName : "Preview") + "  ·  " + (teacher && portalAdmin ? "Teacher and admin" : teacher ? "Teacher" : "Admin");
+        if (!teacher)
+        {
+            // Admin who isn't a teacher: question management only.
+            titleText.text = "ADMIN PORTAL";
+            subtitleText.text = who;
+            if (tab != Tab.Questions && tab != Tab.Requests) tab = Tab.Requests;
+            TabButton("REQUESTS", Tab.Requests);
+            TabButton("QUESTIONS", Tab.Questions);
+            if (tab == Tab.Requests) QuestionRequests(); else TeacherQuestions();
+            return;
+        }
+
+        titleText.text = portalAdmin ? "TEACHER PORTAL  ·  ADMIN" : "TEACHER PORTAL";
         var cls = CurrentClass;
-        subtitleText.text = $"{svc.DisplayName}  ·  Teacher" + (cls != null ? $"  ·  <color={UIKit.HexAccent}>{Esc(cls.name)}</color>  ·  code <b>{ClassCode.Display(cls.code)}</b>" +
-                                                                              (cls.archived ? "  <color=#FBBF24>(archived)</color>" : "") : "");
-        if (cls == null || data == null) tab = Tab.Classes;
+        subtitleText.text = who + (cls != null ? $"  ·  <color={UIKit.HexAccent}>{Esc(cls.name)}</color>  ·  code <b>{ClassCode.Display(cls.code)}</b>" +
+                                                 (cls.archived ? "  <color=#FBBF24>(archived)</color>" : "") : "");
+        if ((cls == null || data == null) && tab != Tab.Questions && tab != Tab.Requests) tab = Tab.Classes;
         TabButton("DASHBOARD", Tab.Dashboard, cls != null);
         TabButton("STUDENTS", Tab.Students, cls != null);
         TabButton("ANALYTICS", Tab.Analytics, cls != null);
         TabButton("REPORTS", Tab.Reports, cls != null);
         TabButton("CLASSES", Tab.Classes);
+        TabButton("QUESTIONS", Tab.Questions);   // the question bank is shared by every class, so no class is needed
+        TabButton(portalAdmin ? "REQUESTS" : "MY REQUESTS", Tab.Requests);
         if (classes.Count > 1)
         {
             var spacer = UIKit.Rect("Spacer", tabBar);
             spacer.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
             var prev = Btn(tabBar, "◀", () => SwitchClass(-1), UIKit.HudVariant.Secondary, 70, 56, 22);
             prev.name = "PrevClass";
-            var next = Btn(tabBar, "NEXT CLASS  ▶", () => SwitchClass(1), UIKit.HudVariant.Secondary, 260, 56, 20);
+            var next = Btn(tabBar, "NEXT  ▶", () => SwitchClass(1), UIKit.HudVariant.Secondary, 150, 56, 20);
             next.name = "NextClass";
         }
 
         switch (tab)
         {
+            case Tab.Requests: QuestionRequests(); break;
             case Tab.Students: if (selectedStudent != null) TeacherStudentDetail(); else TeacherStudents(); break;
             case Tab.Analytics: TeacherAnalytics(); break;
             case Tab.Reports: TeacherReports(); break;
             case Tab.Classes: TeacherClasses(); break;
+            case Tab.Questions: TeacherQuestions(); break;
             default: TeacherDashboard(); break;
         }
     }
@@ -1041,11 +1086,21 @@ public class ClassroomUI : MonoBehaviour
         newClassError = Line(create, "", Small, UIKit.Danger);
         newClassError.gameObject.SetActive(false);
 
-        var list = UICharts.Card(content, $"Your classes  ({classes.Count})");
+        int archivedCount = classes.Count(c => c.archived);
+        var list = UICharts.Card(content, $"Your classes  ({classes.Count - archivedCount} open" + (archivedCount > 0 ? $", {archivedCount} archived)" : ")"));
         if (classes.Count == 0) { UICharts.Empty(list, "No classes yet. Create one above."); return; }
-        var cols = new[] { -1f, 200f, 200f, 170f, 470f };
-        TableRow(list, cols, true, "CLASS", "CODE", "CREATED", "STATUS", "");
-        foreach (var c in classes)
+        if (archivedCount > 0)
+        {
+            var toggle = RowH(list, 50);
+            Line(toggle, showArchived ? "Showing archived classes too." : $"{archivedCount} archived class{(archivedCount == 1 ? " is" : "es are")} hidden.", 17f, Muted);
+            Btn(toggle, showArchived ? "HIDE ARCHIVED" : $"SHOW ARCHIVED ({archivedCount})", () => { showArchived = !showArchived; confirmDeleteClass = null; Render(); },
+                UIKit.HudVariant.Secondary, 330, 48, 18).name = "ToggleArchived";
+        }
+        var shown = classes.Where(c => showArchived || !c.archived || c.id == confirmDeleteClass).ToList();
+        if (shown.Count == 0) UICharts.Empty(list, "All your classes are archived. Press SHOW ARCHIVED to see them.");
+        var cols = new[] { -1f, 200f, 200f, 170f, 650f };
+        if (shown.Count > 0) TableRow(list, cols, true, "CLASS", "CODE", "CREATED", "STATUS", "");
+        foreach (var c in shown)
         {
             bool current = c.id == currentClassId;
             var r = TableRow(list, cols, false, (current ? $"<color={UIKit.HexAccent}>›</color> " : "") + Esc(c.name),
@@ -1055,12 +1110,52 @@ public class ClassroomUI : MonoBehaviour
             var h = UIKit.Horizontal((RectTransform)cell, 10, TextAnchor.MiddleRight);
             h.childForceExpandWidth = false;
             string id = c.id;
-            Btn(cell, "OPEN", () => _ = OpenClass(id, Tab.Dashboard), UIKit.HudVariant.Primary, 140, 46, 18);
+            Btn(cell, "OPEN", () => { confirmDeleteClass = null; _ = OpenClass(id, Tab.Dashboard); }, UIKit.HudVariant.Primary, 140, 46, 18);
             bool confirming = confirmArchive == id;
             string label = c.archived ? "RESTORE" : confirming ? "CONFIRM ARCHIVE" : "ARCHIVE";
             Btn(cell, label, () => ToggleArchive(id), confirming ? UIKit.HudVariant.Danger : UIKit.HudVariant.Secondary, confirming ? 300 : 190, 46, 18);
+            bool deleting = confirmDeleteClass == id;
+            var del = Btn(cell, deleting ? "CONFIRM DELETE" : "DELETE", () => DeleteClass(id), deleting ? UIKit.HudVariant.Danger : UIKit.HudVariant.Secondary, deleting ? 290 : 160, 46, 18);
+            del.name = "Delete_" + c.code;
         }
-        Line(list, "Archiving closes a class to new students (the code stops working); its records stay and RESTORE reopens it.", 17f, Muted);
+        var pending = classes.FirstOrDefault(x => x.id == confirmDeleteClass);
+        if (pending != null)
+            Line(list, $"<color={UIKit.HexWarning}>Delete <b>{Esc(pending.name)}</b>? Its class code stops working and any students in it are removed from it. " +
+                       "This can't be undone. Press CONFIRM DELETE, or anything else to cancel.</color>", Small, UIKit.TextPrimary).name = "DeleteWarning";
+        Line(list, "DELETE removes a class that has no results yet (a test class, a typo). A class with results can't be deleted, because student records are kept. " +
+                   "ARCHIVE it instead: the code stops working, its records stay, it's hidden from this list, and RESTORE reopens it.", 17f, Muted);
+    }
+
+    async void DeleteClass(string id)
+    {
+        var c = classes.FirstOrDefault(x => x.id == id);
+        if (c == null) return;
+        confirmArchive = null;
+        if (confirmDeleteClass != id) { confirmDeleteClass = id; Render(); return; }
+        confirmDeleteClass = null;
+        int v = version;
+        try
+        {
+            var res = await ClassroomService.DeleteClassAsync(id);
+            if (!Current(v)) return;
+            if (!res.ok) { Render(); SetStatus(res.error, true); return; }
+            if (currentClassId == id) { currentClassId = null; data = null; }
+            classes = await ClassroomService.ListClassesAsync();
+            if (!Current(v)) return;
+            if (currentClassId == null)
+            {
+                var next = classes.FirstOrDefault(x => !x.archived) ?? classes.FirstOrDefault();
+                if (next != null) { currentClassId = next.id; data = await ClassroomService.LoadClassAsync(next); if (!Current(v)) return; }
+            }
+            tab = Tab.Classes;
+            Render();
+            SetStatus($"{c.name} was deleted." + (res.members_removed > 0 ? $" {res.members_removed} student{(res.members_removed == 1 ? " was" : "s were")} removed from it and can join another class." : ""), false);
+        }
+        catch (SupabaseException se) when (se.Status == 404 || (se.Code ?? "").Contains("PGRST202"))
+        {
+            if (Current(v)) { Render(); SetStatus("Deleting classes isn't set up on the server yet (developer: apply supabase/migrations/20261128044325_delete_class.sql).", true); }
+        }
+        catch (Exception e) { if (Current(v)) { Render(); SetStatus(ClassroomService.Message(e), true); } }
     }
 
     async void CreateClass()
@@ -1085,6 +1180,7 @@ public class ClassroomUI : MonoBehaviour
     {
         var c = classes.FirstOrDefault(x => x.id == id);
         if (c == null) return;
+        confirmDeleteClass = null;
         if (!c.archived && confirmArchive != id) { confirmArchive = id; Render(); return; }
         confirmArchive = null;
         int v = version;
@@ -1105,8 +1201,8 @@ public class ClassroomUI : MonoBehaviour
     void TabButton(string label, Tab t, bool enabled = true)
     {
         bool on = tab == t;
-        var b = Btn(tabBar, (on ? "›  " : "") + label, () => { if (tab == t) return; tab = t; selectedStudent = null; confirmRemove = confirmArchive = null; confirmLeave = false; Render(); },
-                    on ? UIKit.HudVariant.Primary : UIKit.HudVariant.Secondary, Mathf.Max(200f, 26f + label.Length * 17f), 56, 20);
+        var b = Btn(tabBar, (on ? "›  " : "") + label, () => { if (tab == t) return; tab = t; selectedStudent = null; confirmRemove = confirmArchive = confirmDeleteClass = null; confirmLeave = false; openRequestId = null; Render(); },
+                    on ? UIKit.HudVariant.Primary : UIKit.HudVariant.Secondary, Mathf.Max(180f, 50f + label.Length * 16f), 56, 20);
         b.name = "Tab_" + t;
         UIKit.SetInteractable(b, enabled);
     }

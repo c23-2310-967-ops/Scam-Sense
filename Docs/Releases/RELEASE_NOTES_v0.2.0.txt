@@ -1,0 +1,81 @@
+SCAM SENSE: THINK BEFORE YOU CLICK - RELEASE NOTES
+
+Project:        Scam Sense: Think Before You Click (BSIT Capstone)
+Version:        0.2.0
+Release Date:   (set when the build is released)
+Release Type:   Development (minor: new features)
+Platform:       Windows 10/11, 64-bit
+Source:         GitHub c23-2310-967-ops/Scam-Sense, Git tag v0.2.0
+                (the exact commit hash is in BUILD_INFO.txt)
+Built with:     Unity 6000.0.38f1
+Previous:       0.1.1. Saved progress and accounts carry over.
+
+
+INCLUDED IN THIS VERSION
+- The five rooms now ask the validated curriculum questions (28 in rooms,
+  4 in reserve), in a new order on every attempt. Level 1 is a short
+  introduction: two scams and two real messages.
+- Interactive investigations: most questions are played inside a simulated
+  email, browser, chat, call, form, Wi-Fi list, file explorer or evidence
+  folder. Click underlined details to find clues; key clues glow gold.
+- Level 1 tutorial: a guide walks new players through the controls and their
+  first question (clues, HINT, answering, feedback).
+- CLASSROOM on the main menu:
+  - Students join a class with a 6-character class code and see their
+    levels, attempts, feedback, topics to review and achievements.
+  - Teachers (with a teacher code) get a dashboard, students, analytics,
+    reports with CSV export, and class management.
+  - Teachers can delete a class that has no results yet. Archived classes
+    are hidden until SHOW ARCHIVED.
+- Question management:
+  - Questions are no longer built into the game. They come from the online
+    question bank, with a copy inside the game for offline play.
+  - Admins add, edit, turn off and delete questions in CLASSROOM > QUESTIONS.
+    Changes reach players the next time they load a level.
+  - Teachers send requests (add, edit or delete, with a reason) that an
+    admin approves or rejects, and they can see each decision and remark.
+- If a level's questions are missing or can't be read, the game shows a
+  clear message with a way back to the main menu instead of an empty room.
+
+
+CHANGED SINCE 0.1.1
+- Simpler main menu: PLAY, CLASSROOM, SETTINGS, ABOUT, QUIT GAME. PLAY opens
+  the next room in your progression. Level Selection and How to Play were
+  removed; their help now appears in the game where it is needed (briefing,
+  Level 1 guide, one-time tips, pause menu).
+- Clearer briefings, task card ("NEXT" step), results screen and pop-ups.
+  Pop-ups use four styles (info, correct, wrong, warning), each with its own
+  colour and icon.
+- Plain-language explanations, feedback and hints for every question.
+- Results uploaded to the cloud are checked by the server before they are
+  saved (the level exists, the question count matches, the score is within
+  the maximum, and the pass flag matches the pass score).
+
+
+FIXED
+- (No separate bug fixes are listed for this version; see the changes above.)
+
+
+KNOWN ISSUES
+- The window title and the save location still use the project's working name
+  "Capstone" (HKEY_CURRENT_USER\Software\DefaultCompany\Capstone).
+- Online accounts, classes, question editing and request approval have been
+  tested on the server and in the editor, but not yet end to end in a built
+  game.
+- Changing how many questions a level has takes effect immediately. A student
+  who is in the middle of that level may have that run refused when it is
+  uploaded; make such changes between class sessions.
+- The question copy inside the game (used offline) is the one from this build;
+  later online edits are only seen by players who sign in.
+- Questions cannot include image files yet; attachments are shown as text.
+- The game is not code-signed, so Windows SmartScreen may warn on first run.
+- The sources of a few third-party assets (phone and pen models, two desk
+  images, menu music) are still being confirmed.
+- Windows only: the game uses keyboard and mouse controls.
+
+
+INSTALLATION / RUNNING
+1. Extract ScamSense-v0.2.0.zip to a folder.
+2. Open the ScamSense-v0.2.0 folder and run ScamSense.exe.
+3. If Windows SmartScreen appears: More info > Run anyway.
+4. Choose PLAY on the main menu. See README.txt for controls.

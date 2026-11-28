@@ -27,6 +27,10 @@ Guests and offline play work as before. Guests can see their own results, but jo
 
 1. **Get teacher access.** Create an account (or sign in), open CLASSROOM, enter your teacher code under *Are you a teacher?* and press **ACTIVATE TEACHER PORTAL**. A teacher account can't join classes as a student.
 2. **CLASSES:** type a class name and press **CREATE CLASS**. Each class gets a unique code. Write it on the board. **ARCHIVE** (press twice) stops new students joining and keeps the records. **RESTORE** reopens the class. **OPEN** switches to that class. **◀ / NEXT CLASS ▶** also switch between classes.
+   - **Archived classes are hidden** from the list. **SHOW ARCHIVED (n)** brings them back, and **HIDE ARCHIVED** hides them again.
+   - **DELETE** (press twice: DELETE, then CONFIRM DELETE) removes a class with **no recorded results**, such as a test class or a typo. Its code stops working, and any students in it are released so they can join another class.
+   - A class that already has results can't be deleted, because student records are never removed. Archive it instead.
+   - Deleting needs `supabase/migrations/20261128044325_delete_class.sql` on the server.
 3. **DASHBOARD:**
    - the class code;
    - students enrolled, active (played in the last 7 days), completed (finished every level) and not started;
@@ -44,6 +48,13 @@ Guests and offline play work as before. Guests can see their own results, but jo
    - hardest questions;
    - most-missed topics.
 6. **REPORTS:** pick a student (or all), an activity (or all), and one row per attempt or one per question answer, then press **EXPORT CSV**. Files are saved in `Documents\Scam Sense Reports\`. **OPEN FOLDER** shows them. The CSV opens in Excel or Google Sheets.
+
+7. **QUESTIONS and MY REQUESTS:** browse every question in the game.
+   - To add, change, move, turn off or delete one, open it, make the change, give a **reason**, and press **SUBMIT REQUEST** (or **REQUEST DELETE**).
+   - An admin reviews it. Students only see the change once it's approved.
+   - Follow your requests, and the admin's remarks, in **MY REQUESTS**.
+   - Admins edit directly and approve requests in **REQUESTS**.
+   - Details: [ContentManagement.md](ContentManagement.md).
 
 **REFRESH** reloads everything from the server.
 
