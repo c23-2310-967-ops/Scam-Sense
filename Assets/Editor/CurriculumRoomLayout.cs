@@ -159,7 +159,9 @@ public static class CurriculumRoomLayout
         "\n<i>In English: \"Mom, it's Migs. My phone broke, this is my new number. Please send ₱3,000 to PayLite 0917 555 0188, " +
         "it's an emergency. Don't call yet, I have no load.\"</i>";
 
-    [MenuItem("Tools/Scam Sense/Curriculum/Arrange Rooms")]
+    // LEGACY: no menu item any more. Rooms are arranged by each question's levelId / order in the question bank
+    // (Assets/Resources/Content/question_bank.json, see Docs/ContentManagement.md). Running this would rewrite the old
+    // CurriculumQuestions.json and the level assets, not the bank the game plays.
     public static void Arrange()
     {
         var data = CurriculumQuestionsImporter.Load();
@@ -214,7 +216,13 @@ public static class CurriculumRoomLayout
         var level1 = AssetDatabase.LoadAssetAtPath<LevelDefinition>(Rooms[0].asset);
         if (level1.inboxExtras != null && level1.inboxExtras.RemoveAll(m => m != null && Level1InboxRemoved.Contains(m.id)) > 0)
             EditorUtility.SetDirty(level1);
-        CurriculumQuestionsImporter.LoadIntoRooms();
+        foreach (var room in data.rooms)
+        {
+            var level = AssetDatabase.LoadAssetAtPath<LevelDefinition>(room.levelAsset);
+            CurriculumQuestionsImporter.Apply(level, room);
+            EditorUtility.SetDirty(level);
+        }
+        AssetDatabase.SaveAssets();
         Debug.Log($"Curriculum: {data.rooms.Length} rooms arranged ({string.Join(" / ", data.rooms.Select(r => r.questions.Length))} questions), " +
                   $"{data.reserve.Length} validated questions in reserve ({string.Join(", ", data.reserve.Select(q => q.id))}).");
     }

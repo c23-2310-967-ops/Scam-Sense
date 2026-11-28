@@ -11,8 +11,10 @@ HOW TO RUN
 2. Open the folder ScamSense-v{VERSION} and double-click ScamSense.exe.
 3. If Windows shows "Windows protected your PC", click "More info" and then
    "Run anyway". The game is not code-signed, so Windows does not recognise it.
-4. On the main menu, choose PLAY. Room 1 is always open; each later room
-   unlocks when you reach the previous room's passing score.
+4. On the main menu, choose PLAY. It opens the next room in your progression:
+   Room 1 is always open, and each later room unlocks when you reach the
+   previous room's passing score. CLASSROOM is for students and teachers
+   (an account is needed to join a class).
 
 Keep every file and folder together. ScamSense.exe needs ScamSense_Data,
 UnityPlayer.dll and MonoBleedingEdge next to it.
@@ -46,7 +48,7 @@ does not delete progress; use RESET PROGRESS on the main menu for that.
 
 
 WHICH VERSION IS THIS?
-The version is shown in the top-right corner of the main menu.
+The version is shown in the bottom-right corner of the main menu.
 BUILD_INFO.txt lists the exact source commit this build was made from.
 RELEASE_NOTES.txt lists what is included, fixed and still known.
 

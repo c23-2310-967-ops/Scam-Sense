@@ -152,6 +152,16 @@ public static class ClassroomService
     public static Task SetArchivedAsync(string classId, bool archived) =>
         Rpc("set_class_archived", "{\"p_class\":" + Json(classId) + ",\"p_archived\":" + (archived ? "true" : "false") + "}");
 
+    /// <summary>
+    /// Deletes one of the teacher's classes (supabase/migrations/20261128044325_delete_class.sql). Classes with recorded
+    /// results are refused with a message (results are never changed): archive those instead.
+    /// </summary>
+    public static async Task<M.ActionResult> DeleteClassAsync(string classId)
+    {
+        var res = JsonUtility.FromJson<M.ActionResult>(await Rpc("delete_class", Arg("p_class", classId)));
+        return res ?? new M.ActionResult { ok = false, error = "The server didn't answer." };
+    }
+
     public static Task RemoveStudentAsync(string classId, string studentId) =>
         Rpc("remove_student", "{\"p_class\":" + Json(classId) + ",\"p_student\":" + Json(studentId) + "}");
 

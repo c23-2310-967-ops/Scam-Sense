@@ -51,12 +51,27 @@ public class GameManager : MonoBehaviour
     [Tooltip("Pause after the last feedback before the results appear.")]
     [SerializeField] private float resultsDelay = 0.6f;
 
-    public LevelDefinition Level => level;
+    /// <summary>The level being played: a runtime copy of the asset with the question bank's content applied.</summary>
+    public LevelDefinition Level { get { EnsureContent(); return level; } }
+    /// <summary>Where this level's questions came from (question bank source or the asset's built-in fallback).</summary>
+    public ResolvedLevel Content { get { EnsureContent(); return content; } }
 
     private bool finished, leaving;
+    private ResolvedLevel content;
+
+    /// <summary>Swaps the authored asset for its content-applied copy once, before anything reads it.</summary>
+    void EnsureContent()
+    {
+        if (content != null || level == null) return;
+        content = LevelContentResolver.Resolve(level);
+        foreach (var issue in content.issues)
+            if (issue.IsError) Debug.LogWarning("Level content: " + issue, this);
+        if (content.level != null) level = content.level;
+    }
 
     void Awake()
     {
+        EnsureContent();
         if (quiz == null) quiz = GetComponent<QuizManager>();
         if (scoring == null) scoring = GetComponent<ScoringSystem>();
         if (hud == null) hud = GetComponent<LevelHUD>();
@@ -98,6 +113,17 @@ public class GameManager : MonoBehaviour
 
         Time.timeScale = 1f;
         finished = leaving = false;
+
+        // No valid question anywhere (bank and built-in fallback): stop safely instead of starting an empty room.
+        if (!content.Playable)
+        {
+            InteractionGate.Acquire(this);
+            MouseLook.SetCursorLocked(false);
+            var errors = content.issues.FindAll(i => i.IsError).ConvertAll(i => i.ToString());
+            string details = string.Join("\n", errors.GetRange(0, Mathf.Min(3, errors.Count)));
+            ContentErrorScreen.Show(transform, level.displayName, details, ReturnToMainMenu);
+            return;
+        }
         ProgressController.EnterRoom(level);   // a room you are standing in is always unlocked
         scoring.Configure(level);   // this level's points, reading time and penalties
         scoring.ResetRun();

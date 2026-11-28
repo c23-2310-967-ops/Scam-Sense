@@ -5,7 +5,10 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Loads the 30 validated curriculum questions (Assets/Editor/CurriculumQuestions.json) into the room assets.
+/// LEGACY (read-only since the question bank): reads Assets/Editor/CurriculumQuestions.json, the format the Python
+/// generator (Tools/build_game_questions.py) writes. Only used by Tools > Scam Sense > Content > Migrate Legacy
+/// Content to Bank and by tests; the game itself reads Assets/Resources/Content/question_bank.json.
+/// Originally: loaded the 30 validated curriculum questions into the room assets.
 /// Each room has its own number of questions (the layout is set by CurriculumRoomLayout: 10 rooms of 3, easiest
 /// first). The game shuffles them per attempt; the assets keep the file's order.
 /// Replaces each room's scored messages, briefing, objectives, case notes, case files, lessons and the star /
@@ -16,18 +19,10 @@ public static class CurriculumQuestionsImporter
 {
     public const string JsonPath = "Assets/Editor/CurriculumQuestions.json";
     /// <summary>A room needs at least this many questions (and at most MaxQuestionsPerRoom) to make a real case.</summary>
-    public const int MinQuestionsPerRoom = 2, MaxQuestionsPerRoom = 8;
+    public const int MinQuestionsPerRoom = LevelContentRules.MinQuestionsPerRoom, MaxQuestionsPerRoom = LevelContentRules.MaxQuestionsPerRoom;
 
-    /// <summary>
-    /// Correct answers needed for 1 star and for 2 stars / unlocking, out of <paramref name="n"/> questions:
-    /// about half for 1 star, about 60% (never all of them) to unlock. 3 questions: 1 / 2. 6 questions: 3 / 4.
-    /// </summary>
-    public static (int oneStar, int unlock) CorrectNeeded(int n)
-    {
-        int unlock = Mathf.Clamp(Mathf.CeilToInt(n * 0.6f), 1, Mathf.Max(1, n - 1));
-        int one = Mathf.Clamp(n / 2, 1, unlock);
-        return (one, unlock);
-    }
+    /// <summary>See <see cref="LevelContentRules.CorrectNeeded"/>.</summary>
+    public static (int oneStar, int unlock) CorrectNeeded(int n) => LevelContentRules.CorrectNeeded(n);
 
     [Serializable] public class InspectData { public string id, field, match, label, finding, linkAddress, clueId, part; }
     [Serializable] public class ItemData { public string key, role, label, text; }
@@ -79,34 +74,10 @@ public static class CurriculumQuestionsImporter
         return data;
     }
 
-    [MenuItem("Tools/Scam Sense/Curriculum/Load Questions into Rooms")]
-    public static void LoadIntoRooms() => LoadRooms(null);
+    // The menu items that baked this file into the level assets are gone: the question bank
+    // (Assets/Resources/Content/question_bank.json) is now the source, read at runtime. See QuestionBankTools.
 
-    /// <summary>Rewrites only Level 1 (the tutorial room). Levels 2-5 are not opened or re-saved.</summary>
-    [MenuItem("Tools/Scam Sense/Curriculum/Load Level 1 (Tutorial) Only")]
-    public static void LoadLevel1Only() => LoadRooms(1);
-
-    static void LoadRooms(int? onlyRoom)
-    {
-        var data = Load();
-        int total = 0;
-        foreach (var room in data.rooms)
-        {
-            if (onlyRoom.HasValue && room.room != onlyRoom.Value) continue;
-            var level = AssetDatabase.LoadAssetAtPath<LevelDefinition>(room.levelAsset);
-            if (level == null) { Debug.LogError($"Curriculum import: {room.levelAsset} not found"); continue; }
-            Undo.RecordObject(level, "Load curriculum questions");
-            Apply(level, room);
-            EditorUtility.SetDirty(level);
-            total += level.MessageCount;
-            Debug.Log($"Curriculum import: {level.name} now has {level.MessageCount} questions " +
-                      $"(unlock {level.minScoreToUnlockNext}, stars {level.oneStarScore}/{level.twoStarScore}/{level.threeStarScore}).", level);
-        }
-        AssetDatabase.SaveAssets();
-        Debug.Log($"Curriculum import: {total} questions loaded into {data.rooms.Length} rooms from {JsonPath}.");
-    }
-
-    /// <summary>Writes one room's questions and texts into its level asset (no saving).</summary>
+    /// <summary>Writes one room's questions and texts into a level (no saving). Same rules as the runtime resolver.</summary>
     public static void Apply(LevelDefinition level, RoomData room)
     {
         int n = room.questions != null ? room.questions.Length : 0;
@@ -117,62 +88,13 @@ public static class CurriculumQuestionsImporter
         foreach (var q in room.questions) level.messages.Add(ToMessage(q, room.tutorial));
         level.tutorial = room.tutorial;
         level.tutorialFirstQuestion = room.tutorial ? room.firstQuestion ?? "" : "";
-
-        // Scores from the room's own rules and size. Unlocking: about 60% right always unlocks, even if every right
-        // answer ran over its reading time (each still earns at least minCorrectPoints) and the misses cost points.
-        var s = level.scoring ?? new LevelScoring();
-        int b = s.basePoints, p = s.wrongPenalty, slow = Mathf.Min(b, Mathf.Max(0, s.minCorrectPoints));
-        var (k1, k2) = CorrectNeeded(n);
-        level.oneStarScore = Mathf.Max(1, k1 * slow - (n - k1) * p);
-        level.twoStarScore = Mathf.Max(level.oneStarScore, k2 * slow - (n - k2) * p);
-        level.threeStarScore = Mathf.Max(level.twoStarScore, n * b);
-        level.minScoreToUnlockNext = level.twoStarScore;
-
-        int choiceCount = 0;
-        foreach (var q in room.questions) if (q.choices != null && q.choices.Length >= 2) choiceCount++;
-        int verdictCount = n - choiceCount;
-        // Short and beginner-friendly: what the room teaches, then what kind of questions to expect.
-        string mix = verdictCount == 0 ? $"{n} questions with answer choices (A-D)"
-                   : choiceCount == 0 ? $"{n} messages to judge as SCAM or LEGITIMATE"
-                   : $"{n} questions: {choiceCount} with answer choices (A-D) and {verdictCount} to judge as SCAM or LEGITIMATE";
-        level.briefingText = $"{room.intro}\nYou'll get {mix}. Take your time and read each one carefully.";
-        bool last = string.IsNullOrEmpty(level.nextLevelId);
-        level.objectives = new[]
+        LevelContentRules.ApplyThresholds(level, n);
+        LevelContentRules.ApplyTexts(level, new LevelContentRecord
         {
-            $"Answer all {n} questions.",
-            "Read the whole situation before you choose. Stuck? Press HINT.",
-            last ? $"Score {level.minScoreToUnlockNext}+ to finish the investigation."
-                 : $"Score {level.minScoreToUnlockNext}+ to unlock the next room."
-        };
-        // Tutorial room: its own intro briefing and objectives ({unlock} = the unlock score, {count} = questions).
-        if (!string.IsNullOrEmpty(room.briefingTitle)) level.briefingTitle = room.briefingTitle;
-        if (!string.IsNullOrEmpty(room.briefing)) level.briefingText = room.briefing;
-        if (room.objectives != null && room.objectives.Length > 0)
-        {
-            level.objectives = new string[room.objectives.Length];
-            for (int i = 0; i < room.objectives.Length; i++)
-                level.objectives[i] = room.objectives[i].Replace("{unlock}", level.minScoreToUnlockNext.ToString()).Replace("{count}", n.ToString());
-        }
-        level.caseNotes = room.caseNotes ?? new string[0];
-        level.lessons = room.lessons ?? new string[0];
-        level.learningSummary = "";
-
-        // Case-files computer: this room's notes (never an answer) and how the room works.
-        string notes = level.caseNotes.Length > 0 ? "• " + string.Join("\n• ", level.caseNotes)
-                     : "No extra records are needed in this room. Everything you need is in each question.";
-        level.caseFiles = new List<CaseFile>
-        {
-            new CaseFile { title = "Case Notes", body = notes },
-            new CaseFile { title = "How This Room Works", body =
-                $"1. {n} questions arrive one at a time, in a new order each attempt.\n\n" +
-                "2. Case questions: pick the safest, most accurate answer (A-D).\n\n" +
-                "3. Messages and web pages: choose SCAM or LEGITIMATE.\n\n" +
-                "4. Not sure? Press HINT to see what to look at. After each answer you'll see why it was right or wrong.\n\n" +
-                $"Goal: score {level.minScoreToUnlockNext}+ to {(last ? "finish the investigation" : "unlock the next room")}." }
-        };
+            levelId = level.levelId, intro = room.intro, briefingTitle = room.briefingTitle, briefing = room.briefing,
+            objectives = room.objectives, caseNotes = room.caseNotes, lessons = room.lessons, learningSummary = ""
+        });
     }
-
-    static string Count(int n) => n switch { 1 => "one", 2 => "two", 3 => "three", 4 => "four", 5 => "five", _ => n.ToString() };
 
     /// <summary>The question's interactive activity (Kind None when it has none).</summary>
     public static MessageActivity ToActivity(ActivityData a)

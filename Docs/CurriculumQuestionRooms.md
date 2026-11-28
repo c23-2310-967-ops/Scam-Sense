@@ -1,5 +1,10 @@
 # Curriculum Questions in the Five Rooms
 
+> **Superseded for editing (2026-11-28):** the game now reads its questions at runtime from the question bank,
+> `Assets/Resources/Content/question_bank.json`. To add, edit, move or switch off a question, follow
+> [ContentManagement.md](ContentManagement.md). The "Arrange Rooms" and "Load Questions into Rooms" menus mentioned below were removed.
+> The history below is still accurate for *what* each room asks.
+
 The five rooms now ask the 30 validated curriculum questions, six per room, in a new random order on every attempt.
 
 > **Level 1 is a 4-message introduction (2026-11-25).**

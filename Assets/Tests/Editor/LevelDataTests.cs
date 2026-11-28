@@ -146,19 +146,19 @@ public class LevelDataTests
     [Test]
     public void Rooms_MatchTheValidatedQuestionBank()
     {
-        var data = CurriculumQuestionsImporter.Load();
-        Assert.AreEqual(Catalog.levels.Count, data.rooms.Length, "The question data must define one room per level in the catalog");
-        foreach (var room in data.rooms)
+        // The built-in (fallback) questions in each level asset match the question bank the game plays.
+        var data = QuestionBankTools.LoadBankFile();
+        Assert.AreEqual(Catalog.levels.Count, data.levels.Count, "The question bank must define one room per level in the catalog");
+        foreach (var level in Catalog.levels)
         {
-            var level = AssetDatabase.LoadAssetAtPath<LevelDefinition>(room.levelAsset);
-            Assert.IsNotNull(level, room.levelAsset + " is missing");
-            CollectionAssert.AreEqual(room.questions.Select(q => q.id).ToList(), level.messages.Select(m => m.id).ToList(),
-                $"{level.name} is out of date with {CurriculumQuestionsImporter.JsonPath} - run Tools > Scam Sense > Curriculum > Load Questions into Rooms");
-            for (int i = 0; i < room.questions.Length; i++)
+            var qs = LevelContentResolver.ActiveQuestions(data, level.levelId);
+            CollectionAssert.AreEqual(qs.Select(q => q.questionId).ToList(), level.messages.Select(m => m.id).ToList(),
+                $"{level.name} is out of date with {QuestionBankTools.BankPath} - run Tools > Scam Sense > Content > Bake Fallback Content into Levels");
+            for (int i = 0; i < qs.Count; i++)
             {
-                var q = room.questions[i]; var m = level.messages[i];
-                Assert.AreEqual(q.body, m.body, $"{level.name} / {m.id}: question text differs from the question bank");
-                Assert.AreEqual(q.correctChoice, m.correctChoice, $"{level.name} / {m.id}: correct answer differs from the question bank");
+                var q = qs[i]; var m = level.messages[i];
+                Assert.AreEqual(q.message, m.body, $"{level.name} / {m.id}: question text differs from the question bank");
+                Assert.AreEqual(q.HasChoices ? q.correctChoice : 0, m.correctChoice, $"{level.name} / {m.id}: correct answer differs from the question bank");
                 CollectionAssert.AreEqual(q.choices ?? new string[0], m.choices ?? new string[0], $"{level.name} / {m.id}: choices differ from the question bank");
             }
         }
@@ -221,7 +221,7 @@ public class LevelDataTests
     public void Difficulty_RisesGently()
     {
         var rooms = Catalog.levels;
-        var data = CurriculumQuestionsImporter.Load();
+        var data = QuestionBankTools.LoadBankFile();
         float Level(string d) => d == "Hard" ? 3f : d == "Medium" ? 2f : 1f;
         float prevAvg = 0f;
         for (int i = 0; i < rooms.Count; i++)
@@ -234,8 +234,8 @@ public class LevelDataTests
             }
             if (i < 2) Assert.IsFalse(l.scoring.HasTimePressure, $"{l.name}: the first two rooms have no time pressure");
             Assert.LessOrEqual(l.scoring.wrongPenalty, l.scoring.basePoints / 5, $"{l.name}: a mistake shouldn't cost more than a fifth of a right answer");
-            var room = data.rooms.First(r => r.levelAsset == AssetDatabase.GetAssetPath(l));
-            float avg = room.questions.Average(q => Level(q.difficulty));
+            var room = data.levels.First(r => r.levelId == l.levelId);
+            float avg = LevelContentResolver.ActiveQuestions(data, l.levelId).Average(q => Level(q.difficulty));
             Assert.GreaterOrEqual(avg, prevAvg, $"{l.name}: easier on average than the room before");
             prevAvg = avg;
             Assert.IsFalse(string.IsNullOrWhiteSpace(room.intro), $"{l.name}: the briefing must say what the room teaches");
@@ -271,7 +271,7 @@ public class LevelDataTests
     [Test]
     public void All30CurriculumQuestions_AreInARoomOrTheReserve_Once()
     {
-        var reserve = (CurriculumQuestionsImporter.Load().reserve ?? new CurriculumQuestionsImporter.QuestionData[0]).Select(q => q.id);
+        var reserve = QuestionBankTools.LoadBankFile().questions.Where(q => q.isActive && string.IsNullOrEmpty(q.levelId)).Select(q => q.questionId);
         var ids = CurriculumMessages().Select(m => m.id).Concat(reserve).ToList();
         CollectionAssert.AreEquivalent(CurriculumIds, ids, "a validated question is missing, or is both in a room and in the reserve");
     }
