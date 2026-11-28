@@ -30,9 +30,10 @@ public static class ReleaseBuilder
     static void BuildMenu()
     {
         string version = PlayerSettings.bundleVersion;
-        string git = UncommittedFiles();
-        string warning = string.IsNullOrWhiteSpace(git) ? "" :
-            "\n\nWARNING: there are uncommitted changes. A release should be built from a committed, reviewed version.";
+        string warning = !GitFound()
+            ? "\n\nWARNING: Git was not found, so this build can't be traced to a commit. Install Git (git-scm.com) and restart Unity."
+            : string.IsNullOrWhiteSpace(UncommittedFiles()) ? ""
+            : "\n\nWARNING: there are uncommitted changes. A release should be built from a committed, reviewed version.";
         if (EditorUtility.DisplayDialog("Build Release", $"Build Scam Sense version {version} for Windows?{warning}", "Build", "Cancel"))
             Debug.Log(Build());
     }
@@ -75,9 +76,11 @@ public static class ReleaseBuilder
         File.WriteAllText(Path.Combine(folder, "README.txt"), readme);
         File.Copy(notes, Path.Combine(folder, "RELEASE_NOTES.txt"));
 
+        bool gitFound = GitFound();
         string commit = Git("rev-parse HEAD").Trim();
         string branch = Git("rev-parse --abbrev-ref HEAD").Trim();
-        bool clean = string.IsNullOrWhiteSpace(UncommittedFiles());
+        string uncommitted = gitFound ? UncommittedFiles() : null;
+        bool clean = gitFound && commit.Length > 0 && string.IsNullOrWhiteSpace(uncommitted);
         File.WriteAllText(Path.Combine(folder, "BUILD_INFO.txt"),
             $"Product:        Scam Sense: Think Before You Click\r\n" +
             $"Version:        {version}\r\n" +
@@ -86,13 +89,37 @@ public static class ReleaseBuilder
             $"Unity:          {Application.unityVersion}\r\n" +
             $"Source commit:  {(commit.Length > 0 ? commit : "unknown")}\r\n" +
             $"Source branch:  {(branch.Length > 0 ? branch : "unknown")}\r\n" +
-            $"Clean source:   {(clean ? "yes (no uncommitted changes)" : "NO - built with uncommitted changes, not a traceable release")}\r\n" +
+            $"Clean source:   {CleanSourceLine(gitFound && commit.Length > 0, uncommitted)}\r\n" +
             $"Scenes:         {string.Join(", ", scenes.Select(Path.GetFileNameWithoutExtension))}\r\n");
 
         ZipFile.CreateFromDirectory(folder, zip, System.IO.Compression.CompressionLevel.Optimal, includeBaseDirectory: true);
         double mb = new FileInfo(zip).Length / (1024.0 * 1024.0);
         return $"Build Release {version} succeeded: {zip} ({mb:F0} MB, built in {report.summary.totalTime.TotalSeconds:F0} s)" +
-               (clean ? "" : "  WARNING: built with uncommitted changes.");
+               (clean ? "" : gitFound ? "  WARNING: built with uncommitted changes." : "  WARNING: Git was not found, so the source could not be checked.");
+    }
+
+    /// <summary>
+    /// BUILD_INFO's "Clean source" value. Without Git nothing was checked, so it must never say yes
+    /// (v0.2.0 found this: a Unity session started before Git was installed reported a clean source).
+    /// </summary>
+    public static string CleanSourceLine(bool gitFound, string uncommittedFiles) =>
+        !gitFound ? "UNKNOWN - Git was not found, so this build can't be traced to a commit"
+        : string.IsNullOrWhiteSpace(uncommittedFiles) ? "yes (no uncommitted changes)"
+        : "NO - built with uncommitted changes, not a traceable release";
+
+    /// <summary>True if Git can be run (from PATH or its standard install folder).</summary>
+    static bool GitFound() => Git("--version").StartsWith("git version", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>"git" from PATH, else Git for Windows' standard location (Unity keeps the PATH it was started with).</summary>
+    static string GitExe()
+    {
+        foreach (var candidate in new[]
+                 {
+                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Git", "cmd", "git.exe"),
+                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Git", "cmd", "git.exe"),
+                 })
+            if (File.Exists(candidate)) return candidate;
+        return "git";
     }
 
     /// <summary>
@@ -106,7 +133,7 @@ public static class ReleaseBuilder
     {
         try
         {
-            var p = Process.Start(new ProcessStartInfo("git", args)
+            var p = Process.Start(new ProcessStartInfo(GitExe(), args)
             {
                 WorkingDirectory = ProjectRoot, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true
             });

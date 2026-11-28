@@ -32,6 +32,15 @@ public class ReleaseTests
     }
 
     [Test]
+    public void BuildInfo_NeverClaimsACleanSourceWithoutGit()
+    {
+        StringAssert.StartsWith("UNKNOWN", ReleaseBuilder.CleanSourceLine(false, ""), "without Git nothing was checked, so it can't say yes");
+        StringAssert.StartsWith("UNKNOWN", ReleaseBuilder.CleanSourceLine(false, null));
+        StringAssert.StartsWith("yes", ReleaseBuilder.CleanSourceLine(true, ""));
+        StringAssert.StartsWith("NO", ReleaseBuilder.CleanSourceLine(true, "Assets/Scenes/Menu.unity\n"));
+    }
+
+    [Test]
     public void BuildTarget_IsWindows64()
     {
         Assert.AreEqual(BuildTarget.StandaloneWindows64, EditorUserBuildSettings.activeBuildTarget, "The release platform is Windows 64-bit");
